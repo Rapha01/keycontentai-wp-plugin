@@ -23,6 +23,7 @@ foreach ($post_types as $post_type) {
 $selected_post_type = get_option('keycontentai_selected_post_type', 'post');
 $field_descriptions = get_option('keycontentai_field_descriptions', array());
 $field_word_counts = get_option('keycontentai_field_word_counts', array());
+$field_enabled = get_option('keycontentai_field_enabled', array());
 
 // Get custom fields for the selected post type
 $custom_fields = array();
@@ -138,11 +139,12 @@ if (!empty($selected_post_type)) {
             <table class="form-table keycontentai-fields-table" role="presentation">
                 <thead>
                     <tr>
-                        <th style="width: 20%;"><?php esc_html_e('Field Name', 'keycontentai'); ?></th>
-                        <th style="width: 12%;"><?php esc_html_e('Type', 'keycontentai'); ?></th>
+                        <th style="width: 18%;"><?php esc_html_e('Field Name', 'keycontentai'); ?></th>
+                        <th style="width: 10%;"><?php esc_html_e('Type', 'keycontentai'); ?></th>
                         <th style="width: 8%;"><?php esc_html_e('Source', 'keycontentai'); ?></th>
-                        <th style="width: 45%;"><?php esc_html_e('Description / Prompt', 'keycontentai'); ?></th>
-                        <th style="width: 15%;"><?php esc_html_e('Word Count', 'keycontentai'); ?></th>
+                        <th style="width: 40%;"><?php esc_html_e('Description / Prompt', 'keycontentai'); ?></th>
+                        <th style="width: 12%;"><?php esc_html_e('Word Count', 'keycontentai'); ?></th>
+                        <th style="width: 12%; text-align: center;"><?php esc_html_e('Generate', 'keycontentai'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -183,6 +185,22 @@ if (!empty($selected_post_type)) {
                                 />
                                 <p class="description">
                                     <?php esc_html_e('Target word count for AI generation', 'keycontentai'); ?>
+                                </p>
+                            </td>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <label style="display: inline-block; margin: 0;">
+                                    <input 
+                                        type="checkbox" 
+                                        name="keycontentai_field_enabled[<?php echo esc_attr($field['key']); ?>]"
+                                        value="1"
+                                        <?php checked(isset($field_enabled[$field['key']]) ? $field_enabled[$field['key']] : true, true); ?>
+                                    />
+                                    <span class="screen-reader-text">
+                                        <?php echo esc_html(sprintf(__('Enable generation for %s', 'keycontentai'), $field['label'])); ?>
+                                    </span>
+                                </label>
+                                <p class="description" style="margin-top: 5px;">
+                                    <?php esc_html_e('Enable AI generation', 'keycontentai'); ?>
                                 </p>
                             </td>
                         </tr>

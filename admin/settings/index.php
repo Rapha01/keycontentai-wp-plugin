@@ -19,9 +19,6 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'client-
         <a href="?page=keycontentai-settings&tab=client-settings" class="nav-tab <?php echo $active_tab === 'client-settings' ? 'nav-tab-active' : ''; ?>">
             <?php esc_html_e('Client', 'keycontentai'); ?>
         </a>
-        <a href="?page=keycontentai-settings&tab=competition" class="nav-tab <?php echo $active_tab === 'competition' ? 'nav-tab-active' : ''; ?>">
-            <?php esc_html_e('Competition', 'keycontentai'); ?>
-        </a>
         <a href="?page=keycontentai-settings&tab=cpt" class="nav-tab <?php echo $active_tab === 'cpt' ? 'nav-tab-active' : ''; ?>">
             <?php esc_html_e('CPT', 'keycontentai'); ?>
         </a>
@@ -37,9 +34,6 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'client-
         switch ($active_tab) {
             case 'client-settings':
                 $tab_file = KEYCONTENTAI_PLUGIN_DIR . 'admin/settings/tabs/tab-client-settings.php';
-                break;
-            case 'competition':
-                $tab_file = KEYCONTENTAI_PLUGIN_DIR . 'admin/settings/tabs/tab-competition.php';
                 break;
             case 'cpt':
                 $tab_file = KEYCONTENTAI_PLUGIN_DIR . 'admin/settings/tabs/tab-cpt.php';

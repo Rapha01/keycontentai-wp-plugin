@@ -113,5 +113,38 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
                 </div>
             </div>
         </div>
+        
+        <!-- Debug Toggle -->
+        <div class="keycontentai-debug-toggle" style="margin-top: 20px; margin-bottom: 10px;">
+            <button type="button" id="keycontentai-toggle-debug-btn" class="button button-secondary">
+                <span class="dashicons dashicons-admin-tools" style="margin-top: 4px; margin-right: 5px;"></span>
+                <span class="button-text"><?php esc_html_e('Show Debug Mode', 'keycontentai'); ?></span>
+            </button>
+            <p class="description" style="margin-top: 8px;">
+                <?php esc_html_e('Show detailed information about the content generation process', 'keycontentai'); ?>
+            </p>
+        </div>
+        
+        <!-- Debug Output Box (hidden by default) -->
+        <div id="keycontentai-debug-container" class="keycontentai-debug-container" style="display: none;">
+            <div class="card">
+                <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>
+                        <span class="dashicons dashicons-admin-tools" style="margin-right: 5px;"></span>
+                        <?php esc_html_e('Debug Information', 'keycontentai'); ?>
+                    </span>
+                    <button type="button" id="keycontentai-clear-debug-btn" class="button button-small">
+                        <?php esc_html_e('Clear', 'keycontentai'); ?>
+                    </button>
+                </h2>
+                
+                <div id="keycontentai-debug-output" class="keycontentai-debug-output">
+                    <div class="keycontentai-debug-empty">
+                        <span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>
+                        <p><?php esc_html_e('Debug information will appear here when generation starts.', 'keycontentai'); ?></p>
+                    </div>
+                </div>
+            </div>
+        </div>
     <?php endif; ?>
 </div>

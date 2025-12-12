@@ -72,7 +72,8 @@ class KeyContentAI {
      * Load plugin dependencies
      */
     private function load_dependencies() {
-        // Dependencies will be loaded when needed
+        // Load content generator class
+        require_once KEYCONTENTAI_PLUGIN_DIR . 'includes/content-generator.php';
     }
     
     /**
@@ -98,6 +99,15 @@ class KeyContentAI {
             'manage_options',                              // Capability
             'keycontentai-create',                         // Menu slug (same as parent for first item)
             array($this, 'render_create_page')            // Callback
+        );
+
+        add_submenu_page(
+            'keycontentai-create',                         // Parent slug
+            __('Competition', 'keycontentai'),            // Page title
+            __('Competition', 'keycontentai'),            // Menu title
+            'manage_options',                              // Capability
+            'keycontentai-competition',                    // Menu slug
+            array($this, 'render_competition_page')       // Callback
         );
         
         add_submenu_page(
@@ -197,6 +207,13 @@ class KeyContentAI {
             'sanitize_callback' => array($this, 'sanitize_field_word_counts'),
             'default' => array()
         ));
+        
+        // Custom Field Enabled/Disabled Status
+        register_setting('keycontentai_cpt_settings', 'keycontentai_field_enabled', array(
+            'type' => 'array',
+            'sanitize_callback' => array($this, 'sanitize_field_enabled'),
+            'default' => array()
+        ));
     }
     
     /**
@@ -226,6 +243,22 @@ class KeyContentAI {
         $sanitized = array();
         foreach ($input as $field_key => $word_count) {
             $sanitized[sanitize_key($field_key)] = absint($word_count);
+        }
+        
+        return $sanitized;
+    }
+    
+    /**
+     * Sanitize field enabled status
+     */
+    public function sanitize_field_enabled($input) {
+        if (!is_array($input)) {
+            return array();
+        }
+        
+        $sanitized = array();
+        foreach ($input as $field_key => $enabled) {
+            $sanitized[sanitize_key($field_key)] = (bool) $enabled;
         }
         
         return $sanitized;
@@ -263,6 +296,18 @@ class KeyContentAI {
     }
     
     /**
+     * Render Competition page with tabs
+     */
+    public function render_competition_page() {
+        // Check user capabilities
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        
+        include KEYCONTENTAI_PLUGIN_DIR . 'admin/competition/index.php';
+    }
+    
+    /**
      * Render Create page
      */
     public function render_create_page() {
@@ -279,8 +324,20 @@ class KeyContentAI {
      */
     public function enqueue_admin_assets($hook) {
         // Only load on our plugin pages
-        if ($hook !== 'toplevel_page_keycontentai-create' && $hook !== 'keycontentai_page_keycontentai-settings') {
+        if ($hook !== 'toplevel_page_keycontentai-create' 
+            && $hook !== 'keycontentai_page_keycontentai-settings' 
+            && $hook !== 'keycontentai_page_keycontentai-competition') {
             return;
+        }
+        
+        // Settings page assets
+        if ($hook === 'keycontentai_page_keycontentai-settings' || $hook === 'keycontentai_page_keycontentai-competition') {
+            wp_enqueue_style(
+                'keycontentai-settings',
+                KEYCONTENTAI_PLUGIN_URL . 'admin/settings/assets/settings.css',
+                array(),
+                KEYCONTENTAI_VERSION
+            );
         }
         
         // Create page assets
@@ -327,10 +384,10 @@ class KeyContentAI {
      * AJAX handler for content generation
      */
     public function ajax_generate_content() {
-        // 1. Security check
+        // Security check
         check_ajax_referer('keycontentai_generate', 'nonce');
         
-        // 2. Get keyword from request
+        // Get keyword from request
         if (!isset($_POST['keyword']) || empty($_POST['keyword'])) {
             wp_send_json_error(array(
                 'message' => __('No keyword provided', 'keycontentai')
@@ -338,31 +395,21 @@ class KeyContentAI {
         }
         
         $keyword = sanitize_text_field($_POST['keyword']);
+        $debug_mode = isset($_POST['debug']) && $_POST['debug'] === '1';
         
-        // 3. TODO: Gather all settings
-        // $settings = $this->gather_settings();
+        // Generate content using the content generator class
+        $generator = new KeyContentAI_Content_Generator();
+        $result = $generator->generate_content($keyword, $debug_mode);
         
-        // 4. TODO: Get custom fields for selected post type
-        // $custom_fields = $this->get_custom_fields_config();
-        
-        // 5. TODO: Build the prompt
-        // $prompt = $this->build_prompt($keyword, $settings, $custom_fields);
-        
-        // 6. TODO: Call OpenAI API
-        // $response = $this->call_openai_api($prompt, $settings['api_key']);
-        
-        // 7. TODO: Parse the response
-        // $parsed_content = $this->parse_ai_response($response);
-        
-        // 8. TODO: Create/update post
-        // $post_id = $this->create_post_with_content($keyword, $parsed_content, $settings['post_type'], $custom_fields);
-        
-        // 9. Return success response
-        wp_send_json_success(array(
-            'post_id' => 0, // Placeholder
-            'keyword' => $keyword,
-            'message' => sprintf(__('Successfully processed keyword: %s', 'keycontentai'), $keyword)
-        ));
+        // Return response
+        if ($result['success']) {
+            wp_send_json_success($result);
+        } else {
+            wp_send_json_error(array(
+                'message' => $result['message'],
+                'debug' => isset($result['debug']) ? $result['debug'] : array()
+            ));
+        }
     }
 }
 

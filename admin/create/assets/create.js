@@ -11,7 +11,37 @@ jQuery(document).ready(function($) {
     var $clearLogBtn = $('#keycontentai-clear-log-btn');
     var $log = $('#keycontentai-log');
     var $form = $('#keycontentai-create-form');
+    var $toggleDebugBtn = $('#keycontentai-toggle-debug-btn');
+    var $debugContainer = $('#keycontentai-debug-container');
+    var $debugOutput = $('#keycontentai-debug-output');
+    var $clearDebugBtn = $('#keycontentai-clear-debug-btn');
     var isRunning = false;
+    var debugVisible = false;
+    
+    // Toggle debug container
+    $toggleDebugBtn.on('click', function() {
+        if (debugVisible) {
+            // Hide debug
+            $debugContainer.slideUp(300, function() {
+                // Clear debug output when hiding
+                $debugOutput.html('<div class="keycontentai-debug-empty"><span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span><p>Debug information will appear here when generation starts.</p></div>');
+            });
+            $(this).find('.dashicons').removeClass('dashicons-hidden').addClass('dashicons-admin-tools');
+            $(this).find('.button-text').text('Show Debug Mode');
+            debugVisible = false;
+        } else {
+            // Show debug
+            $debugContainer.slideDown(300);
+            $(this).find('.dashicons').removeClass('dashicons-admin-tools').addClass('dashicons-hidden');
+            $(this).find('.button-text').text('Hide Debug Mode');
+            debugVisible = true;
+        }
+    });
+    
+    // Clear debug output
+    $clearDebugBtn.on('click', function() {
+        $debugOutput.html('<div class="keycontentai-debug-empty"><span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span><p>Debug information will appear here when generation starts.</p></div>');
+    });
     
     // Update keyword count
     function updateKeywordCount() {
@@ -51,6 +81,21 @@ jQuery(document).ready(function($) {
         
         $log.append(entry);
         $log.scrollTop($log[0].scrollHeight);
+    }
+    
+    // Add debug entry
+    function addDebugEntry(title, content) {
+        var timestamp = new Date().toLocaleTimeString();
+        
+        // Remove empty state if present
+        $debugOutput.find('.keycontentai-debug-empty').remove();
+        
+        var entry = $('<div class="keycontentai-debug-entry"></div>');
+        entry.append('<div class="keycontentai-debug-entry-header">' + title + '<span class="keycontentai-debug-timestamp">' + timestamp + '</span></div>');
+        entry.append('<div class="keycontentai-debug-entry-content">' + (typeof content === 'object' ? JSON.stringify(content, null, 2) : content) + '</div>');
+        
+        $debugOutput.append(entry);
+        $debugOutput.scrollTop($debugOutput[0].scrollHeight);
     }
     
     // Form submission
@@ -102,6 +147,11 @@ jQuery(document).ready(function($) {
                     addLogEntry('  └─ Post ID: ' + result.post_id, 'info');
                 }
                 
+                // Display debug info if available
+                if (result.debug && result.debug.length > 0) {
+                    addDebugEntry('Keyword: ' + keyword, result.debug);
+                }
+                
             } catch (error) {
                 addLogEntry('  └─ ' + keycontentaiCreate.error + ' ' + error, 'error');
             }
@@ -126,6 +176,9 @@ jQuery(document).ready(function($) {
     
     // Process a single keyword
     async function processKeyword(keyword) {
+        // Check if debug container is visible
+        var debugMode = $debugContainer.is(':visible');
+        
         return new Promise((resolve, reject) => {
             $.ajax({
                 url: keycontentaiCreate.ajaxUrl,
@@ -133,7 +186,8 @@ jQuery(document).ready(function($) {
                 data: {
                     action: 'keycontentai_generate_content',
                     keyword: keyword,
-                    nonce: keycontentaiCreate.nonce
+                    nonce: keycontentaiCreate.nonce,
+                    debug: debugMode ? '1' : '0'
                 },
                 success: function(response) {
                     if (response.success) {
