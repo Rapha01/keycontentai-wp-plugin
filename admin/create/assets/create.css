@@ -194,6 +194,69 @@
     margin: 0;
 }
 
+/* Debug Tabs */
+.keycontentai-debug-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #dcdcde;
+    margin-bottom: 0;
+}
+
+.keycontentai-debug-tab {
+    padding: 12px 20px;
+    background: #f6f7f7;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #50575e;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.keycontentai-debug-tab:hover {
+    background: #fff;
+    color: #2271b1;
+}
+
+.keycontentai-debug-tab.keycontentai-debug-tab-active {
+    background: #fff;
+    color: #2271b1;
+    border-bottom-color: #2271b1;
+}
+
+.keycontentai-debug-tab .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* Debug Tab Content */
+.keycontentai-debug-tab-content {
+    position: relative;
+}
+
+.keycontentai-debug-pane {
+    display: none;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.keycontentai-debug-pane.keycontentai-debug-pane-active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 @keyframes slideDown {
     from {
         opacity: 0;
@@ -205,7 +268,9 @@
     }
 }
 
-.keycontentai-debug-output {
+.keycontentai-debug-output,
+.keycontentai-prompt-output,
+.keycontentai-api-response-output {
     background: #f9f9f9;
     border: 1px solid #dcdcde;
     border-radius: 4px;
@@ -215,6 +280,14 @@
     font-family: 'Courier New', monospace;
     font-size: 12px;
     line-height: 1.6;
+}
+
+.keycontentai-prompt-output,
+.keycontentai-api-response-output {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .keycontentai-debug-empty {

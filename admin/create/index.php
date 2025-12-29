@@ -138,10 +138,52 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
                     </button>
                 </h2>
                 
-                <div id="keycontentai-debug-output" class="keycontentai-debug-output">
-                    <div class="keycontentai-debug-empty">
-                        <span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>
-                        <p><?php esc_html_e('Debug information will appear here when generation starts.', 'keycontentai'); ?></p>
+                <!-- Debug Tabs -->
+                <div class="keycontentai-debug-tabs">
+                    <button class="keycontentai-debug-tab keycontentai-debug-tab-active" data-tab="general">
+                        <span class="dashicons dashicons-list-view"></span>
+                        <?php esc_html_e('General Debug', 'keycontentai'); ?>
+                    </button>
+                    <button class="keycontentai-debug-tab" data-tab="prompt">
+                        <span class="dashicons dashicons-edit-large"></span>
+                        <?php esc_html_e('Latest Prompt', 'keycontentai'); ?>
+                    </button>
+                    <button class="keycontentai-debug-tab" data-tab="api-response">
+                        <span class="dashicons dashicons-cloud"></span>
+                        <?php esc_html_e('Latest Text API Response', 'keycontentai'); ?>
+                    </button>
+                </div>
+                
+                <!-- Debug Tab Content -->
+                <div class="keycontentai-debug-tab-content">
+                    <!-- General Debug Tab -->
+                    <div id="keycontentai-debug-tab-general" class="keycontentai-debug-pane keycontentai-debug-pane-active">
+                        <div id="keycontentai-debug-output" class="keycontentai-debug-output">
+                            <div class="keycontentai-debug-empty">
+                                <span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>
+                                <p><?php esc_html_e('Debug information will appear here when generation starts.', 'keycontentai'); ?></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Latest Prompt Tab -->
+                    <div id="keycontentai-debug-tab-prompt" class="keycontentai-debug-pane">
+                        <div id="keycontentai-prompt-output" class="keycontentai-prompt-output">
+                            <div class="keycontentai-debug-empty">
+                                <span class="dashicons dashicons-edit-large" style="font-size: 48px; opacity: 0.3;"></span>
+                                <p><?php esc_html_e('The latest generated prompt will appear here.', 'keycontentai'); ?></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Latest API Response Tab -->
+                    <div id="keycontentai-debug-tab-api-response" class="keycontentai-debug-pane">
+                        <div id="keycontentai-api-response-output" class="keycontentai-api-response-output">
+                            <div class="keycontentai-debug-empty">
+                                <span class="dashicons dashicons-cloud" style="font-size: 48px; opacity: 0.3;"></span>
+                                <p><?php esc_html_e('The latest text API response will appear here.', 'keycontentai'); ?></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

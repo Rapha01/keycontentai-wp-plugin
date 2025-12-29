@@ -65,6 +65,7 @@ class KeyContentAI {
             
             // AJAX handlers
             add_action('wp_ajax_keycontentai_generate_content', array($this, 'ajax_generate_content'));
+            add_action('wp_ajax_keycontentai_fetch_models', array($this, 'ajax_fetch_models'));
         }
     }
     
@@ -72,6 +73,12 @@ class KeyContentAI {
      * Load plugin dependencies
      */
     private function load_dependencies() {
+        // Load prompt builder class
+        require_once KEYCONTENTAI_PLUGIN_DIR . 'includes/prompt-builder.php';
+        
+        // Load OpenAI API caller class
+        require_once KEYCONTENTAI_PLUGIN_DIR . 'includes/openai-api-caller.php';
+        
         // Load content generator class
         require_once KEYCONTENTAI_PLUGIN_DIR . 'includes/content-generator.php';
     }
@@ -99,6 +106,15 @@ class KeyContentAI {
             'manage_options',                              // Capability
             'keycontentai-create',                         // Menu slug (same as parent for first item)
             array($this, 'render_create_page')            // Callback
+        );
+
+        add_submenu_page(
+            'keycontentai-create',                         // Parent slug
+            __('Edit', 'keycontentai'),                   // Page title
+            __('Edit', 'keycontentai'),                   // Menu title
+            'manage_options',                              // Capability
+            'keycontentai-edit',                           // Menu slug
+            array($this, 'render_edit_page')              // Callback
         );
 
         add_submenu_page(
@@ -131,7 +147,25 @@ class KeyContentAI {
             'default' => ''
         ));
         
+        register_setting('keycontentai_api_settings', 'keycontentai_text_model', array(
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => 'gpt-4o-mini'
+        ));
+        
+        register_setting('keycontentai_api_settings', 'keycontentai_image_model', array(
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => 'dall-e-3'
+        ));
+        
         // Client Settings
+        register_setting('keycontentai_client_settings', 'keycontentai_language', array(
+            'type' => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default' => 'de'
+        ));
+        
         register_setting('keycontentai_client_settings', 'keycontentai_addressing', array(
             'type' => 'string',
             'sanitize_callback' => 'sanitize_text_field',
@@ -194,71 +228,77 @@ class KeyContentAI {
             'default' => 'post'
         ));
         
-        // Custom Field Descriptions
-        register_setting('keycontentai_cpt_settings', 'keycontentai_field_descriptions', array(
+        // Custom Field Configurations (per post type)
+        // Structure: array('post_type' => array('field_key' => array('description' => '', 'word_count' => 0, 'enabled' => true)))
+        register_setting('keycontentai_cpt_settings', 'keycontentai_field_configs', array(
             'type' => 'array',
-            'sanitize_callback' => array($this, 'sanitize_field_descriptions'),
+            'sanitize_callback' => array($this, 'sanitize_field_configs'),
             'default' => array()
         ));
         
-        // Custom Field Word Counts
-        register_setting('keycontentai_cpt_settings', 'keycontentai_field_word_counts', array(
+        // Additional Context per Post Type
+        // Structure: array('post_type' => 'context text')
+        register_setting('keycontentai_cpt_settings', 'keycontentai_cpt_additional_context', array(
             'type' => 'array',
-            'sanitize_callback' => array($this, 'sanitize_field_word_counts'),
-            'default' => array()
-        ));
-        
-        // Custom Field Enabled/Disabled Status
-        register_setting('keycontentai_cpt_settings', 'keycontentai_field_enabled', array(
-            'type' => 'array',
-            'sanitize_callback' => array($this, 'sanitize_field_enabled'),
+            'sanitize_callback' => array($this, 'sanitize_cpt_additional_context'),
             'default' => array()
         ));
     }
     
     /**
-     * Sanitize field descriptions
+     * Sanitize field configurations
      */
-    public function sanitize_field_descriptions($input) {
+    public function sanitize_field_configs($input) {
         if (!is_array($input)) {
             return array();
         }
         
-        $sanitized = array();
-        foreach ($input as $field_key => $description) {
-            $sanitized[sanitize_key($field_key)] = sanitize_textarea_field($description);
+        // Get existing field configs to preserve data for other post types
+        $existing_configs = get_option('keycontentai_field_configs', array());
+        
+        // Start with existing data
+        $sanitized = is_array($existing_configs) ? $existing_configs : array();
+        
+        // Update only the post types that are in the input
+        foreach ($input as $post_type => $fields) {
+            $post_type_clean = sanitize_key($post_type);
+            $sanitized[$post_type_clean] = array();
+            
+            if (is_array($fields)) {
+                foreach ($fields as $field_key => $field_data) {
+                    $field_key_clean = sanitize_key($field_key);
+                    $sanitized[$post_type_clean][$field_key_clean] = array(
+                        'description' => isset($field_data['description']) ? sanitize_textarea_field($field_data['description']) : '',
+                        'word_count' => isset($field_data['word_count']) ? absint($field_data['word_count']) : 0,
+                        'enabled' => isset($field_data['enabled']) ? (bool) $field_data['enabled'] : false,
+                        'width' => isset($field_data['width']) ? absint($field_data['width']) : 0,
+                        'height' => isset($field_data['height']) ? absint($field_data['height']) : 0
+                    );
+                }
+            }
         }
         
         return $sanitized;
     }
     
     /**
-     * Sanitize field word counts
+     * Sanitize CPT additional context
      */
-    public function sanitize_field_word_counts($input) {
+    public function sanitize_cpt_additional_context($input) {
         if (!is_array($input)) {
             return array();
         }
         
-        $sanitized = array();
-        foreach ($input as $field_key => $word_count) {
-            $sanitized[sanitize_key($field_key)] = absint($word_count);
-        }
+        // Get existing context to preserve data for other post types
+        $existing_context = get_option('keycontentai_cpt_additional_context', array());
         
-        return $sanitized;
-    }
-    
-    /**
-     * Sanitize field enabled status
-     */
-    public function sanitize_field_enabled($input) {
-        if (!is_array($input)) {
-            return array();
-        }
+        // Start with existing data
+        $sanitized = is_array($existing_context) ? $existing_context : array();
         
-        $sanitized = array();
-        foreach ($input as $field_key => $enabled) {
-            $sanitized[sanitize_key($field_key)] = (bool) $enabled;
+        // Update only the post types that are in the input
+        foreach ($input as $post_type => $context) {
+            $post_type_clean = sanitize_key($post_type);
+            $sanitized[$post_type_clean] = sanitize_textarea_field($context);
         }
         
         return $sanitized;
@@ -308,6 +348,18 @@ class KeyContentAI {
     }
     
     /**
+     * Render Edit page
+     */
+    public function render_edit_page() {
+        // Check user capabilities
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        
+        include KEYCONTENTAI_PLUGIN_DIR . 'admin/edit/index.php';
+    }
+    
+    /**
      * Render Create page
      */
     public function render_create_page() {
@@ -325,6 +377,7 @@ class KeyContentAI {
     public function enqueue_admin_assets($hook) {
         // Only load on our plugin pages
         if ($hook !== 'toplevel_page_keycontentai-create' 
+            && $hook !== 'keycontentai_page_keycontentai-edit'
             && $hook !== 'keycontentai_page_keycontentai-settings' 
             && $hook !== 'keycontentai_page_keycontentai-competition') {
             return;
@@ -338,6 +391,19 @@ class KeyContentAI {
                 array(),
                 KEYCONTENTAI_VERSION
             );
+            
+            wp_enqueue_script(
+                'keycontentai-settings',
+                KEYCONTENTAI_PLUGIN_URL . 'admin/settings/assets/settings.js',
+                array('jquery'),
+                KEYCONTENTAI_VERSION,
+                true
+            );
+            
+            // Localize script for AJAX
+            wp_localize_script('keycontentai-settings', 'keycontentaiSettings', array(
+                'nonce' => wp_create_nonce('keycontentai_settings_nonce')
+            ));
         }
         
         // Create page assets
@@ -409,6 +475,52 @@ class KeyContentAI {
                 'message' => $result['message'],
                 'debug' => isset($result['debug']) ? $result['debug'] : array()
             ));
+        }
+    }
+    
+    /**
+     * AJAX handler to fetch available OpenAI models
+     */
+    public function ajax_fetch_models() {
+        // Check nonce
+        check_ajax_referer('keycontentai_settings_nonce', 'nonce');
+        
+        // Check permissions
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Unauthorized'));
+            return;
+        }
+        
+        // Get API key from POST or settings
+        $api_key = isset($_POST['api_key']) ? sanitize_text_field($_POST['api_key']) : get_option('keycontentai_openai_api_key', '');
+        
+        if (empty($api_key)) {
+            wp_send_json_error(array('message' => 'API key is required'));
+            return;
+        }
+        
+        try {
+            // Fetch models
+            $models = KeyContentAI_OpenAI_API_Caller::get_available_models($api_key);
+            
+            // Format all models for both dropdowns
+            $all_models = array();
+            
+            foreach ($models as $model) {
+                $model_id = $model['id'];
+                $all_models[] = array(
+                    'id' => $model_id,
+                    'name' => $model_id
+                );
+            }
+            
+            wp_send_json_success(array(
+                'text_models' => $all_models,
+                'image_models' => $all_models
+            ));
+            
+        } catch (Exception $e) {
+            wp_send_json_error(array('message' => $e->getMessage()));
         }
     }
 }

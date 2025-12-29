@@ -14,9 +14,24 @@ jQuery(document).ready(function($) {
     var $toggleDebugBtn = $('#keycontentai-toggle-debug-btn');
     var $debugContainer = $('#keycontentai-debug-container');
     var $debugOutput = $('#keycontentai-debug-output');
+    var $promptOutput = $('#keycontentai-prompt-output');
     var $clearDebugBtn = $('#keycontentai-clear-debug-btn');
+    var $debugTabs = $('.keycontentai-debug-tab');
     var isRunning = false;
     var debugVisible = false;
+    
+    // Debug tab switching
+    $debugTabs.on('click', function() {
+        var tab = $(this).data('tab');
+        
+        // Update tab buttons
+        $debugTabs.removeClass('keycontentai-debug-tab-active');
+        $(this).addClass('keycontentai-debug-tab-active');
+        
+        // Update tab panes
+        $('.keycontentai-debug-pane').removeClass('keycontentai-debug-pane-active');
+        $('#keycontentai-debug-tab-' + tab).addClass('keycontentai-debug-pane-active');
+    });
     
     // Toggle debug container
     $toggleDebugBtn.on('click', function() {
@@ -41,6 +56,8 @@ jQuery(document).ready(function($) {
     // Clear debug output
     $clearDebugBtn.on('click', function() {
         $debugOutput.html('<div class="keycontentai-debug-empty"><span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span><p>Debug information will appear here when generation starts.</p></div>');
+        $promptOutput.html('<div class="keycontentai-debug-empty"><span class="dashicons dashicons-edit-large" style="font-size: 48px; opacity: 0.3;"></span><p>The latest generated prompt will appear here.</p></div>');
+        $('#keycontentai-api-response-output').html('<div class="keycontentai-debug-empty"><span class="dashicons dashicons-cloud" style="font-size: 48px; opacity: 0.3;"></span><p>The latest text API response will appear here.</p></div>');
     });
     
     // Update keyword count
@@ -96,6 +113,133 @@ jQuery(document).ready(function($) {
         
         $debugOutput.append(entry);
         $debugOutput.scrollTop($debugOutput[0].scrollHeight);
+        
+        // Extract and display prompt if available
+        if (typeof content === 'object' && Array.isArray(content)) {
+            // Find build_prompt step in debug array
+            for (var i = 0; i < content.length; i++) {
+                if (content[i].step === 'build_prompt' && content[i].data && content[i].data.prompt_length) {
+                    // Look for the next entry which might contain the full prompt
+                    // Or check if there's a prompt preview we can use
+                    continue;
+                }
+                
+                // Check if this step contains actual prompt data
+                if (content[i].step === 'build_prompt' && content[i].data) {
+                    var promptData = content[i].data;
+                    
+                    // Try to find the prompt in various possible locations
+                    var prompt = null;
+                    
+                    // Check if prompt_preview exists
+                    if (promptData.prompt_preview) {
+                        // This is just a preview, but we'll use it for now
+                        prompt = promptData.prompt_preview;
+                    }
+                }
+            }
+            
+            // Actually, let's look for the full prompt in the entire debug array
+            // The prompt should be in the build_prompt step
+            extractAndDisplayPrompt(content);
+            
+            // Also extract and display the API response
+            extractAndDisplayApiResponse(content);
+        }
+    }
+    
+    // Extract and display the prompt from debug data
+    function extractAndDisplayPrompt(debugArray) {
+        var textPrompt = null;
+        var imagePrompts = null;
+        var combinedPrompt = '';
+        
+        // Loop through debug entries to find the prompts
+        for (var i = 0; i < debugArray.length; i++) {
+            var entry = debugArray[i];
+            
+            // Look for text prompt (build_text_prompt step)
+            if (entry.step === 'build_text_prompt' && entry.data && entry.data.full_prompt) {
+                textPrompt = entry.data.full_prompt;
+            }
+            
+            // Look for image prompts (build_image_prompts step)
+            if (entry.step === 'build_image_prompts' && entry.data && entry.data.full_prompt) {
+                imagePrompts = entry.data.full_prompt;
+            }
+        }
+        
+        // Build combined prompt display
+        if (textPrompt) {
+            combinedPrompt += '=== TEXT GENERATION PROMPT (GPT) ===\n\n' + textPrompt;
+        }
+        
+        if (imagePrompts) {
+            if (combinedPrompt) {
+                combinedPrompt += '\n\n\n';
+            }
+            combinedPrompt += '=== IMAGE GENERATION PROMPTS (DALL-E) ===\n\n' + imagePrompts;
+        }
+        
+        // Display the combined prompts
+        if (combinedPrompt) {
+            // Remove empty state if present
+            $promptOutput.find('.keycontentai-debug-empty').remove();
+            
+            // Display the full prompt
+            $promptOutput.html('<pre style="margin: 0; white-space: pre-wrap; word-break: break-word; font-family: \'Courier New\', monospace; font-size: 12px; line-height: 1.6;">' + escapeHtml(combinedPrompt) + '</pre>');
+        } else {
+            // If no prompts found, show empty state
+            $promptOutput.html('<div class="keycontentai-debug-empty"><span class="dashicons dashicons-edit-large" style="font-size: 48px; opacity: 0.3;"></span><p>No prompt data found in this debug session.</p></div>');
+        }
+    }
+    
+    // Helper function to escape HTML
+    function escapeHtml(text) {
+        var map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+    
+    // Function to extract and display the latest API response from debug data
+    function extractAndDisplayApiResponse(debugArray) {
+        var apiResponse = null;
+        var $apiResponseOutput = $('#keycontentai-api-response-output');
+        
+        // Loop through debug entries to find the API response
+        for (var i = 0; i < debugArray.length; i++) {
+            var entry = debugArray[i];
+            
+            // Look for generate_text step with full_api_response
+            if (entry.step === 'generate_text' && entry.data && entry.data.full_api_response) {
+                apiResponse = entry.data.full_api_response;
+                
+                // Remove empty state if present
+                $apiResponseOutput.find('.keycontentai-debug-empty').remove();
+                
+                // Try to format as JSON if possible
+                try {
+                    var parsed = JSON.parse(apiResponse);
+                    apiResponse = JSON.stringify(parsed, null, 2);
+                } catch (e) {
+                    // Not JSON, display as-is
+                }
+                
+                // Display the API response
+                $apiResponseOutput.html('<pre style="margin: 0; white-space: pre-wrap; word-break: break-word; font-family: \'Courier New\', monospace; font-size: 12px; line-height: 1.6;">' + escapeHtml(apiResponse) + '</pre>');
+                return;
+            }
+        }
+        
+        // If no API response found, show empty state
+        if (!apiResponse) {
+            $apiResponseOutput.html('<div class="keycontentai-debug-empty"><span class="dashicons dashicons-cloud" style="font-size: 48px; opacity: 0.3;"></span><p>No text API response data found in this debug session.</p></div>');
+        }
     }
     
     // Form submission
