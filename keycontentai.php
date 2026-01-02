@@ -66,6 +66,7 @@ class KeyContentAI {
             // AJAX handlers
             add_action('wp_ajax_keycontentai_generate_content', array($this, 'ajax_generate_content'));
             add_action('wp_ajax_keycontentai_fetch_models', array($this, 'ajax_fetch_models'));
+            add_action('wp_ajax_keycontentai_load_keyword', array($this, 'ajax_load_keyword'));
         }
     }
     
@@ -81,6 +82,9 @@ class KeyContentAI {
         
         // Load content generator class
         require_once KEYCONTENTAI_PLUGIN_DIR . 'includes/content-generator.php';
+        
+        // Load keyword loader class
+        require_once KEYCONTENTAI_PLUGIN_DIR . 'includes/keyword-loader.php';
     }
     
     /**
@@ -106,6 +110,24 @@ class KeyContentAI {
             'manage_options',                              // Capability
             'keycontentai-create',                         // Menu slug (same as parent for first item)
             array($this, 'render_create_page')            // Callback
+        );
+
+        add_submenu_page(
+            'keycontentai-create',                         // Parent slug
+            __('Generation', 'keycontentai'),             // Page title
+            __('Generation', 'keycontentai'),             // Menu title
+            'manage_options',                              // Capability
+            'keycontentai-generation',                     // Menu slug
+            array($this, 'render_generation_page')        // Callback
+        );
+
+        add_submenu_page(
+            'keycontentai-create',                         // Parent slug
+            __('Load Keywords', 'keycontentai'),          // Page title
+            __('Load Keywords', 'keycontentai'),          // Menu title
+            'manage_options',                              // Capability
+            'keycontentai-load-keywords',                  // Menu slug
+            array($this, 'render_load_keywords_page')     // Callback
         );
 
         add_submenu_page(
@@ -348,6 +370,30 @@ class KeyContentAI {
     }
     
     /**
+     * Render Generation page
+     */
+    public function render_generation_page() {
+        // Check user capabilities
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        
+        include KEYCONTENTAI_PLUGIN_DIR . 'admin/generation/index.php';
+    }
+    
+    /**
+     * Render Load Keywords page
+     */
+    public function render_load_keywords_page() {
+        // Check user capabilities
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        
+        include KEYCONTENTAI_PLUGIN_DIR . 'admin/load-keywords/index.php';
+    }
+    
+    /**
      * Render Edit page
      */
     public function render_edit_page() {
@@ -377,6 +423,8 @@ class KeyContentAI {
     public function enqueue_admin_assets($hook) {
         // Only load on our plugin pages
         if ($hook !== 'toplevel_page_keycontentai-create' 
+            && $hook !== 'keycontentai_page_keycontentai-generation'
+            && $hook !== 'keycontentai_page_keycontentai-load-keywords'
             && $hook !== 'keycontentai_page_keycontentai-edit'
             && $hook !== 'keycontentai_page_keycontentai-settings' 
             && $hook !== 'keycontentai_page_keycontentai-competition') {
@@ -403,6 +451,66 @@ class KeyContentAI {
             // Localize script for AJAX
             wp_localize_script('keycontentai-settings', 'keycontentaiSettings', array(
                 'nonce' => wp_create_nonce('keycontentai_settings_nonce')
+            ));
+        }
+        
+        // Generation page assets
+        if ($hook === 'keycontentai_page_keycontentai-generation') {
+            wp_enqueue_style(
+                'keycontentai-generation',
+                KEYCONTENTAI_PLUGIN_URL . 'admin/generation/assets/generation.css',
+                array(),
+                KEYCONTENTAI_VERSION
+            );
+            
+            wp_enqueue_script(
+                'keycontentai-generation',
+                KEYCONTENTAI_PLUGIN_URL . 'admin/generation/assets/generation.js',
+                array('jquery'),
+                KEYCONTENTAI_VERSION,
+                true
+            );
+            
+            // Localize script for AJAX
+            wp_localize_script('keycontentai-generation', 'keycontentaiGeneration', array(
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('keycontentai_generation_nonce')
+            ));
+        }
+        
+        // Load Keywords page assets
+        if ($hook === 'keycontentai_page_keycontentai-load-keywords') {
+            wp_enqueue_style(
+                'keycontentai-load-keywords',
+                KEYCONTENTAI_PLUGIN_URL . 'admin/load-keywords/assets/load-keywords.css',
+                array(),
+                KEYCONTENTAI_VERSION
+            );
+            
+            wp_enqueue_script(
+                'keycontentai-load-keywords',
+                KEYCONTENTAI_PLUGIN_URL . 'admin/load-keywords/assets/load-keywords.js',
+                array('jquery'),
+                KEYCONTENTAI_VERSION,
+                true
+            );
+            
+            // Localize script for AJAX
+            wp_localize_script('keycontentai-load-keywords', 'keycontentaiCreate', array(
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('keycontentai_generate'),
+                'confirmClear' => __('Are you sure you want to clear all keywords?', 'keycontentai'),
+                'confirmStop' => __('Are you sure you want to stop the process?', 'keycontentai'),
+                'noKeywords' => __('Please enter at least one keyword.', 'keycontentai'),
+                'starting' => __('Starting post creation...', 'keycontentai'),
+                'found' => __('Found', 'keycontentai'),
+                'keywordsToProcess' => __('keyword(s) to process', 'keycontentai'),
+                'processing' => __('Processing keyword', 'keycontentai'),
+                'error' => __('Error:', 'keycontentai'),
+                'allProcessed' => __('All keywords processed!', 'keycontentai'),
+                'stoppedByUser' => __('Process stopped by user', 'keycontentai'),
+                'stopping' => __('Stopping process...', 'keycontentai'),
+                'logEmpty' => __('Activity log is empty. Enter keywords and click "Generate Posts" to start.', 'keycontentai')
             ));
         }
         
@@ -521,6 +629,39 @@ class KeyContentAI {
             
         } catch (Exception $e) {
             wp_send_json_error(array('message' => $e->getMessage()));
+        }
+    }
+    
+    /**
+     * AJAX handler to load a keyword and create a post
+     */
+    public function ajax_load_keyword() {
+        // Security check
+        check_ajax_referer('keycontentai_generate', 'nonce');
+        
+        // Get keyword from request
+        if (!isset($_POST['keyword']) || empty($_POST['keyword'])) {
+            wp_send_json_error(array(
+                'message' => __('No keyword provided', 'keycontentai')
+            ));
+        }
+        
+        $keyword = sanitize_text_field($_POST['keyword']);
+        $debug_mode = isset($_POST['debug']) && $_POST['debug'] === '1';
+        $auto_publish = isset($_POST['auto_publish']) && $_POST['auto_publish'] === '1';
+        
+        // Load keyword using the keyword loader class
+        $loader = new KeyContentAI_Keyword_Loader();
+        $result = $loader->load_keyword($keyword, $debug_mode, $auto_publish);
+        
+        // Return response
+        if ($result['success']) {
+            wp_send_json_success($result);
+        } else {
+            wp_send_json_error(array(
+                'message' => $result['message'],
+                'debug' => isset($result['debug']) ? $result['debug'] : array()
+            ));
         }
     }
 }
