@@ -9,7 +9,6 @@ if (!defined('ABSPATH')) {
 }
 
 // Get current settings
-$language = get_option('keycontentai_language', 'de');
 $addressing = get_option('keycontentai_addressing', 'formal');
 $company_name = get_option('keycontentai_company_name', '');
 $industry = get_option('keycontentai_industry', '');
@@ -35,37 +34,6 @@ $additional_context = get_option('keycontentai_additional_context', '');
         
         <table class="form-table" role="presentation">
             <tbody>
-                <tr>
-                    <th scope="row">
-                        <label for="keycontentai_language">
-                            <?php esc_html_e('Language', 'keycontentai'); ?>
-                        </label>
-                    </th>
-                    <td>
-                        <select 
-                            id="keycontentai_language" 
-                            name="keycontentai_language" 
-                            class="regular-text"
-                        >
-                            <option value="de" <?php selected($language, 'de'); ?>>Deutsch (German)</option>
-                            <option value="en" <?php selected($language, 'en'); ?>>English</option>
-                            <option value="fr" <?php selected($language, 'fr'); ?>>Français (French)</option>
-                            <option value="es" <?php selected($language, 'es'); ?>>Español (Spanish)</option>
-                            <option value="it" <?php selected($language, 'it'); ?>>Italiano (Italian)</option>
-                            <option value="pt" <?php selected($language, 'pt'); ?>>Português (Portuguese)</option>
-                            <option value="nl" <?php selected($language, 'nl'); ?>>Nederlands (Dutch)</option>
-                            <option value="pl" <?php selected($language, 'pl'); ?>>Polski (Polish)</option>
-                            <option value="ru" <?php selected($language, 'ru'); ?>>Русский (Russian)</option>
-                            <option value="zh" <?php selected($language, 'zh'); ?>>中文 (Chinese)</option>
-                            <option value="ja" <?php selected($language, 'ja'); ?>>日本語 (Japanese)</option>
-                            <option value="ko" <?php selected($language, 'ko'); ?>>한국어 (Korean)</option>
-                        </select>
-                        <p class="description">
-                            <?php esc_html_e('Select the language for AI-generated content.', 'keycontentai'); ?>
-                        </p>
-                    </td>
-                </tr>
-                
                 <tr>
                     <th scope="row">
                         <label for="keycontentai_addressing">

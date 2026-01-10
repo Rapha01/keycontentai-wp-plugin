@@ -74,6 +74,9 @@ class KeyContentAI {
      * Load plugin dependencies
      */
     private function load_dependencies() {
+        // Load utility functions
+        require_once KEYCONTENTAI_PLUGIN_DIR . 'includes/util.php';
+        
         // Load prompt builder class
         require_once KEYCONTENTAI_PLUGIN_DIR . 'includes/prompt-builder.php';
         
@@ -96,60 +99,33 @@ class KeyContentAI {
             __('KeyContentAI', 'keycontentai'),           // Page title
             __('KeyContentAI', 'keycontentai'),           // Menu title
             'manage_options',                              // Capability
-            'keycontentai-create',                         // Menu slug
-            array($this, 'render_create_page'),           // Callback
+            'keycontentai-load-keywords',                  // Menu slug
+            array($this, 'render_load_keywords_page'),    // Callback
             'dashicons-admin-post',                        // Icon
             30                                             // Position
         );
         
         // Add submenu items
         add_submenu_page(
-            'keycontentai-create',                         // Parent slug
-            __('Create', 'keycontentai'),                 // Page title
-            __('Create', 'keycontentai'),                 // Menu title
+            'keycontentai-load-keywords',                  // Parent slug
+            __('Load Keywords', 'keycontentai'),          // Page title
+            __('Load Keywords', 'keycontentai'),          // Menu title
             'manage_options',                              // Capability
-            'keycontentai-create',                         // Menu slug (same as parent for first item)
-            array($this, 'render_create_page')            // Callback
+            'keycontentai-load-keywords',                  // Menu slug (same as parent for first item)
+            array($this, 'render_load_keywords_page')     // Callback
         );
 
         add_submenu_page(
-            'keycontentai-create',                         // Parent slug
+            'keycontentai-load-keywords',                  // Parent slug
             __('Generation', 'keycontentai'),             // Page title
             __('Generation', 'keycontentai'),             // Menu title
             'manage_options',                              // Capability
             'keycontentai-generation',                     // Menu slug
             array($this, 'render_generation_page')        // Callback
         );
-
-        add_submenu_page(
-            'keycontentai-create',                         // Parent slug
-            __('Load Keywords', 'keycontentai'),          // Page title
-            __('Load Keywords', 'keycontentai'),          // Menu title
-            'manage_options',                              // Capability
-            'keycontentai-load-keywords',                  // Menu slug
-            array($this, 'render_load_keywords_page')     // Callback
-        );
-
-        add_submenu_page(
-            'keycontentai-create',                         // Parent slug
-            __('Edit', 'keycontentai'),                   // Page title
-            __('Edit', 'keycontentai'),                   // Menu title
-            'manage_options',                              // Capability
-            'keycontentai-edit',                           // Menu slug
-            array($this, 'render_edit_page')              // Callback
-        );
-
-        add_submenu_page(
-            'keycontentai-create',                         // Parent slug
-            __('Competition', 'keycontentai'),            // Page title
-            __('Competition', 'keycontentai'),            // Menu title
-            'manage_options',                              // Capability
-            'keycontentai-competition',                    // Menu slug
-            array($this, 'render_competition_page')       // Callback
-        );
         
         add_submenu_page(
-            'keycontentai-create',                         // Parent slug
+            'keycontentai-load-keywords',                  // Parent slug
             __('Settings', 'keycontentai'),               // Page title
             __('Settings', 'keycontentai'),               // Menu title
             'manage_options',                              // Capability
@@ -182,12 +158,6 @@ class KeyContentAI {
         ));
         
         // Client Settings
-        register_setting('keycontentai_client_settings', 'keycontentai_language', array(
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_text_field',
-            'default' => 'de'
-        ));
-        
         register_setting('keycontentai_client_settings', 'keycontentai_addressing', array(
             'type' => 'string',
             'sanitize_callback' => 'sanitize_text_field',
@@ -236,13 +206,6 @@ class KeyContentAI {
             'default' => ''
         ));
         
-        // Competition Settings
-        register_setting('keycontentai_competition_settings', 'keycontentai_competition_urls', array(
-            'type' => 'array',
-            'sanitize_callback' => array($this, 'sanitize_competition_urls'),
-            'default' => array()
-        ));
-        
         // CPT Settings
         register_setting('keycontentai_cpt_settings', 'keycontentai_selected_post_type', array(
             'type' => 'string',
@@ -250,46 +213,72 @@ class KeyContentAI {
             'default' => 'post'
         ));
         
-        // Custom Field Configurations (per post type)
-        // Structure: array('post_type' => array('field_key' => array('description' => '', 'word_count' => 0, 'enabled' => true)))
-        register_setting('keycontentai_cpt_settings', 'keycontentai_field_configs', array(
-            'type' => 'array',
-            'sanitize_callback' => array($this, 'sanitize_field_configs'),
-            'default' => array()
-        ));
-        
-        // Additional Context per Post Type
-        // Structure: array('post_type' => 'context text')
-        register_setting('keycontentai_cpt_settings', 'keycontentai_cpt_additional_context', array(
-            'type' => 'array',
-            'sanitize_callback' => array($this, 'sanitize_cpt_additional_context'),
-            'default' => array()
+        // CPT Configurations (consolidated) - Stored as JSON
+        // Structure: array('post_type' => array('additional_context' => '', 'fields' => array('field_key' => array(...))))
+        register_setting('keycontentai_cpt_settings', 'keycontentai_cpt_configs', array(
+            'type' => 'string',
+            'sanitize_callback' => array($this, 'sanitize_cpt_configs'),
+            'default' => ''
         ));
     }
     
     /**
-     * Sanitize field configurations
+     * Get CPT configs (reads from JSON format)
      */
-    public function sanitize_field_configs($input) {
-        if (!is_array($input)) {
+    public function get_cpt_configs() {
+        $json = get_option('keycontentai_cpt_configs', '');
+        
+        if (empty($json)) {
             return array();
         }
         
-        // Get existing field configs to preserve data for other post types
-        $existing_configs = get_option('keycontentai_field_configs', array());
+        $data = json_decode($json, true);
+        return is_array($data) ? $data : array();
+    }
+    
+    /**
+     * Sanitize CPT configurations and save as JSON
+     */
+    public function sanitize_cpt_configs($input) {
+        // Input comes as array from the form
+        if (!is_array($input)) {
+            // If it's already JSON string, decode it first
+            if (is_string($input)) {
+                $input = json_decode($input, true);
+            }
+            if (!is_array($input)) {
+                return '';
+            }
+        }
+        
+        // Get existing configs to preserve data for other post types
+        $existing_configs = $this->get_cpt_configs();
         
         // Start with existing data
         $sanitized = is_array($existing_configs) ? $existing_configs : array();
         
         // Update only the post types that are in the input
-        foreach ($input as $post_type => $fields) {
+        foreach ($input as $post_type => $data) {
             $post_type_clean = sanitize_key($post_type);
-            $sanitized[$post_type_clean] = array();
             
-            if (is_array($fields)) {
-                foreach ($fields as $field_key => $field_data) {
+            if (!isset($sanitized[$post_type_clean])) {
+                $sanitized[$post_type_clean] = array(
+                    'additional_context' => '',
+                    'fields' => array()
+                );
+            }
+            
+            // Handle additional_context
+            if (isset($data['additional_context'])) {
+                $sanitized[$post_type_clean]['additional_context'] = sanitize_textarea_field($data['additional_context']);
+            }
+            
+            // Handle fields
+            if (isset($data['fields']) && is_array($data['fields'])) {
+                $sanitized[$post_type_clean]['fields'] = array();
+                foreach ($data['fields'] as $field_key => $field_data) {
                     $field_key_clean = sanitize_key($field_key);
-                    $sanitized[$post_type_clean][$field_key_clean] = array(
+                    $sanitized[$post_type_clean]['fields'][$field_key_clean] = array(
                         'description' => isset($field_data['description']) ? sanitize_textarea_field($field_data['description']) : '',
                         'word_count' => isset($field_data['word_count']) ? absint($field_data['word_count']) : 0,
                         'enabled' => isset($field_data['enabled']) ? (bool) $field_data['enabled'] : false,
@@ -300,49 +289,8 @@ class KeyContentAI {
             }
         }
         
-        return $sanitized;
-    }
-    
-    /**
-     * Sanitize CPT additional context
-     */
-    public function sanitize_cpt_additional_context($input) {
-        if (!is_array($input)) {
-            return array();
-        }
-        
-        // Get existing context to preserve data for other post types
-        $existing_context = get_option('keycontentai_cpt_additional_context', array());
-        
-        // Start with existing data
-        $sanitized = is_array($existing_context) ? $existing_context : array();
-        
-        // Update only the post types that are in the input
-        foreach ($input as $post_type => $context) {
-            $post_type_clean = sanitize_key($post_type);
-            $sanitized[$post_type_clean] = sanitize_textarea_field($context);
-        }
-        
-        return $sanitized;
-    }
-    
-    /**
-     * Sanitize competition URLs
-     */
-    public function sanitize_competition_urls($input) {
-        if (!is_array($input)) {
-            return array();
-        }
-        
-        $sanitized = array();
-        foreach ($input as $url) {
-            $url = trim($url);
-            if (!empty($url)) {
-                $sanitized[] = esc_url_raw($url);
-            }
-        }
-        
-        return array_filter($sanitized);
+        // Return as JSON string
+        return wp_json_encode($sanitized);
     }
     
     /**
@@ -355,18 +303,6 @@ class KeyContentAI {
         }
         
         include KEYCONTENTAI_PLUGIN_DIR . 'admin/settings/index.php';
-    }
-    
-    /**
-     * Render Competition page with tabs
-     */
-    public function render_competition_page() {
-        // Check user capabilities
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-        
-        include KEYCONTENTAI_PLUGIN_DIR . 'admin/competition/index.php';
     }
     
     /**
@@ -394,45 +330,19 @@ class KeyContentAI {
     }
     
     /**
-     * Render Edit page
-     */
-    public function render_edit_page() {
-        // Check user capabilities
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-        
-        include KEYCONTENTAI_PLUGIN_DIR . 'admin/edit/index.php';
-    }
-    
-    /**
-     * Render Create page
-     */
-    public function render_create_page() {
-        // Check user capabilities
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-        
-        include KEYCONTENTAI_PLUGIN_DIR . 'admin/create/index.php';
-    }
-    
-    /**
      * Enqueue admin assets
      */
     public function enqueue_admin_assets($hook) {
         // Only load on our plugin pages
-        if ($hook !== 'toplevel_page_keycontentai-create' 
+        if ($hook !== 'toplevel_page_keycontentai-load-keywords' 
             && $hook !== 'keycontentai_page_keycontentai-generation'
             && $hook !== 'keycontentai_page_keycontentai-load-keywords'
-            && $hook !== 'keycontentai_page_keycontentai-edit'
-            && $hook !== 'keycontentai_page_keycontentai-settings' 
-            && $hook !== 'keycontentai_page_keycontentai-competition') {
+            && $hook !== 'keycontentai_page_keycontentai-settings') {
             return;
         }
         
         // Settings page assets
-        if ($hook === 'keycontentai_page_keycontentai-settings' || $hook === 'keycontentai_page_keycontentai-competition') {
+        if ($hook === 'keycontentai_page_keycontentai-settings') {
             wp_enqueue_style(
                 'keycontentai-settings',
                 KEYCONTENTAI_PLUGIN_URL . 'admin/settings/assets/settings.css',
@@ -479,7 +389,7 @@ class KeyContentAI {
         }
         
         // Load Keywords page assets
-        if ($hook === 'keycontentai_page_keycontentai-load-keywords') {
+        if ($hook === 'toplevel_page_keycontentai-load-keywords' || $hook === 'keycontentai_page_keycontentai-load-keywords') {
             wp_enqueue_style(
                 'keycontentai-load-keywords',
                 KEYCONTENTAI_PLUGIN_URL . 'admin/load-keywords/assets/load-keywords.css',
@@ -496,7 +406,7 @@ class KeyContentAI {
             );
             
             // Localize script for AJAX
-            wp_localize_script('keycontentai-load-keywords', 'keycontentaiCreate', array(
+            wp_localize_script('keycontentai-load-keywords', 'keycontentaiLoadKeywords', array(
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('keycontentai_generate'),
                 'confirmClear' => __('Are you sure you want to clear all keywords?', 'keycontentai'),
@@ -511,45 +421,6 @@ class KeyContentAI {
                 'stoppedByUser' => __('Process stopped by user', 'keycontentai'),
                 'stopping' => __('Stopping process...', 'keycontentai'),
                 'logEmpty' => __('Activity log is empty. Enter keywords and click "Generate Posts" to start.', 'keycontentai')
-            ));
-        }
-        
-        // Create page assets
-        if ($hook === 'toplevel_page_keycontentai-create') {
-            wp_enqueue_style(
-                'keycontentai-create',
-                KEYCONTENTAI_PLUGIN_URL . 'admin/create/assets/create.css',
-                array(),
-                KEYCONTENTAI_VERSION
-            );
-            
-            wp_enqueue_script(
-                'keycontentai-create',
-                KEYCONTENTAI_PLUGIN_URL . 'admin/create/assets/create.js',
-                array('jquery'),
-                KEYCONTENTAI_VERSION,
-                true
-            );
-            
-            // Localize script for translations and AJAX
-            wp_localize_script('keycontentai-create', 'keycontentaiCreate', array(
-                'ajaxUrl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('keycontentai_generate'),
-                'confirmClear' => __('Are you sure you want to clear all keywords?', 'keycontentai'),
-                'confirmStop' => __('Are you sure you want to stop the generation process?', 'keycontentai'),
-                'noKeywords' => __('Please enter at least one keyword.', 'keycontentai'),
-                'starting' => __('Starting content generation...', 'keycontentai'),
-                'found' => __('Found', 'keycontentai'),
-                'keywordsToProcess' => __('keyword(s) to process', 'keycontentai'),
-                'processing' => __('Processing keyword', 'keycontentai'),
-                'placeholder' => __('Content generation placeholder - ready for implementation', 'keycontentai'),
-                'error' => __('Error:', 'keycontentai'),
-                'allProcessed' => __('All keywords processed!', 'keycontentai'),
-                'generated' => __('Generated', 'keycontentai'),
-                'postsSuccess' => __('post(s) successfully', 'keycontentai'),
-                'stoppedByUser' => __('Process stopped by user', 'keycontentai'),
-                'stopping' => __('Stopping process...', 'keycontentai'),
-                'logEmpty' => __('Activity log is empty. Enter keywords and click "Generate Content" to start.', 'keycontentai')
             ));
         }
     }
@@ -670,7 +541,9 @@ class KeyContentAI {
  * Initialize the plugin
  */
 function keycontentai_init() {
-    return KeyContentAI::get_instance();
+    global $keycontentai;
+    $keycontentai = KeyContentAI::get_instance();
+    return $keycontentai;
 }
 
 // Start the plugin

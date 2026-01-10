@@ -1,8 +1,6 @@
 <?php
 /**
  * Prompt Builder Class
- * 
- * Handles the construction of AI prompts for content generation
  */
 
 // Exit if accessed directly
@@ -27,7 +25,9 @@ class KeyContentAI_Prompt_Builder {
         $prompt_parts[] = $this->build_system_context($settings);
         
         // 2. Language Instruction
-        $prompt_parts[] = $this->build_language_instruction($settings);
+        if (!empty($settings['language'])) {
+            $prompt_parts[] = $this->build_language_instruction($settings);
+        }
         
         // 3. Topic/Keyword
         $prompt_parts[] = $this->build_topic_section($keyword);
@@ -40,21 +40,16 @@ class KeyContentAI_Prompt_Builder {
             $prompt_parts[] = $this->build_target_audience_section($settings);
         }
         
-        // 6. Competition Context (if available)
-        if (!empty($settings['competition_urls'])) {
-            $prompt_parts[] = $this->build_competition_section($settings);
-        }
-        
-        // 7. Post Type Specific Context
+        // 6. Post Type Specific Context
         $prompt_parts[] = $this->build_post_type_context($settings);
         
-        // 8. Custom Fields Instructions
+        // 7. Custom Fields Instructions
         $prompt_parts[] = $this->build_custom_fields_instructions($custom_fields);
         
-        // 9. Output Format Instructions
+        // 8. Output Format Instructions
         $prompt_parts[] = $this->build_output_format_instructions($custom_fields);
         
-        // 10. Final Instructions
+        // 9. Final Instructions
         $prompt_parts[] = $this->build_final_instructions($settings);
         
         // Combine all parts with double line breaks
@@ -74,26 +69,12 @@ class KeyContentAI_Prompt_Builder {
     private function build_language_instruction($settings) {
         $language = !empty($settings['language']) ? $settings['language'] : 'de';
         
-        $language_names = array(
-            'de' => 'German',
-            'en' => 'English',
-            'fr' => 'French',
-            'es' => 'Spanish',
-            'it' => 'Italian',
-            'pt' => 'Portuguese',
-            'nl' => 'Dutch',
-            'pl' => 'Polish',
-            'ru' => 'Russian',
-            'zh' => 'Chinese',
-            'ja' => 'Japanese',
-            'ko' => 'Korean'
-        );
-        
-        $language_name = isset($language_names[$language]) ? $language_names[$language] : 'German';
+        // Get language name from utility function
+        $language_name = keycontentai_get_language_name($language);
         
         $instruction = "IMPORTANT: Write all content in {$language_name}.";
         
-        // Add addressing style for German
+        // Add addressing style only for German
         if ($language === 'de' && !empty($settings['addressing'])) {
             if ($settings['addressing'] === 'formal') {
                 $instruction .= " Use formal addressing (Sie) when speaking to the reader.";
@@ -152,25 +133,6 @@ class KeyContentAI_Prompt_Builder {
      */
     private function build_target_audience_section($settings) {
         return "TARGET AUDIENCE: {$settings['target_group']}\n\nTailor the content to resonate with this specific audience. Use language, examples, and references that appeal to them.";
-    }
-    
-    /**
-     * Build competition section
-     */
-    private function build_competition_section($settings) {
-        $competition_parts = array();
-        $competition_parts[] = "COMPETITIVE CONTEXT:";
-        $competition_parts[] = "The following competitor websites exist in this space:";
-        
-        foreach ($settings['competition_urls'] as $url) {
-            if (!empty($url)) {
-                $competition_parts[] = "- {$url}";
-            }
-        }
-        
-        $competition_parts[] = "Create content that is more comprehensive, engaging, and valuable than what competitors offer.";
-        
-        return implode("\n", $competition_parts);
     }
     
     /**

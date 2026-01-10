@@ -22,14 +22,16 @@ foreach ($post_types as $post_type) {
 // Get current settings
 // Check if post type is being changed via URL parameter
 $selected_post_type = isset($_GET['cpt']) ? sanitize_key($_GET['cpt']) : get_option('keycontentai_selected_post_type', 'post');
-$field_configs = get_option('keycontentai_field_configs', array());
-$cpt_additional_context = get_option('keycontentai_cpt_additional_context', array());
+
+// Get CPT configs from consolidated JSON structure
+global $keycontentai;
+$cpt_configs = $keycontentai->get_cpt_configs();
 
 // Get field configurations for the selected post type
-$current_field_configs = isset($field_configs[$selected_post_type]) ? $field_configs[$selected_post_type] : array();
+$current_field_configs = isset($cpt_configs[$selected_post_type]['fields']) ? $cpt_configs[$selected_post_type]['fields'] : array();
 
 // Get additional context for the selected post type
-$current_additional_context = isset($cpt_additional_context[$selected_post_type]) ? $cpt_additional_context[$selected_post_type] : '';
+$current_additional_context = isset($cpt_configs[$selected_post_type]['additional_context']) ? $cpt_configs[$selected_post_type]['additional_context'] : '';
 
 // Get custom fields for the selected post type
 $custom_fields = array();
@@ -199,7 +201,7 @@ if (!empty($selected_post_type)) {
                             </td>
                             <td>
                                 <textarea 
-                                    name="keycontentai_field_configs[<?php echo esc_attr($selected_post_type); ?>][<?php echo esc_attr($field['key']); ?>][description]"
+                                    name="keycontentai_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][description]"
                                     rows="3"
                                     class="large-text"
                                     placeholder="<?php esc_attr_e('E.g., A brief summary of the content, maximum 150 characters', 'keycontentai'); ?>"
@@ -210,14 +212,14 @@ if (!empty($selected_post_type)) {
                                     <!-- Hidden inputs for actual width/height values -->
                                     <input 
                                         type="hidden" 
-                                        name="keycontentai_field_configs[<?php echo esc_attr($selected_post_type); ?>][<?php echo esc_attr($field['key']); ?>][width]"
+                                        name="keycontentai_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][width]"
                                         class="keycontentai-dimension-width"
                                         data-field-key="<?php echo esc_attr($field['key']); ?>"
                                         value="<?php echo esc_attr($current_width); ?>"
                                     />
                                     <input 
                                         type="hidden" 
-                                        name="keycontentai_field_configs[<?php echo esc_attr($selected_post_type); ?>][<?php echo esc_attr($field['key']); ?>][height]"
+                                        name="keycontentai_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][height]"
                                         class="keycontentai-dimension-height"
                                         data-field-key="<?php echo esc_attr($field['key']); ?>"
                                         value="<?php echo esc_attr($current_height); ?>"
@@ -268,7 +270,7 @@ if (!empty($selected_post_type)) {
                                     <!-- Word Count Input for Text Fields -->
                                     <input 
                                         type="number" 
-                                        name="keycontentai_field_configs[<?php echo esc_attr($selected_post_type); ?>][<?php echo esc_attr($field['key']); ?>][word_count]"
+                                        name="keycontentai_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][word_count]"
                                         value="<?php echo isset($current_field_configs[$field['key']]['word_count']) ? esc_attr($current_field_configs[$field['key']]['word_count']) : ''; ?>"
                                         class="small-text"
                                         min="0"
@@ -284,7 +286,7 @@ if (!empty($selected_post_type)) {
                                 <label style="display: inline-block; margin: 0;">
                                     <input 
                                         type="checkbox" 
-                                        name="keycontentai_field_configs[<?php echo esc_attr($selected_post_type); ?>][<?php echo esc_attr($field['key']); ?>][enabled]"
+                                        name="keycontentai_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][enabled]"
                                         value="1"
                                         <?php 
                                         // Check if this field has been saved before
@@ -331,7 +333,7 @@ if (!empty($selected_post_type)) {
                     <td>
                         <textarea 
                             id="keycontentai_cpt_additional_context_<?php echo esc_attr($selected_post_type); ?>"
-                            name="keycontentai_cpt_additional_context[<?php echo esc_attr($selected_post_type); ?>]"
+                            name="keycontentai_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][additional_context]"
                             rows="5"
                             class="large-text"
                             placeholder="<?php esc_attr_e('E.g., This post type is used for case studies. Focus on results and data. Always include a call-to-action at the end.', 'keycontentai'); ?>"

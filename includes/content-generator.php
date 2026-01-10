@@ -3,8 +3,7 @@
  * Content Generator Class
  * 
  * Handles all content generation logic including:
- * - Gathering settings
- * - Getting custom fields
+ * - Gathering settings and custom fields
  * - Building prompts
  * - Calling OpenAI API
  * - Creating posts
@@ -130,6 +129,21 @@ class KeyContentAI_Content_Generator {
     }
     
     /**
+     * Get WordPress site language
+     * 
+     * @return string Language code (e.g., 'en', 'de', 'fr')
+     */
+    private function get_site_language() {
+        // Get WordPress locale (e.g., 'en_US', 'de_DE', 'fr_FR')
+        $locale = get_locale();
+        
+        // Extract language code (first 2 characters)
+        $language = substr($locale, 0, 2);
+        
+        return $language;
+    }
+    
+    /**
      * Gather all plugin settings and validate required fields
      * 
      * @return array All plugin settings
@@ -143,8 +157,10 @@ class KeyContentAI_Content_Generator {
             // Post Type
             'post_type' => get_option('keycontentai_selected_post_type', 'post'),
             
+            // WordPress Site Language
+            'language' => $this->get_site_language(),
+            
             // Client Information
-            'language' => get_option('keycontentai_language', 'de'),
             'addressing' => get_option('keycontentai_addressing', ''),
             'company_name' => get_option('keycontentai_company_name', ''),
             'industry' => get_option('keycontentai_industry', ''),
@@ -154,11 +170,8 @@ class KeyContentAI_Content_Generator {
             'buying_reasons' => get_option('keycontentai_buying_reasons', ''),
             'additional_context' => get_option('keycontentai_additional_context', ''),
             
-            // Competition
-            'competition_urls' => get_option('keycontentai_competition_urls', array()),
-            
-            // Field Configurations (new structure)
-            'field_configs' => get_option('keycontentai_field_configs', array()),
+            // Field Configurations (JSON format)
+            'field_configs' => $this->get_field_configs_from_json(),
             
             // CPT Additional Context
             'cpt_additional_context' => get_option('keycontentai_cpt_additional_context', array())
@@ -185,6 +198,46 @@ class KeyContentAI_Content_Generator {
     }
     
     /**
+     * Get field configs from the consolidated CPT configs
+     */
+    private function get_field_configs_from_json() {
+        global $keycontentai;
+        if ($keycontentai && method_exists($keycontentai, 'get_cpt_configs')) {
+            $cpt_configs = $keycontentai->get_cpt_configs();
+            
+            // Convert to old format: array(post_type => fields)
+            $field_configs = array();
+            foreach ($cpt_configs as $post_type => $config) {
+                if (isset($config['fields'])) {
+                    $field_configs[$post_type] = $config['fields'];
+                }
+            }
+            return $field_configs;
+        }
+        
+        // Fallback: read directly from option
+        $json = get_option('keycontentai_cpt_configs', '');
+        
+        if (empty($json)) {
+            return array();
+        }
+        
+        $data = json_decode($json, true);
+        if (!is_array($data)) {
+            return array();
+        }
+        
+        // Convert to old format
+        $field_configs = array();
+        foreach ($data as $post_type => $config) {
+            if (isset($config['fields'])) {
+                $field_configs[$post_type] = $config['fields'];
+            }
+        }
+        return $field_configs;
+    }
+    
+    /**
      * Get custom fields configuration for a post type (ACF only)
      * 
      * @param string $post_type The post type to get fields for
@@ -200,7 +253,7 @@ class KeyContentAI_Content_Generator {
             throw new Exception("Advanced Custom Fields plugin is not active");
         }
         
-        $field_configs = get_option('keycontentai_field_configs', array());
+        $field_configs = $this->get_field_configs_from_json();
         
         if (!isset($field_configs[$post_type])) {
             $this->add_debug('get_custom_fields_config', "No field configuration found for post type: {$post_type}");

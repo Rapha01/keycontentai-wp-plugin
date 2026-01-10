@@ -1,5 +1,5 @@
 /**
- * KeyContentAI Create Page JavaScript
+ * KeyContentAI Load Keywords Page JavaScript
  */
 
 jQuery(document).ready(function($) {
@@ -10,7 +10,7 @@ jQuery(document).ready(function($) {
     var $clearBtn = $('#keycontentai-clear-btn');
     var $clearLogBtn = $('#keycontentai-clear-log-btn');
     var $log = $('#keycontentai-log');
-    var $form = $('#keycontentai-create-form');
+    var $form = $('#keycontentai-load-keywords-form');
     var $toggleDebugBtn = $('#keycontentai-toggle-debug-btn');
     var $debugContainer = $('#keycontentai-debug-container');
     var $debugOutput = $('#keycontentai-debug-output');
@@ -25,7 +25,7 @@ jQuery(document).ready(function($) {
             // Hide debug
             $debugContainer.slideUp(300, function() {
                 // Clear debug output when hiding
-                $debugOutput.html('<div class="keycontentai-debug-empty"><span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span><p>Debug information will appear here when generation starts.</p></div>');
+                $debugOutput.html('<div class="keycontentai-loadkeywords-debug-empty"><span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span><p>Debug information will appear here when generation starts.</p></div>');
             });
             $(this).find('.dashicons').removeClass('dashicons-hidden').addClass('dashicons-admin-tools');
             $(this).find('.button-text').text('Show Debug Mode');
@@ -41,7 +41,7 @@ jQuery(document).ready(function($) {
     
     // Clear debug output
     $clearDebugBtn.on('click', function() {
-        $debugOutput.html('<div class="keycontentai-debug-empty"><span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span><p>Debug information will appear here when generation starts.</p></div>');
+        $debugOutput.html('<div class="keycontentai-loadkeywords-debug-empty"><span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span><p>Debug information will appear here when generation starts.</p></div>');
     });
     
     // Update keyword count
@@ -56,7 +56,7 @@ jQuery(document).ready(function($) {
     
     // Clear keywords
     $clearBtn.on('click', function() {
-        if (confirm(keycontentaiCreate.confirmClear)) {
+        if (confirm(keycontentaiLoadKeywords.confirmClear)) {
             $keywordsInput.val('');
             updateKeywordCount();
         }
@@ -64,7 +64,7 @@ jQuery(document).ready(function($) {
     
     // Clear log
     $clearLogBtn.on('click', function() {
-        $log.html('<div class="keycontentai-log-empty"><span class="dashicons dashicons-info" style="font-size: 48px; opacity: 0.3;"></span><p>' + keycontentaiCreate.logEmpty + '</p></div>');
+        $log.html('<div class="keycontentai-loadkeywords-log-empty"><span class="dashicons dashicons-info" style="font-size: 48px; opacity: 0.3;"></span><p>' + keycontentaiLoadKeywords.logEmpty + '</p></div>');
     });
     
     // Add log entry
@@ -73,11 +73,11 @@ jQuery(document).ready(function($) {
         var timestamp = new Date().toLocaleTimeString();
         
         // Remove empty state if present
-        $log.find('.keycontentai-log-empty').remove();
+        $log.find('.keycontentai-loadkeywords-log-empty').remove();
         
-        var entry = $('<div class="keycontentai-log-entry log-' + type + '">' +
-            '<span class="keycontentai-log-timestamp">[' + timestamp + ']</span>' +
-            '<span class="keycontentai-log-message">' + message + '</span>' +
+        var entry = $('<div class="keycontentai-loadkeywords-log-entry log-' + type + '">' +
+            '<span class="keycontentai-loadkeywords-log-timestamp">[' + timestamp + ']</span>' +
+            '<span class="keycontentai-loadkeywords-log-message">' + message + '</span>' +
             '</div>');
         
         $log.append(entry);
@@ -89,11 +89,11 @@ jQuery(document).ready(function($) {
         var timestamp = new Date().toLocaleTimeString();
         
         // Remove empty state if present
-        $debugOutput.find('.keycontentai-debug-empty').remove();
+        $debugOutput.find('.keycontentai-loadkeywords-debug-empty').remove();
         
-        var entry = $('<div class="keycontentai-debug-entry"></div>');
-        entry.append('<div class="keycontentai-debug-entry-header">' + title + '<span class="keycontentai-debug-timestamp">' + timestamp + '</span></div>');
-        entry.append('<div class="keycontentai-debug-entry-content">' + (typeof content === 'object' ? JSON.stringify(content, null, 2) : content) + '</div>');
+        var entry = $('<div class="keycontentai-loadkeywords-debug-entry"></div>');
+        entry.append('<div class="keycontentai-loadkeywords-debug-entry-header">' + title + '<span class="keycontentai-loadkeywords-debug-timestamp">' + timestamp + '</span></div>');
+        entry.append('<div class="keycontentai-loadkeywords-debug-entry-content">' + (typeof content === 'object' ? JSON.stringify(content, null, 2) : content) + '</div>');
         
         $debugOutput.append(entry);
         $debugOutput.scrollTop($debugOutput[0].scrollHeight);
@@ -108,7 +108,7 @@ jQuery(document).ready(function($) {
         });
         
         if (keywords.length === 0) {
-            alert(keycontentaiCreate.noKeywords);
+            alert(keycontentaiLoadKeywords.noKeywords);
             return;
         }
         
@@ -119,8 +119,8 @@ jQuery(document).ready(function($) {
         isRunning = true;
         
         // Initial log entries
-        addLogEntry(keycontentaiCreate.starting, 'info');
-        addLogEntry(keycontentaiCreate.found + ' ' + keywords.length + ' ' + keycontentaiCreate.keywordsToProcess, 'info');
+        addLogEntry(keycontentaiLoadKeywords.starting, 'info');
+        addLogEntry(keycontentaiLoadKeywords.found + ' ' + keywords.length + ' ' + keycontentaiLoadKeywords.keywordsToProcess, 'info');
         addLogEntry('---', 'info');
         
         // Process keywords sequentially
@@ -139,7 +139,7 @@ jQuery(document).ready(function($) {
             var currentNum = index + 1;
             
             // Log processing start
-            addLogEntry(keycontentaiCreate.processing + ' [' + currentNum + '/' + keywords.length + ']: "' + keyword + '"', 'info');
+            addLogEntry(keycontentaiLoadKeywords.processing + ' [' + currentNum + '/' + keywords.length + ']: "' + keyword + '"', 'info');
             
             try {
                 // Call the AJAX endpoint
@@ -166,7 +166,7 @@ jQuery(document).ready(function($) {
                 }
                 
             } catch (error) {
-                addLogEntry('  └─ ' + keycontentaiCreate.error + ' ' + error, 'error');
+                addLogEntry('  └─ ' + keycontentaiLoadKeywords.error + ' ' + error, 'error');
             }
             
             // Small delay between keywords
@@ -178,10 +178,10 @@ jQuery(document).ready(function($) {
         // Check if completed or stopped
         if (isRunning) {
             addLogEntry('---', 'info');
-            addLogEntry(keycontentaiCreate.allProcessed, 'success');
+            addLogEntry(keycontentaiLoadKeywords.allProcessed, 'success');
             addLogEntry('Created: ' + createdCount + ' | Already existed: ' + existingCount + ' | Total: ' + keywords.length, 'info');
         } else {
-            addLogEntry(keycontentaiCreate.stoppedByUser, 'warning');
+            addLogEntry(keycontentaiLoadKeywords.stoppedByUser, 'warning');
         }
         
         resetForm();
@@ -194,12 +194,12 @@ jQuery(document).ready(function($) {
         
         return new Promise((resolve, reject) => {
             $.ajax({
-                url: keycontentaiCreate.ajaxUrl,
+                url: keycontentaiLoadKeywords.ajaxUrl,
                 type: 'POST',
                 data: {
                     action: 'keycontentai_load_keyword',
                     keyword: keyword,
-                    nonce: keycontentaiCreate.nonce,
+                    nonce: keycontentaiLoadKeywords.nonce,
                     debug: debugMode ? '1' : '0',
                     auto_publish: autoPublish ? '1' : '0'
                 },
@@ -232,9 +232,9 @@ jQuery(document).ready(function($) {
     
     // Stop button
     $stopBtn.on('click', function() {
-        if (confirm(keycontentaiCreate.confirmStop)) {
+        if (confirm(keycontentaiLoadKeywords.confirmStop)) {
             isRunning = false;
-            addLogEntry(keycontentaiCreate.stopping, 'warning');
+            addLogEntry(keycontentaiLoadKeywords.stopping, 'warning');
         }
     });
 });

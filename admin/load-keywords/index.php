@@ -53,21 +53,21 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
             </p>
         </div>
         
-        <div class="keycontentai-create-layout">
+        <div class="keycontentai-loadkeywords-layout">
             <!-- Left Column: Keywords Input -->
-            <div class="keycontentai-create-left">
+            <div class="keycontentai-loadkeywords-left">
                 <div class="card">
                     <h2><?php esc_html_e('Keywords', 'keycontentai'); ?></h2>
                     <p class="description">
                         <?php esc_html_e('Enter one keyword per line. Each keyword will generate a separate post.', 'keycontentai'); ?>
                     </p>
                     
-                    <form id="keycontentai-create-form" method="post">
+                    <form id="keycontentai-load-keywords-form" method="post">
                         <textarea 
                             id="keycontentai-keywords" 
                             name="keywords" 
                             rows="20" 
-                            class="keycontentai-keywords-textarea"
+                            class="keycontentai-loadkeywords-keywords-textarea"
                             placeholder="<?php esc_attr_e('WordPress Plugins&#10;SEO Best Practices&#10;Content Marketing Tips&#10;...', 'keycontentai'); ?>"
                         ></textarea>
                         
@@ -83,7 +83,7 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
                             </p>
                         </div>
                         
-                        <div class="keycontentai-create-actions">
+                        <div class="keycontentai-loadkeywords-actions">
                             <button type="submit" id="keycontentai-start-btn" class="button button-primary button-hero">
                                 <span class="dashicons dashicons-admin-post" style="margin-top: 4px;"></span>
                                 <?php esc_html_e('Generate Posts', 'keycontentai'); ?>
@@ -99,7 +99,7 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
                             </button>
                         </div>
                         
-                        <div class="keycontentai-stats">
+                        <div class="keycontentai-loadkeywords-stats">
                             <span id="keycontentai-keyword-count">0</span> <?php esc_html_e('keywords', 'keycontentai'); ?>
                         </div>
                     </form>
@@ -107,7 +107,7 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
             </div>
             
             <!-- Right Column: Activity Log -->
-            <div class="keycontentai-create-right">
+            <div class="keycontentai-loadkeywords-right">
                 <div class="card">
                     <h2>
                         <?php esc_html_e('Activity Log', 'keycontentai'); ?>
@@ -116,8 +116,8 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
                         </button>
                     </h2>
                     
-                    <div id="keycontentai-log" class="keycontentai-log">
-                        <div class="keycontentai-log-empty">
+                    <div id="keycontentai-log" class="keycontentai-loadkeywords-log">
+                        <div class="keycontentai-loadkeywords-log-empty">
                             <span class="dashicons dashicons-info" style="font-size: 48px; opacity: 0.3;"></span>
                             <p><?php esc_html_e('Activity log is empty. Enter keywords and click "Generate Content" to start.', 'keycontentai'); ?></p>
                         </div>
@@ -127,7 +127,7 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
         </div>
         
         <!-- Debug Toggle -->
-        <div class="keycontentai-debug-toggle" style="margin-top: 20px; margin-bottom: 10px;">
+        <div class="keycontentai-loadkeywords-debug-toggle" style="margin-top: 20px; margin-bottom: 10px;">
             <button type="button" id="keycontentai-toggle-debug-btn" class="button button-secondary">
                 <span class="dashicons dashicons-admin-tools" style="margin-top: 4px; margin-right: 5px;"></span>
                 <span class="button-text"><?php esc_html_e('Show Debug Mode', 'keycontentai'); ?></span>
@@ -138,7 +138,7 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
         </div>
         
         <!-- Debug Output Box (hidden by default) -->
-        <div id="keycontentai-debug-container" class="keycontentai-debug-container" style="display: none;">
+        <div id="keycontentai-debug-container" class="keycontentai-loadkeywords-debug-container" style="display: none;">
             <div class="card">
                 <h2 style="display: flex; justify-content: space-between; align-items: center;">
                     <span>
@@ -151,8 +151,8 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
                 </h2>
                 
                 <!-- Debug Output -->
-                <div id="keycontentai-debug-output" class="keycontentai-debug-output">
-                    <div class="keycontentai-debug-empty">
+                <div id="keycontentai-debug-output" class="keycontentai-loadkeywords-debug-output">
+                    <div class="keycontentai-loadkeywords-debug-empty">
                         <span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>
                         <p><?php esc_html_e('Debug information will appear here when generation starts.', 'keycontentai'); ?></p>
                     </div>
