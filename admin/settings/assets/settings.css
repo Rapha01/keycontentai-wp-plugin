@@ -116,6 +116,12 @@
     color: #155724;
 }
 
+.keycontentai-source-wp {
+    background: #e7f3ff;
+    color: #0073aa;
+    border: 1px solid #0073aa;
+}
+
 .keycontentai-source-meta {
     background: #cce5ff;
     color: #004085;

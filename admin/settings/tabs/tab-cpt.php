@@ -36,6 +36,35 @@ $current_additional_context = isset($cpt_configs[$selected_post_type]['additiona
 // Get custom fields for the selected post type
 $custom_fields = array();
 if (!empty($selected_post_type)) {
+    // Add WordPress core fields first
+    $custom_fields[] = array(
+        'key' => 'post_title',
+        'label' => __('Post Title', 'keycontentai'),
+        'type' => 'text',
+        'source' => 'WP'
+    );
+    
+    $custom_fields[] = array(
+        'key' => 'post_content',
+        'label' => __('Post Content', 'keycontentai'),
+        'type' => 'wysiwyg',
+        'source' => 'WP'
+    );
+    
+    $custom_fields[] = array(
+        'key' => 'post_excerpt',
+        'label' => __('Post Excerpt', 'keycontentai'),
+        'type' => 'textarea',
+        'source' => 'WP'
+    );
+    
+    $custom_fields[] = array(
+        'key' => '_thumbnail_id',
+        'label' => __('Featured Image', 'keycontentai'),
+        'type' => 'image',
+        'source' => 'WP'
+    );
+    
     // Get ACF fields
     if (function_exists('acf_get_field_groups')) {
         $field_groups = acf_get_field_groups(array('post_type' => $selected_post_type));
