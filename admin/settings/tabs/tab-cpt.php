@@ -62,6 +62,7 @@ if (!empty($selected_post_type)) {
         INNER JOIN {$wpdb->posts} p ON pm.post_id = p.ID
         WHERE p.post_type = %s 
         AND meta_key NOT LIKE '\\_%%'
+        AND meta_key NOT LIKE 'keycontentai%%'
         ORDER BY meta_key
     ", $selected_post_type));
     
@@ -74,6 +75,13 @@ if (!empty($selected_post_type)) {
                     $exists = true;
                     break;
                 }
+            }
+            
+            // Skip if it was previously an ACF field (exists in plugin configs) but no longer exists
+            if (!$exists && isset($current_field_configs[$meta_key])) {
+                // This meta key is in our plugin configs but not in current ACF fields
+                // It's likely an old/deleted ACF field - skip it
+                continue;
             }
             
             if (!$exists) {

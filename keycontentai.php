@@ -57,6 +57,9 @@ class KeyContentAI {
         // Load dependencies
         $this->load_dependencies();
         
+        // Register post meta fields
+        add_action('init', array($this, 'register_post_meta'));
+        
         // Initialize admin
         if (is_admin()) {
             add_action('admin_menu', array($this, 'add_admin_menu'));
@@ -88,6 +91,11 @@ class KeyContentAI {
         
         // Load keyword loader class
         require_once KEYCONTENTAI_PLUGIN_DIR . 'includes/keyword-loader.php';
+        
+        // Load admin meta box (only in admin)
+        if (is_admin()) {
+            require_once KEYCONTENTAI_PLUGIN_DIR . 'admin/edit-meta-box.php';
+        }
     }
     
     /**
@@ -291,6 +299,71 @@ class KeyContentAI {
         
         // Return as JSON string
         return wp_json_encode($sanitized);
+    }
+    
+    /**
+     * Register post meta fields for content generation
+     * Registers for all post types that have been configured in the plugin
+     */
+    public function register_post_meta() {
+        // Get all configured post types from CPT configs
+        $cpt_configs = $this->get_cpt_configs();
+        $post_types_to_register = array();
+        
+        // Add all post types that have configs
+        if (!empty($cpt_configs)) {
+            $post_types_to_register = array_keys($cpt_configs);
+        }
+        
+        // Always include the currently selected post type
+        $selected_post_type = get_option('keycontentai_selected_post_type', 'post');
+        if (!in_array($selected_post_type, $post_types_to_register)) {
+            $post_types_to_register[] = $selected_post_type;
+        }
+        
+        // If no post types yet, at least register for 'post'
+        if (empty($post_types_to_register)) {
+            $post_types_to_register = array('post');
+        }
+        
+        // Register meta fields for all relevant post types
+        foreach ($post_types_to_register as $post_type) {
+            // Register additional context field (per-post specific context)
+            register_post_meta($post_type, 'keycontentai_additional_context', array(
+                'type' => 'string',
+                'description' => 'Post-specific additional context for AI content generation',
+                'single' => true,
+                'show_in_rest' => true,
+                'sanitize_callback' => 'sanitize_textarea_field',
+                'auth_callback' => function() {
+                    return current_user_can('edit_posts');
+                }
+            ));
+            
+            // Register last generation timestamp field
+            register_post_meta($post_type, 'keycontentai_last_generation', array(
+                'type' => 'string',
+                'description' => 'Timestamp of last AI content generation',
+                'single' => true,
+                'show_in_rest' => true,
+                'sanitize_callback' => 'sanitize_text_field',
+                'auth_callback' => function() {
+                    return current_user_can('edit_posts');
+                }
+            ));
+            
+            // Register keyword field (the keyword used for generation)
+            register_post_meta($post_type, 'keycontentai_keyword', array(
+                'type' => 'string',
+                'description' => 'Keyword used for AI content generation',
+                'single' => true,
+                'show_in_rest' => true,
+                'sanitize_callback' => 'sanitize_text_field',
+                'auth_callback' => function() {
+                    return current_user_can('edit_posts');
+                }
+            ));
+        }
     }
     
     /**

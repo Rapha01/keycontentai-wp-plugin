@@ -164,6 +164,19 @@ class KeyContentAI_Keyword_Loader {
             );
         }
         
+        // Save the keyword to the custom field
+        update_post_meta($post_id, 'keycontentai_keyword', $keyword);
+        
+        if ($debug_mode) {
+            $result['debug'][] = array(
+                'step' => 'save_keyword_meta',
+                'data' => array(
+                    'post_id' => $post_id,
+                    'keyword' => $keyword
+                )
+            );
+        }
+        
         // Success
         $result['success'] = true;
         $result['message'] = $auto_publish 
