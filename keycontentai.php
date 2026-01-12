@@ -446,10 +446,25 @@ class KeyContentAI {
                 KEYCONTENTAI_VERSION
             );
             
+            wp_enqueue_style(
+                'keycontentai-generation-debug',
+                KEYCONTENTAI_PLUGIN_URL . 'admin/generation/assets/debug.css',
+                array('keycontentai-generation'),
+                KEYCONTENTAI_VERSION
+            );
+            
+            wp_enqueue_script(
+                'keycontentai-generation-debug',
+                KEYCONTENTAI_PLUGIN_URL . 'admin/generation/assets/debug.js',
+                array('jquery'),
+                KEYCONTENTAI_VERSION,
+                true
+            );
+            
             wp_enqueue_script(
                 'keycontentai-generation',
                 KEYCONTENTAI_PLUGIN_URL . 'admin/generation/assets/generation.js',
-                array('jquery'),
+                array('jquery', 'keycontentai-generation-debug'),
                 KEYCONTENTAI_VERSION,
                 true
             );
@@ -503,29 +518,40 @@ class KeyContentAI {
      */
     public function ajax_generate_content() {
         // Security check
-        check_ajax_referer('keycontentai_generate', 'nonce');
+        check_ajax_referer('keycontentai_generation_nonce', 'nonce');
         
-        // Get keyword from request
-        if (!isset($_POST['keyword']) || empty($_POST['keyword'])) {
+        // Check permissions
+        if (!current_user_can('edit_posts')) {
             wp_send_json_error(array(
-                'message' => __('No keyword provided', 'keycontentai')
+                'message' => __('Unauthorized', 'keycontentai')
             ));
+            return;
         }
         
-        $keyword = sanitize_text_field($_POST['keyword']);
-        $debug_mode = isset($_POST['debug']) && $_POST['debug'] === '1';
+        // Get post_id from request
+        $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
         
-        // Generate content using the content generator class
+        if (empty($post_id)) {
+            wp_send_json_error(array(
+                'message' => __('No post ID provided', 'keycontentai')
+            ));
+            return;
+        }
+        
+        // Generate content for existing post
         $generator = new KeyContentAI_Content_Generator();
-        $result = $generator->generate_content($keyword, $debug_mode);
+        $result = $generator->generate_content($post_id);
         
-        // Return response
+        // Return response with debug log
         if ($result['success']) {
-            wp_send_json_success($result);
+            wp_send_json_success(array(
+                'message' => __('Content generated successfully', 'keycontentai'),
+                'debug_log' => isset($result['debug_log']) ? $result['debug_log'] : array()
+            ));
         } else {
             wp_send_json_error(array(
                 'message' => $result['message'],
-                'debug' => isset($result['debug']) ? $result['debug'] : array()
+                'debug_log' => isset($result['debug_log']) ? $result['debug_log'] : array()
             ));
         }
     }

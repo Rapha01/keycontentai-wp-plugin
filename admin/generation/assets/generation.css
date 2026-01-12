@@ -1,21 +1,171 @@
 /**
- * Generation Page Styles
+ * KeyContentAI Generation Page Styles
  */
 
-.keycontentai-generation-container {
-    max-width: 1200px;
-    margin: 20px 0;
-}
-
-.keycontentai-generation-content {
+/* Header Section */
+.keycontentai-generation-header {
     background: #fff;
-    border: 1px solid #ccd0d4;
-    box-shadow: 0 1px 1px rgba(0,0,0,.04);
-    padding: 20px;
-    margin-top: 20px;
+    border: 1px solid #c3c4c7;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.keycontentai-generation-content p {
+.keycontentai-header-info p {
     margin: 0;
-    color: #666;
+    font-size: 14px;
+}
+
+.keycontentai-header-info .separator {
+    margin: 0 10px;
+    color: #c3c4c7;
+}
+
+.keycontentai-header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Posts List Table */
+.keycontentai-posts-list {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+}
+
+.keycontentai-posts-list table {
+    margin: 0;
+}
+
+.keycontentai-post-row {
+    transition: background-color 0.2s ease;
+}
+
+/* Status Indicators */
+.status-cell {
+    text-align: center;
+}
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.status-indicator .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+/* Status States */
+.status-unqueued {
+    background: #f0f0f1;
+    color: #646970;
+}
+
+.status-queued {
+    background: #fcf3cf;
+    color: #856404;
+}
+
+.status-queued .dashicons:before {
+    content: "\f463"; /* clock icon */
+}
+
+.status-processing {
+    background: #d1ecf1;
+    color: #0c5460;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.status-processing .dashicons:before {
+    content: "\f463"; /* update/spinner icon */
+    animation: spin 2s linear infinite;
+}
+
+.status-finished {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-finished .dashicons:before {
+    content: "\f147"; /* checkmark icon */
+}
+
+.status-error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-error .dashicons:before {
+    content: "\f534"; /* warning icon */
+}
+
+/* Animations */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Row Hover Effects */
+.keycontentai-post-row:hover {
+    background: #f6f7f7 !important;
+}
+
+/* Toggle Queue Button States */
+.keycontentai-toggle-queue {
+    min-width: 80px;
+}
+
+.keycontentai-post-row[data-status="queued"] .keycontentai-toggle-queue,
+.keycontentai-post-row[data-status="processing"] .keycontentai-toggle-queue,
+.keycontentai-post-row[data-status="finished"] .keycontentai-toggle-queue {
+    background: #f0f0f1;
+}
+
+.keycontentai-post-row[data-status="processing"] .keycontentai-toggle-queue {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Start Generation Button */
+#keycontentai-start-generation:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+    .keycontentai-generation-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .keycontentai-header-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .keycontentai-header-actions button {
+        width: 100%;
+    }
 }

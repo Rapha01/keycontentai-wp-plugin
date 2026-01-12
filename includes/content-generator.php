@@ -29,54 +29,58 @@ class KeyContentAI_Content_Generator {
     }
     
     /**
-     * Generate content for a keyword
+     * Generate content for an existing post
      * 
-     * @param string $keyword The keyword to generate content for
-     * @param bool $debug_mode Whether to enable debug mode
-     * @return array Success/error response
+     * @param int $post_id The post ID to generate content for
+     * @return array Success/error response with debug_log
      */
-    public function generate_content($keyword, $debug_mode = false) {
-        $this->debug_mode = $debug_mode;
+    public function generate_content($post_id) {
+        $this->debug_mode = true; // Always enable debug mode for generation page
         $this->debug_log = array();
         
         try {
-            $this->add_debug('Starting content generation', array(
-                'keyword' => $keyword,
-                'debug_mode' => $debug_mode
+            // 1. Validate post exists
+            $post = get_post($post_id);
+            if (!$post) {
+                throw new Exception(__('Post not found', 'keycontentai'));
+            }
+            
+            $this->add_debug('Starting content generation for existing post', array(
+                'post_id' => $post_id,
+                'post_type' => $post->post_type
             ));
             
-            // 1. Gather all settings (includes validation)
+            // 2. Gather all settings (includes validation)
             $settings = $this->gather_settings();
             
-            // 2. Get custom fields for selected post type
-            $custom_fields = $this->get_custom_fields_config($settings['post_type']);
+            // 3. Get custom fields for the post type
+            $custom_fields = $this->get_custom_fields_config($post->post_type);
             
-            // 3. Build the text generation prompt
-            $text_prompt = $this->build_text_prompt($keyword, $settings, $custom_fields);
-            
-            // 4. Generate text content via GPT API
+            // 4. Build the text generation prompt (will retrieve keyword and merge context)
+            $text_prompt = $this->build_text_prompt($settings, $custom_fields, $post_id);
+            /*
+            // 8. Generate text content via GPT API
             $text_response = $this->api_caller->generate_text($text_prompt, $settings['api_key']);
             
-            // 5. Build the image generation prompt(s)
+            // 9. Build the image generation prompt(s)
             $image_prompts = $this->build_image_prompts($keyword, $settings, $custom_fields);
 
-            // 6. Parse the text response
+            // 10. Parse the text response
             $parsed_content = $this->parse_text_response($text_response['content'], $custom_fields);
-            /*
-            // 7. Generate images
+            
+            // 11. Generate images
             $image_responses = array();
             if (!empty($image_prompts)) {
                 foreach ($image_prompts as $field_key => $image_prompt) {
-                    $image_responses[$field_key] = 'url';//$this->api_caller->generate_image($image_prompt, $settings['api_key']);
+                    $image_responses[$field_key] = $this->api_caller->generate_image($image_prompt, $settings['api_key']);
                 }
             }
 
-            
-            // 8. Process image responses
+            // 12. Process image responses
             $image_ids = $this->process_image_responses($image_responses);
             
-            // 9. Create/update post with text content and images
-            $post_id = $this->create_post_with_content($keyword, $parsed_content, $image_ids, $settings['post_type'], $custom_fields);
+            // 13. Update post with generated content
+            $this->update_post_with_content($post_id, $parsed_content, $image_ids, $custom_fields);
             
             $this->add_debug('Generation complete', array(
                 'status' => 'success',
@@ -85,14 +89,20 @@ class KeyContentAI_Content_Generator {
                 'images_generated' => count($image_responses)
             ));
             */
+            
+            // Update last generation timestamp
+            update_post_meta($post_id, 'keycontentai_last_generation', current_time('mysql'));
+            
+            // Get keyword for response message
+            $keyword = get_post_meta($post_id, 'keycontentai_keyword', true);
+            
             // Return success response
             return array(
                 'success' => true,
                 'post_id' => $post_id,
                 'keyword' => $keyword,
-                'post_type' => $settings['post_type'],
-                'message' => sprintf(__('Successfully created post (ID: %d) for keyword: %s', 'keycontentai'), $post_id, $keyword),
-                'debug' => $this->debug_log
+                'message' => sprintf(__('Successfully updated post (ID: %d) for keyword: %s', 'keycontentai'), $post_id, $keyword),
+                'debug_log' => $this->debug_log
             );
             
         } catch (Exception $e) {
@@ -107,7 +117,7 @@ class KeyContentAI_Content_Generator {
             return array(
                 'success' => false,
                 'message' => $e->getMessage(),
-                'debug' => $this->debug_log
+                'debug_log' => $this->debug_log
             );
         }
     }
@@ -312,13 +322,41 @@ class KeyContentAI_Content_Generator {
     /**
      * Build the text generation prompt for OpenAI GPT
      * 
-     * @param string $keyword The keyword
      * @param array $settings All settings
      * @param array $custom_fields Custom fields configuration
+     * @param int $post_id Post ID to retrieve keyword and context from
      * @return string The complete text prompt
+     * @throws Exception If keyword is missing
      */
-    private function build_text_prompt($keyword, $settings, $custom_fields) {
+    private function build_text_prompt($settings, $custom_fields, $post_id) {
         $this->add_debug('build_text_prompt', 'Building text prompt using KeyContentAI_Prompt_Builder');
+        
+        // Get keyword from post meta
+        $keyword = get_post_meta($post_id, 'keycontentai_keyword', true);
+        if (empty($keyword)) {
+            throw new Exception(__('No keyword found for this post', 'keycontentai'));
+        }
+        
+        // Get post-specific additional context
+        $post_additional_context = get_post_meta($post_id, 'keycontentai_additional_context', true);
+        
+        // Merge post-specific additional context with CPT-level context
+        if (!empty($post_additional_context)) {
+            $cpt_context = isset($settings['additional_context']) ? $settings['additional_context'] : '';
+            if (!empty($cpt_context)) {
+                $settings['additional_context'] = $cpt_context . "\n\n" . $post_additional_context;
+            } else {
+                $settings['additional_context'] = $post_additional_context;
+            }
+            
+            $this->add_debug('Merged additional context', array(
+                'post_id' => $post_id,
+                'keyword' => $keyword,
+                'cpt_context_length' => strlen($cpt_context),
+                'post_context_length' => strlen($post_additional_context),
+                'merged_context_length' => strlen($settings['additional_context'])
+            ));
+        }
         
         // Filter only text fields (exclude image fields)
         $text_fields = array_filter($custom_fields, function($field) {
@@ -332,7 +370,7 @@ class KeyContentAI_Content_Generator {
         $this->add_debug('build_text_prompt', array(
             'prompt_length' => strlen($prompt),
             'prompt_preview' => $this->prompt_builder->get_prompt_preview($prompt, 300),
-            'full_prompt' => $prompt,  // Include full text prompt for debug display
+            'prompt' => $prompt,  // Use 'prompt' key for debug.js to extract
             'keyword' => $keyword,
             'language' => $settings['language'],
             'text_fields_count' => count($text_fields)
