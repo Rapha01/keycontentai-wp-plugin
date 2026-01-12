@@ -30,6 +30,9 @@ class KeyContentAI_Keyword_Loader {
         // Get selected post type from settings
         $post_type = get_option('keycontentai_selected_post_type', 'post');
         
+        // Normalize keyword to lowercase for consistency
+        $keyword_normalized = strtolower(trim($keyword));
+        
         // Initialize result
         $result = array(
             'success' => false,
@@ -46,7 +49,8 @@ class KeyContentAI_Keyword_Loader {
             $result['debug'][] = array(
                 'step' => 'start',
                 'data' => array(
-                    'keyword' => $keyword,
+                    'keyword_original' => $keyword,
+                    'keyword_normalized' => $keyword_normalized,
                     'post_type' => $post_type,
                     'auto_publish' => $auto_publish,
                     'timestamp' => current_time('mysql')
@@ -54,8 +58,16 @@ class KeyContentAI_Keyword_Loader {
             );
         }
         
-        // Check if a post with this title already exists
-        $existing_post = get_page_by_title($keyword, OBJECT, $post_type);
+        // Check if a post with this keyword already exists
+        $existing_posts = get_posts(array(
+            'post_type' => $post_type,
+            'meta_key' => 'keycontentai_keyword',
+            'meta_value' => $keyword_normalized,
+            'posts_per_page' => 1,
+            'post_status' => 'any'
+        ));
+        
+        $existing_post = !empty($existing_posts) ? $existing_posts[0] : null;
         
         if ($existing_post) {
             if ($debug_mode) {
@@ -65,7 +77,8 @@ class KeyContentAI_Keyword_Loader {
                         'exists' => true,
                         'post_id' => $existing_post->ID,
                         'post_title' => $existing_post->post_title,
-                        'post_status' => $existing_post->post_status
+                        'post_status' => $existing_post->post_status,
+                        'keyword_meta' => get_post_meta($existing_post->ID, 'keycontentai_keyword', true)
                     )
                 );
             }
@@ -91,7 +104,7 @@ class KeyContentAI_Keyword_Loader {
                 
                 if (!is_wp_error($update_result)) {
                     $result['success'] = true;
-                    $result['message'] = sprintf(__('Post already exists and has been published: "%s" (ID: %d)', 'keycontentai'), $keyword, $existing_post->ID);
+                    $result['message'] = sprintf(__('Post with keyword "%s" already exists and has been published: "%s" (ID: %d)', 'keycontentai'), $keyword, $existing_post->post_title, $existing_post->ID);
                     $result['post_id'] = $existing_post->ID;
                     $result['exists'] = true;
                     $result['published'] = true;
@@ -101,7 +114,7 @@ class KeyContentAI_Keyword_Loader {
             }
             
             $result['success'] = true;
-            $result['message'] = sprintf(__('Post already exists: "%s" (ID: %d)', 'keycontentai'), $keyword, $existing_post->ID);
+            $result['message'] = sprintf(__('Post with keyword "%s" already exists: "%s" (ID: %d)', 'keycontentai'), $keyword, $existing_post->post_title, $existing_post->ID);
             $result['post_id'] = $existing_post->ID;
             $result['exists'] = true;
             
@@ -164,15 +177,16 @@ class KeyContentAI_Keyword_Loader {
             );
         }
         
-        // Save the keyword to the custom field
-        update_post_meta($post_id, 'keycontentai_keyword', $keyword);
+        // Save the keyword to the custom field (normalized to lowercase)
+        update_post_meta($post_id, 'keycontentai_keyword', $keyword_normalized);
         
         if ($debug_mode) {
             $result['debug'][] = array(
                 'step' => 'save_keyword_meta',
                 'data' => array(
                     'post_id' => $post_id,
-                    'keyword' => $keyword
+                    'keyword_original' => $keyword,
+                    'keyword_saved' => $keyword_normalized
                 )
             );
         }
