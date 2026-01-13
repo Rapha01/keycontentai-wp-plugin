@@ -325,12 +325,44 @@
         $('#keycontentai-queue-all, #keycontentai-unqueue-all').prop('disabled', false);
         updateQueueCount();
         
-        // Show completion message
-        if (wasStopped) {
-            alert('Generation stopped. Remaining posts are still queued.');
-        } else {
-            alert('Content generation complete!');
-        }
+        // Show completion message as WordPress notice
+        showNotice(
+            wasStopped 
+                ? 'Generation stopped. Remaining posts are still queued.' 
+                : 'Content generation complete!',
+            wasStopped ? 'warning' : 'success'
+        );
+    }
+    
+    /**
+     * Show WordPress-style admin notice
+     */
+    function showNotice(message, type) {
+        type = type || 'info'; // info, success, warning, error
+        
+        const $notice = $('<div class="notice notice-' + type + ' is-dismissible"><p>' + message + '</p></div>');
+        
+        // Insert after page title
+        $('.wrap > h1').after($notice);
+        
+        // Add dismiss button functionality
+        $notice.find('.notice-dismiss').on('click', function() {
+            $notice.fadeOut(300, function() {
+                $(this).remove();
+            });
+        });
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(function() {
+            $notice.fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 5000);
+        
+        // Scroll to notice
+        $('html, body').animate({
+            scrollTop: $notice.offset().top - 50
+        }, 300);
     }
     
 })(jQuery);

@@ -168,4 +168,80 @@
     .keycontentai-header-actions button {
         width: 100%;
     }
+    
+    /* Mobile Card Layout */
+    .keycontentai-posts-list table {
+        border: 0;
+    }
+    
+    .keycontentai-posts-list thead {
+        display: none;
+    }
+    
+    .keycontentai-posts-list tbody {
+        display: block;
+    }
+    
+    .keycontentai-post-row {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid #c3c4c7;
+        border-radius: 4px;
+        background: #fff;
+    }
+    
+    .keycontentai-post-row td {
+        display: block;
+        text-align: left !important;
+        padding: 12px 15px !important;
+        border: none;
+        border-bottom: 1px solid #f0f0f1;
+    }
+    
+    .keycontentai-post-row td:last-child {
+        border-bottom: none;
+    }
+    
+    /* Add labels for mobile */
+    .keycontentai-post-row td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        display: block;
+        margin-bottom: 5px;
+        color: #646970;
+        font-size: 12px;
+        text-transform: uppercase;
+    }
+    
+    .status-cell:before {
+        content: "Status";
+    }
+    
+    /* Status indicator on mobile */
+    .status-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .status-indicator {
+        margin-left: auto;
+    }
+    
+    /* Action buttons full width on mobile */
+    .keycontentai-toggle-queue {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .keycontentai-header-info {
+        text-align: center;
+    }
+    
+    .keycontentai-header-info .separator {
+        display: block;
+        margin: 5px 0;
+    }
 }

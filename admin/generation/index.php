@@ -105,24 +105,24 @@ if ($is_configured) {
                                 $last_generation = get_post_meta($post->ID, 'keycontentai_last_generation', true);
                             ?>
                                 <tr class="keycontentai-post-row" data-post-id="<?php echo esc_attr($post->ID); ?>" data-status="unqueued">
-                                    <td class="status-cell">
+                                    <td class="status-cell" data-label="<?php esc_attr_e('Status', 'keycontentai'); ?>">
                                         <span class="status-indicator status-unqueued" title="<?php esc_attr_e('Unqueued', 'keycontentai'); ?>">
                                             <span class="dashicons dashicons-minus"></span>
                                         </span>
                                     </td>
-                                    <td><?php echo esc_html($post->ID); ?></td>
-                                    <td>
+                                    <td data-label="<?php esc_attr_e('ID', 'keycontentai'); ?>"><?php echo esc_html($post->ID); ?></td>
+                                    <td data-label="<?php esc_attr_e('Keyword', 'keycontentai'); ?>">
                                         <strong><?php echo esc_html($keyword ?: __('(no keyword)', 'keycontentai')); ?></strong>
                                     </td>
-                                    <td>
+                                    <td data-label="<?php esc_attr_e('Title', 'keycontentai'); ?>">
                                         <a href="<?php echo esc_url(get_edit_post_link($post->ID)); ?>" target="_blank">
                                             <?php echo esc_html($post->post_title ?: __('(no title)', 'keycontentai')); ?>
                                         </a>
                                     </td>
-                                    <td>
+                                    <td data-label="<?php esc_attr_e('Last Generated', 'keycontentai'); ?>">
                                         <?php echo $last_generation ? esc_html($last_generation) : '<em>' . esc_html__('Never', 'keycontentai') . '</em>'; ?>
                                     </td>
-                                    <td>
+                                    <td data-label="<?php esc_attr_e('Actions', 'keycontentai'); ?>">
                                         <button type="button" class="button button-small keycontentai-toggle-queue" data-post-id="<?php echo esc_attr($post->ID); ?>">
                                             <?php esc_html_e('Queue', 'keycontentai'); ?>
                                         </button>
