@@ -54,39 +54,15 @@ class KeyContentAI_Content_Generator {
             // 3. Get post-specific settings
             $post_settings = $this->get_post_settings($post_id);
             
-            // 4. Build the text generation prompt
-            $text_prompt = $this->prompt_builder->build_text_prompt($cpt_settings, $post_settings);
-            /*
-            // 8. Generate text content via GPT API
-            $text_response = $this->api_caller->generate_text($text_prompt, $settings['api_key']);
-            
-            // 9. Build the image generation prompt(s)
-            $image_prompts = $this->build_image_prompts($keyword, $settings, $custom_fields);
-
-            // 10. Parse the text response
-            $parsed_content = $this->parse_text_response($text_response['content'], $custom_fields);
-            
-            // 11. Generate images
-            $image_responses = array();
-            if (!empty($image_prompts)) {
-                foreach ($image_prompts as $field_key => $image_prompt) {
-                    $image_responses[$field_key] = $this->api_caller->generate_image($image_prompt, $settings['api_key']);
-                }
-            }
-
-            // 12. Process image responses
-            $image_ids = $this->process_image_responses($image_responses);
-            
-            // 13. Update post with generated content
-            $this->update_post_with_content($post_id, $parsed_content, $image_ids, $custom_fields);
+            // 4. Generate text and image content
+            $generation_result = $this->generate_texts_and_images($post_id, $cpt_settings, $post_settings);
             
             $this->add_debug('Generation complete', array(
                 'status' => 'success',
                 'post_id' => $post_id,
-                'text_generated' => true,
-                'images_generated' => count($image_responses)
+                'text_generated' => $generation_result['text_generated'],
+                'images_generated' => $generation_result['images_generated']
             ));
-            */
             
             // Update last generation timestamp
             update_post_meta($post_id, 'keycontentai_last_generation', current_time('mysql'));
@@ -330,6 +306,57 @@ class KeyContentAI_Content_Generator {
         ));
         
         return $all_fields;
+    }
+    
+    /**
+     * Generate text and image content via API
+     * 
+     * @param int $post_id The post ID
+     * @param array $cpt_settings CPT-level settings
+     * @param array $post_settings Post-specific settings
+     * @return array Result with text_generated and images_generated counts
+     */
+    private function generate_texts_and_images($post_id, $cpt_settings, $post_settings) {
+        $result = array(
+            'text_generated' => false,
+            'images_generated' => 0
+        );
+        
+        // 1. Build the text generation prompt
+        $text_prompt = $this->prompt_builder->build_text_prompt($cpt_settings, $post_settings);
+        
+        // 2. Generate text content if we have text fields
+        if (!empty($text_prompt)) {
+            $text_response = $this->api_caller->generate_text($text_prompt, $cpt_settings['api_key']);
+            
+            // Parse the text response
+            $parsed_content = $this->parse_text_response($text_response['content'], $cpt_settings['custom_fields']);
+            
+            // TODO: Update post with generated text content
+            // $this->update_post_with_content($post_id, $parsed_content, $cpt_settings['custom_fields']);
+            
+            $result['text_generated'] = true;
+        }
+        
+        // 3. Build and generate image content if we have image fields
+        /*$image_prompts = $this->prompt_builder->build_image_prompts($cpt_settings, $post_settings);
+        
+        if (!empty($image_prompts)) {
+            $image_responses = array();
+            foreach ($image_prompts as $field_key => $image_prompt) {
+                $image_responses[$field_key] = $this->api_caller->generate_image($image_prompt, $cpt_settings['api_key']);
+            }
+            
+            // Process image responses and get attachment IDs
+            $image_ids = $this->process_image_responses($image_responses);
+            
+            // TODO: Update post with generated images
+            // $this->update_post_with_images($post_id, $image_ids, $cpt_settings['custom_fields']);
+            
+            $result['images_generated'] = count($image_prompts);
+        }*/
+        
+        return $result;
     }
     
     /**

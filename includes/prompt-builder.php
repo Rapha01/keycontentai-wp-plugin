@@ -301,7 +301,7 @@ class KeyContentAI_Prompt_Builder {
      * 
      * @param array $cpt_settings CPT-level settings (including custom_fields)
      * @param array $post_settings Post-specific settings
-     * @return string The complete text prompt
+     * @return string The complete text prompt (empty string if no text fields)
      */
     public function build_text_prompt($cpt_settings, $post_settings) {
         $this->add_debug('build_text_prompt', 'Building text prompt');
@@ -310,6 +310,11 @@ class KeyContentAI_Prompt_Builder {
         $text_fields = array_filter($cpt_settings['custom_fields'], function($field) {
             return $field['type'] !== 'image';
         });
+        
+        if (empty($text_fields)) {
+            $this->add_debug('build_text_prompt', 'No text fields found - skipping text generation');
+            return '';
+        }
         
         // Build the complete prompt
         $prompt = $this->build_prompt($cpt_settings, $post_settings, $text_fields);
