@@ -27,12 +27,6 @@ class KeyContentAI_Content_Generator {
         $this->prompt_builder = new KeyContentAI_Prompt_Builder(array($this, 'add_debug'));
     }
     
-    /**
-     * Generate content for an existing post
-     * 
-     * @param int $post_id The post ID to generate content for
-     * @return array Success/error response with debug_log
-     */
     public function generate_content($post_id) {
         $this->debug_log = array();
         
@@ -54,14 +48,17 @@ class KeyContentAI_Content_Generator {
             // 3. Get post-specific settings
             $post_settings = $this->get_post_settings($post_id);
             
-            // 4. Generate text and image content
-            $generation_result = $this->generate_texts_and_images($post_id, $cpt_settings, $post_settings);
+            // 4. Generate text content
+            $text_generated = $this->generate_text_content($post_id, $cpt_settings, $post_settings);
+            
+            // 5. Generate image content
+            //$images_generated = $this->generate_image_content($post_id, $cpt_settings, $post_settings);
             
             $this->add_debug('Generation complete', array(
                 'status' => 'success',
                 'post_id' => $post_id,
-                'text_generated' => $generation_result['text_generated'],
-                'images_generated' => $generation_result['images_generated']
+                'text_generated' => $text_generated,
+                'images_generated' => $images_generated
             ));
             
             // Update last generation timestamp
@@ -93,12 +90,6 @@ class KeyContentAI_Content_Generator {
         }
     }
     
-    /**
-     * Add debug entry
-     * 
-     * @param string $step The step name/description
-     * @param mixed $data The data to log
-     */
     public function add_debug($step, $data) {
         $this->debug_log[] = array(
             'step' => $step,
@@ -107,11 +98,6 @@ class KeyContentAI_Content_Generator {
         );
     }
     
-    /**
-     * Get WordPress site language
-     * 
-     * @return string Language code (e.g., 'en', 'de', 'fr')
-     */
     private function get_site_language() {
         // Get WordPress locale (e.g., 'en_US', 'de_DE', 'fr_FR')
         $locale = get_locale();
@@ -122,13 +108,6 @@ class KeyContentAI_Content_Generator {
         return $language;
     }
     
-    /**
-     * Get CPT-level settings (general + CPT-specific)
-     * 
-     * @param string $post_type The post type to get settings for
-     * @return array CPT-level settings (including custom fields)
-     * @throws Exception If required settings are missing
-     */
     private function get_cpt_settings($post_type) {
         // Get CPT-specific additional context from consolidated configs
         $cpt_additional_context = '';
@@ -190,13 +169,6 @@ class KeyContentAI_Content_Generator {
         return $settings;
     }
     
-    /**
-     * Get post-specific settings
-     * 
-     * @param int $post_id The post ID
-     * @return array Post-specific settings
-     * @throws Exception If required settings are missing
-     */
     private function get_post_settings($post_id) {
         $settings = array(
             'keyword' => get_post_meta($post_id, 'keycontentai_keyword', true),
@@ -217,13 +189,6 @@ class KeyContentAI_Content_Generator {
         return $settings;
     }
     
-    /**
-     * Get all fields configuration for a post type (WordPress baseline + ACF)
-     * 
-     * @param string $post_type The post type to get fields for
-     * @return array All fields configuration
-     * @throws Exception If no fields found
-     */
     private function get_custom_fields_config($post_type) {
         $this->add_debug('get_custom_fields_config', "Retrieving field configuration for post type: {$post_type}");
         
@@ -308,111 +273,132 @@ class KeyContentAI_Content_Generator {
         return $all_fields;
     }
     
-    /**
-     * Generate text and image content via API
-     * 
-     * @param int $post_id The post ID
-     * @param array $cpt_settings CPT-level settings
-     * @param array $post_settings Post-specific settings
-     * @return array Result with text_generated and images_generated counts
-     */
-    private function generate_texts_and_images($post_id, $cpt_settings, $post_settings) {
-        $result = array(
-            'text_generated' => false,
-            'images_generated' => 0
-        );
-        
-        // 1. Build the text generation prompt
+    private function generate_text_content($post_id, $cpt_settings, $post_settings) {
+        // Build the text generation prompt
         $text_prompt = $this->prompt_builder->build_text_prompt($cpt_settings, $post_settings);
         
-        // 2. Generate text content if we have text fields
-        if (!empty($text_prompt)) {
-            $text_response = $this->api_caller->generate_text($text_prompt, $cpt_settings['api_key']);
-            
-            // Parse the text response
-            $parsed_content = $this->parse_text_response($text_response['content'], $cpt_settings['custom_fields']);
-            
-            // TODO: Update post with generated text content
-            // $this->update_post_with_content($post_id, $parsed_content, $cpt_settings['custom_fields']);
-            
-            $result['text_generated'] = true;
+        // Generate text content if we have text fields
+        if (empty($text_prompt)) {
+            return false;
         }
         
-        // 3. Build and generate image content if we have image fields
-        /*$image_prompts = $this->prompt_builder->build_image_prompts($cpt_settings, $post_settings);
+        $text_response = $this->api_caller->generate_text($text_prompt, $cpt_settings['api_key']);
         
-        if (!empty($image_prompts)) {
-            $image_responses = array();
-            foreach ($image_prompts as $field_key => $image_prompt) {
-                $image_responses[$field_key] = $this->api_caller->generate_image($image_prompt, $cpt_settings['api_key']);
+        // Parse JSON response
+        $parsed_content = json_decode($text_response['content'], true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception('Failed to parse GPT response: ' . json_last_error_msg());
+        }
+        
+        // Update post with generated text content
+        $this->update_post_with_texts($post_id, $parsed_content, $cpt_settings['custom_fields']);
+        
+        return true;
+    }
+    
+    private function generate_image_content($post_id, $cpt_settings, $post_settings) {
+        // Build image generation prompts
+        $image_prompts = $this->prompt_builder->build_image_prompts($cpt_settings, $post_settings);
+        
+        if (empty($image_prompts)) {
+            return 0;
+        }
+        
+        $image_responses = array();
+        foreach ($image_prompts as $field_key => $image_prompt) {
+            $image_responses[$field_key] = $this->api_caller->generate_image($image_prompt, $cpt_settings['api_key']);
+        }
+        
+        // Process image responses and get attachment IDs
+        $image_ids = $this->process_image_responses($image_responses);
+        
+        // TODO: Update post with generated images
+        // $this->update_post_with_images($post_id, $image_ids, $cpt_settings['custom_fields']);
+        
+        return count($image_prompts);
+    }
+    
+    private function update_post_with_texts($post_id, $parsed_content, $custom_fields) {
+        $this->add_debug('update_post_with_texts', 'Updating post with generated text content');
+        
+        if (empty($parsed_content)) {
+            $this->add_debug('update_post_with_texts', 'No content to update');
+            return;
+        }
+        
+        // Separate WordPress baseline fields from ACF fields
+        $wp_fields = array();
+        $acf_fields = array();
+        
+        foreach ($custom_fields as $field) {
+            // Skip image fields - only process text fields
+            if ($field['type'] === 'image') {
+                continue;
             }
             
-            // Process image responses and get attachment IDs
-            $image_ids = $this->process_image_responses($image_responses);
+            $field_key = $field['key'];
             
-            // TODO: Update post with generated images
-            // $this->update_post_with_images($post_id, $image_ids, $cpt_settings['custom_fields']);
+            // Check if we have content for this field
+            if (!isset($parsed_content[$field_key])) {
+                continue;
+            }
             
-            $result['images_generated'] = count($image_prompts);
-        }*/
-        
-        return $result;
-    }
-    
-    /**
-     * Parse text API response
-     * 
-     * @param string $response Raw JSON response from GPT
-     * @param array $custom_fields Custom fields configuration
-     * @return array Parsed content keyed by field name
-     * @throws Exception If parsing fails
-     */
-    private function parse_text_response($response, $custom_fields) {
-        $this->add_debug('parse_text_response', 'Parsing text response from GPT');
-        
-        // TODO: Implement JSON parsing and field extraction
-        $this->add_debug('parse_text_response', 'TODO: Not yet implemented');
-        
-        return array();
-    }
-    
-    /**
-     * Process image responses from DALL-E
-     * 
-     * @param array $image_responses Array of image responses keyed by field name
-     * @return array Array of WordPress attachment IDs keyed by field name
-     * @throws Exception If processing fails
-     */
-    private function process_image_responses($image_responses) {
-        $this->add_debug('process_image_responses', 'Processing DALL-E image responses');
-        
-        if (empty($image_responses)) {
-            return array();
+            if ($field['source'] === 'wordpress') {
+                $wp_fields[$field_key] = $parsed_content[$field_key];
+            } elseif ($field['source'] === 'acf') {
+                $acf_fields[$field_key] = $parsed_content[$field_key];
+            }
         }
         
-        // TODO: Download images and upload to WordPress media library
-        $this->add_debug('process_image_responses', 'TODO: Not yet implemented');
+        // Update WordPress baseline fields
+        if (!empty($wp_fields)) {
+            $post_data = array('ID' => $post_id);
+            
+            if (isset($wp_fields['post_title'])) {
+                $post_data['post_title'] = $wp_fields['post_title'];
+            }
+            
+            if (isset($wp_fields['post_content'])) {
+                $post_data['post_content'] = $wp_fields['post_content'];
+            }
+            
+            if (isset($wp_fields['post_excerpt'])) {
+                $post_data['post_excerpt'] = $wp_fields['post_excerpt'];
+            }
+            
+            $result = wp_update_post($post_data, true);
+            
+            if (is_wp_error($result)) {
+                throw new Exception('Failed to update WordPress fields: ' . $result->get_error_message());
+            }
+            
+            $this->add_debug('update_post_with_texts', array(
+                'wordpress_fields_updated' => array_keys($wp_fields)
+            ));
+        }
         
-        return array();
+        // Update ACF fields
+        if (!empty($acf_fields) && function_exists('update_field')) {
+            foreach ($acf_fields as $field_key => $field_value) {
+                $updated = update_field($field_key, $field_value, $post_id);
+                
+                if (!$updated) {
+                    $this->add_debug('update_post_with_texts', array(
+                        'warning' => "Failed to update ACF field: {$field_key}"
+                    ));
+                }
+            }
+            
+            $this->add_debug('update_post_with_texts', array(
+                'acf_fields_updated' => array_keys($acf_fields)
+            ));
+        }
+        
+        $this->add_debug('update_post_with_texts', array(
+            'status' => 'completed',
+            'total_fields_updated' => count($wp_fields) + count($acf_fields)
+        ));
     }
     
-    /**
-     * Create post with generated content and images
-     * 
-     * @param string $keyword The keyword (post title)
-     * @param array $content Parsed text content
-     * @param array $image_ids WordPress attachment IDs
-     * @param string $post_type Post type
-     * @param array $custom_fields Custom fields configuration
-     * @return int Post ID
-     * @throws Exception If post creation fails
-     */
-    private function create_post_with_content($keyword, $content, $image_ids, $post_type, $custom_fields) {
-        $this->add_debug('create_post_with_content', 'Creating WordPress post');
-        
-        // TODO: Implement post creation with wp_insert_post() and ACF update_field()
-        $this->add_debug('create_post_with_content', 'TODO: Not yet implemented');
-        
-        return 0;
-    }
 }
