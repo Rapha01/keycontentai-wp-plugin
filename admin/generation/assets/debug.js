@@ -143,8 +143,8 @@
                 debugData.lastTextPrompt = data.prompt;
             }
             
-            // Check for image prompt (from build_image_prompts)
-            if (step === 'build_image_prompts' && data.prompt) {
+            // Check for image prompt (from build_image_prompt - singular, one at a time)
+            if (step === 'build_image_prompt' && data.prompt) {
                 debugData.lastImagePrompt = data.prompt;
             }
             

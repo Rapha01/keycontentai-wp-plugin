@@ -298,8 +298,7 @@ class KeyContentAI {
                         'description' => isset($field_data['description']) ? sanitize_textarea_field($field_data['description']) : '',
                         'word_count' => isset($field_data['word_count']) ? absint($field_data['word_count']) : 0,
                         'enabled' => isset($field_data['enabled']) ? (bool) $field_data['enabled'] : false,
-                        'width' => isset($field_data['width']) ? absint($field_data['width']) : 0,
-                        'height' => isset($field_data['height']) ? absint($field_data['height']) : 0,
+                        'size' => isset($field_data['size']) ? sanitize_text_field($field_data['size']) : 'auto',
                         'quality' => isset($field_data['quality']) ? sanitize_text_field($field_data['quality']) : 'auto'
                     );
                 }

@@ -196,7 +196,7 @@ class KeyContentAI_OpenAI_API_Caller {
      * @throws Exception If API call fails
      */
     public function generate_image($prompt, $api_key, $options = array()) {
-        $this->add_debug('generate_image', 'Preparing image generation request to DALL-E');
+        $this->add_debug('generate_image', 'Preparing image generation request.');
         
         // Validate API key
         if (empty($api_key)) {
@@ -209,9 +209,10 @@ class KeyContentAI_OpenAI_API_Caller {
         // Default options
         $defaults = array(
             'model' => 'gpt-image-1.5',
-            'size' => '1024x1024',
+            'size' => 'auto',  // Supported: 'auto', '1024x1024', '1024x1536', '1536x1024'
             'quality' => 'auto',  // 'low', 'medium', 'high', or 'auto'
-            'n' => 1  // Number of images to generate
+            'n' => 1,  // Number of images to generate
+            'response_format' => 'url'  // 'url' or 'b64_json'
         );
         
         $options = wp_parse_args($options, $defaults);
@@ -239,6 +240,11 @@ class KeyContentAI_OpenAI_API_Caller {
             'quality' => $options['quality'],
             'n' => $options['n']
         );
+        
+        // Only include response_format for DALL-E models (gpt-image doesn't support it)
+        if (strpos($options['model'], 'dall-e') !== false) {
+            $request_body['response_format'] = $options['response_format'];
+        }
         
         $this->add_debug('generate_image', array(
             'endpoint' => $api_endpoint,
@@ -289,13 +295,13 @@ class KeyContentAI_OpenAI_API_Caller {
                 : 'Unknown API error';
             
             $this->add_debug('generate_image', array(
-                'error' => 'DALL-E API Error',
+                'error' => 'Image API Error',
                 'code' => $response_code,
                 'message' => $error_message,
                 'full_response' => $error_data
             ));
             
-            throw new Exception('DALL-E API error (' . $response_code . '): ' . $error_message);
+            throw new Exception('Image API error (' . $response_code . '): ' . $error_message);
         }
         
         // Parse the JSON response

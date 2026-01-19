@@ -321,44 +321,139 @@ class KeyContentAI_Content_Generator {
     }
     
     private function generate_image_content($post_id, $cpt_settings, $post_settings) {
-        // Build image generation prompts
-        $image_prompts = $this->prompt_builder->build_image_prompts($cpt_settings, $post_settings);
+        // Filter only image fields
+        $image_fields = array_filter($cpt_settings['custom_fields'], function($field) {
+            return $field['type'] === 'image';
+        });
         
-        if (empty($image_prompts)) {
+        if (empty($image_fields)) {
             return 0;
         }
         
-        $image_responses = array();
-        foreach ($image_prompts as $field_key => $image_prompt) {
-            // Find the field configuration for this image field
-            $field_config = null;
-            foreach ($cpt_settings['custom_fields'] as $field) {
-                if ($field['key'] === $field_key) {
-                    $field_config = $field;
-                    break;
+        $images_generated_count = 0;
+        
+        // Process each image field individually
+        foreach ($image_fields as $field) {
+            // 1. Build prompt for this specific image
+            $image_prompt = $this->prompt_builder->build_image_prompt($cpt_settings, $post_settings, $field);
+            
+            // 2. Prepare image options from field config
+            $image_options = array(
+                'model' => $cpt_settings['image_model'],
+                'size' => isset($field['size']) ? $field['size'] : 'auto',
+                'quality' => isset($field['quality']) ? $field['quality'] : 'auto',
+                'response_format' => 'url'
+            );
+            
+            // 3. Make API call to generate the image
+            $image_response = $this->api_caller->generate_image($image_prompt, $cpt_settings['api_key'], $image_options);
+            
+            // 4. Process and save the image immediately
+            if ($image_response && isset($image_response['data'][0]['url'])) {
+                $attachment_id = $this->save_image_from_url($image_response['data'][0]['url'], $post_id, $field);
+                
+                if ($attachment_id) {
+                    // 5. Update the post with the generated image
+                    $this->update_post_with_image($post_id, $field, $attachment_id);
+                    $images_generated_count++;
                 }
             }
-            
-            // Prepare image options from field config
-            $image_options = array(
-                'model' => $cpt_settings['image_model']
-            );
-            if ($field_config) {
-                $image_options['width'] = isset($field_config['width']) ? $field_config['width'] : 1024;
-                $image_options['height'] = isset($field_config['height']) ? $field_config['height'] : 1024;
-                $image_options['quality'] = isset($field_config['quality']) ? $field_config['quality'] : 'auto';
-            }
-            
-            $image_responses[$field_key] = $this->api_caller->generate_image($image_prompt, $cpt_settings['api_key'], $image_options);
         }
         
-        // Process image responses and get attachment IDs
-        $image_ids = $this->process_image_responses($image_responses);
+        return $images_generated_count;
+    }
+    
+    /**
+     * Save an image from URL to WordPress Media Library
+     * 
+     * @param string $image_url The URL of the image to download
+     * @param int $post_id The post ID to attach the image to
+     * @param array $field The field configuration
+     * @return int|false The attachment ID on success, false on failure
+     */
+    private function save_image_from_url($image_url, $post_id, $field) {
+        require_once(ABSPATH . 'wp-admin/includes/media.php');
+        require_once(ABSPATH . 'wp-admin/includes/file.php');
+        require_once(ABSPATH . 'wp-admin/includes/image.php');
         
-        // TODO: Update post with generated images
-        // $this->update_post_with_images($post_id, $image_ids, $cpt_settings['custom_fields']);
+        // Generate a unique filename based on the field
+        $filename = sanitize_file_name($field['label']) . '-' . time() . '.png';
         
-        return count($image_prompts);
+        // Download the image
+        $tmp = download_url($image_url);
+        
+        if (is_wp_error($tmp)) {
+            $this->add_debug('save_image_from_url', array(
+                'error' => 'Failed to download image',
+                'message' => $tmp->get_error_message(),
+                'url' => $image_url
+            ));
+            return false;
+        }
+        
+        // Prepare file array
+        $file_array = array(
+            'name' => $filename,
+            'tmp_name' => $tmp
+        );
+        
+        // Upload the file to WordPress Media Library
+        $attachment_id = media_handle_sideload($file_array, $post_id, $field['label']);
+        
+        // Clean up temporary file
+        if (file_exists($tmp)) {
+            @unlink($tmp);
+        }
+        
+        if (is_wp_error($attachment_id)) {
+            $this->add_debug('save_image_from_url', array(
+                'error' => 'Failed to create attachment',
+                'message' => $attachment_id->get_error_message()
+            ));
+            return false;
+        }
+        
+        $this->add_debug('save_image_from_url', array(
+            'attachment_id' => $attachment_id,
+            'field_key' => $field['key'],
+            'filename' => $filename
+        ));
+        
+        return $attachment_id;
+    }
+    
+    /**
+     * Update post with generated image
+     * 
+     * @param int $post_id The post ID
+     * @param array $field The field configuration
+     * @param int $attachment_id The attachment ID
+     */
+    private function update_post_with_image($post_id, $field, $attachment_id) {
+        // Handle featured image (_thumbnail_id)
+        if ($field['key'] === '_thumbnail_id') {
+            set_post_thumbnail($post_id, $attachment_id);
+            
+            $this->add_debug('update_post_with_image', array(
+                'action' => 'set_featured_image',
+                'post_id' => $post_id,
+                'attachment_id' => $attachment_id
+            ));
+            return;
+        }
+        
+        // Handle ACF image fields
+        if ($field['source'] === 'acf' && function_exists('update_field')) {
+            $updated = update_field($field['key'], $attachment_id, $post_id);
+            
+            $this->add_debug('update_post_with_image', array(
+                'action' => 'update_acf_field',
+                'field_key' => $field['key'],
+                'post_id' => $post_id,
+                'attachment_id' => $attachment_id,
+                'success' => $updated
+            ));
+        }
     }
     
     private function update_post_with_texts($post_id, $parsed_content, $custom_fields) {

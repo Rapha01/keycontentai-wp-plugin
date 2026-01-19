@@ -159,26 +159,8 @@ if (!empty($selected_post_type)) {
                         <?php 
                         // Determine if this is an image field
                         $is_image_field = in_array($field['type'], array('image', 'file', 'gallery'));
-                        $current_width = isset($current_field_configs[$field['key']]['width']) ? $current_field_configs[$field['key']]['width'] : 1024;
-                        $current_height = isset($current_field_configs[$field['key']]['height']) ? $current_field_configs[$field['key']]['height'] : 1024;
+                        $current_size = isset($current_field_configs[$field['key']]['size']) ? $current_field_configs[$field['key']]['size'] : 'auto';
                         $current_quality = isset($current_field_configs[$field['key']]['quality']) ? $current_field_configs[$field['key']]['quality'] : 'auto';
-                        
-                        // Determine which preset matches current dimensions (if any)
-                        $current_dimension = 'custom';
-                        $presets = array(
-                            '1024x1024' => array(1024, 1024),
-                            '1792x1024' => array(1792, 1024),
-                            '1024x1792' => array(1024, 1792),
-                            '512x512' => array(512, 512),
-                            '1920x1080' => array(1920, 1080),
-                            '1280x720' => array(1280, 720)
-                        );
-                        foreach ($presets as $preset_key => $preset_dims) {
-                            if ($current_width == $preset_dims[0] && $current_height == $preset_dims[1]) {
-                                $current_dimension = $preset_key;
-                                break;
-                            }
-                        }
                         ?>
                         <tr>
                             <td>
@@ -206,63 +188,16 @@ if (!empty($selected_post_type)) {
                             </td>
                             <td>
                                 <?php if ($is_image_field) : ?>
-                                    <!-- Hidden inputs for actual width/height values -->
-                                    <input 
-                                        type="hidden" 
-                                        name="keycontentai_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][width]"
-                                        class="keycontentai-dimension-width"
-                                        data-field-key="<?php echo esc_attr($field['key']); ?>"
-                                        value="<?php echo esc_attr($current_width); ?>"
-                                    />
-                                    <input 
-                                        type="hidden" 
-                                        name="keycontentai_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][height]"
-                                        class="keycontentai-dimension-height"
-                                        data-field-key="<?php echo esc_attr($field['key']); ?>"
-                                        value="<?php echo esc_attr($current_height); ?>"
-                                    />
-                                    
-                                    <!-- Image Dimension Dropdown (UI only) -->
+                                    <!-- Image Size Dropdown -->
                                     <select 
-                                        class="regular-text keycontentai-dimension-select"
-                                        data-field-key="<?php echo esc_attr($field['key']); ?>"
+                                        name="keycontentai_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][size]"
+                                        class="regular-text"
                                     >
-                                        <option value="1024x1024" <?php selected($current_dimension, '1024x1024'); ?>>1024 x 1024 (Square)</option>
-                                        <option value="1792x1024" <?php selected($current_dimension, '1792x1024'); ?>>1792 x 1024 (Landscape)</option>
-                                        <option value="1024x1792" <?php selected($current_dimension, '1024x1792'); ?>>1024 x 1792 (Portrait)</option>
-                                        <option value="512x512" <?php selected($current_dimension, '512x512'); ?>>512 x 512 (Small Square)</option>
-                                        <option value="1920x1080" <?php selected($current_dimension, '1920x1080'); ?>>1920 x 1080 (Full HD)</option>
-                                        <option value="1280x720" <?php selected($current_dimension, '1280x720'); ?>>1280 x 720 (HD)</option>
-                                        <option value="custom" <?php selected($current_dimension, 'custom'); ?>>Custom Dimensions</option>
+                                        <option value="auto" <?php selected($current_size, 'auto'); ?>><?php esc_html_e('Auto (Recommended)', 'keycontentai'); ?></option>
+                                        <option value="1024x1024" <?php selected($current_size, '1024x1024'); ?>>1024 x 1024 (Square)</option>
+                                        <option value="1024x1536" <?php selected($current_size, '1024x1536'); ?>>1024 x 1536 (Portrait)</option>
+                                        <option value="1536x1024" <?php selected($current_size, '1536x1024'); ?>>1536 x 1024 (Landscape)</option>
                                     </select>
-                                    
-                                    <!-- Custom Dimension Fields -->
-                                    <div class="keycontentai-custom-dimensions" data-field-key="<?php echo esc_attr($field['key']); ?>" style="margin-top: 8px; <?php echo $current_dimension !== 'custom' ? 'display: none;' : ''; ?>">
-                                        <input 
-                                            type="number" 
-                                            class="small-text keycontentai-custom-width"
-                                            data-field-key="<?php echo esc_attr($field['key']); ?>"
-                                            value="<?php echo $current_dimension === 'custom' ? esc_attr($current_width) : ''; ?>"
-                                            min="64"
-                                            max="4096"
-                                            step="1"
-                                            placeholder="Width"
-                                        />
-                                        <span style="margin: 0 5px;">×</span>
-                                        <input 
-                                            type="number" 
-                                            class="small-text keycontentai-custom-height"
-                                            data-field-key="<?php echo esc_attr($field['key']); ?>"
-                                            value="<?php echo $current_dimension === 'custom' ? esc_attr($current_height) : ''; ?>"
-                                            min="64"
-                                            max="4096"
-                                            step="1"
-                                            placeholder="Height"
-                                        />
-                                        <p class="description">
-                                            <?php esc_html_e('Width × Height in pixels', 'keycontentai'); ?>
-                                        </p>
-                                    </div>
                                     
                                     <!-- Image Quality Dropdown -->
                                     <div style="margin-top: 8px;">

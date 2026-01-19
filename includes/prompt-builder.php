@@ -377,28 +377,46 @@ class KeyContentAI_Prompt_Builder {
      * @return string The image generation prompt
      */
     public function build_image_prompt($cpt_settings, $post_settings, $field) {
+        $this->add_debug('build_image_prompt', array(
+            'field_key' => $field['key'],
+            'field_label' => $field['label']
+        ));
+        
         $prompt_parts = array();
         
         $keyword = isset($post_settings['keyword']) ? $post_settings['keyword'] : '';
         
-        // 1. Base description from field configuration
+        // 1. Image field purpose (most important)
+        $prompt_parts[] = "IMAGE FIELD: {$field['label']}";
+        $prompt_parts[] = "FIELD KEY: {$field['key']}";
+        
+        // 2. Primary topic/keyword
+        if (!empty($keyword)) {
+            $prompt_parts[] = "PRIMARY TOPIC: {$keyword}";
+        }
+        
+        // 3. Field-specific description or default instruction
         if (!empty($field['description'])) {
-            $prompt_parts[] = $field['description'];
+            $prompt_parts[] = "SPECIFIC INSTRUCTIONS:\n{$field['description']}";
         } else {
-            $prompt_parts[] = "Create a professional image related to: {$keyword}";
+            $prompt_parts[] = "INSTRUCTIONS:\nCreate a professional, high-quality image that represents the field '{$field['label']}' in the context of: {$keyword}";
         }
         
-        // 2. Add context from company/industry if available
+        // 4. Add context from company/industry if available
         if (!empty($cpt_settings['industry'])) {
-            $prompt_parts[] = "Industry context: {$cpt_settings['industry']}";
+            $prompt_parts[] = "INDUSTRY CONTEXT: {$cpt_settings['industry']}";
         }
         
-        // 3. Add style and quality requirements
-        $prompt_parts[] = "Style: Professional, high-quality, modern, suitable for commercial use";
+        // 5. Style requirements
+        $prompt_parts[] = "STYLE REQUIREMENTS:\n- Professional and modern\n- High-quality composition\n- Clear and well-lit\n- Suitable for commercial use";
         
-        // 4. Technical requirements
-        $prompt_parts[] = "Format: Clear composition, good lighting, appropriate for {$field['label']}";
+        $full_prompt = implode("\n\n", $prompt_parts);
         
-        return implode('. ', $prompt_parts);
+        $this->add_debug('build_image_prompt', array(
+            'field_key' => $field['key'],
+            'prompt' => $full_prompt
+        ));
+        
+        return $full_prompt;
     }
 }
