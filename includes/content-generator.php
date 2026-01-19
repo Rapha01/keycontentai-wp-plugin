@@ -52,8 +52,8 @@ class KeyContentAI_Content_Generator {
             $text_generated = $this->generate_text_content($post_id, $cpt_settings, $post_settings);
             
             // 5. Generate image content
-            //$images_generated = $this->generate_image_content($post_id, $cpt_settings, $post_settings);
-            
+            $images_generated = $this->generate_image_content($post_id, $cpt_settings, $post_settings);
+            //throw new Exception("Test error");
             $this->add_debug('Generation complete', array(
                 'status' => 'success',
                 'post_id' => $post_id,
@@ -122,6 +122,8 @@ class KeyContentAI_Content_Generator {
         $settings = array(
             // API Settings
             'api_key' => get_option('keycontentai_openai_api_key', ''),
+            'text_model' => get_option('keycontentai_text_model', 'gpt-5.2'),
+            'image_model' => get_option('keycontentai_image_model', 'dall-e-3'),
             
             // Post Type
             'post_type' => $post_type,
@@ -205,20 +207,28 @@ class KeyContentAI_Content_Generator {
         $all_fields = array();
         
         // 1. Add WordPress baseline fields if configured
-        $baseline_fields = array('post_title', 'post_content', 'post_excerpt');
+        $baseline_fields = array('post_title', 'post_content', 'post_excerpt', '_thumbnail_id');
         
         foreach ($baseline_fields as $field_key) {
             if (isset($post_type_configs[$field_key]) && !empty($post_type_configs[$field_key]['enabled'])) {
                 $field_labels = array(
                     'post_title' => 'Title',
                     'post_content' => 'Content',
-                    'post_excerpt' => 'Excerpt'
+                    'post_excerpt' => 'Excerpt',
+                    '_thumbnail_id' => 'Featured Image'
                 );
+                
+                $field_type = 'text';
+                if ($field_key === 'post_content') {
+                    $field_type = 'wysiwyg';
+                } elseif ($field_key === '_thumbnail_id') {
+                    $field_type = 'image';
+                }
                 
                 $all_fields[] = array(
                     'key' => $field_key,
                     'label' => $field_labels[$field_key],
-                    'type' => ($field_key === 'post_content') ? 'wysiwyg' : 'text',
+                    'type' => $field_type,
                     'source' => 'wordpress',
                     'description' => isset($post_type_configs[$field_key]['description']) ? $post_type_configs[$field_key]['description'] : '',
                     'word_count' => isset($post_type_configs[$field_key]['word_count']) ? intval($post_type_configs[$field_key]['word_count']) : 0,
@@ -257,6 +267,17 @@ class KeyContentAI_Content_Generator {
             }
         }
         
+        // 3. Add image-specific options to all image fields (regardless of source)
+        foreach ($all_fields as &$field) {
+            if (in_array($field['type'], array('image', 'file', 'gallery'))) {
+                $field_key = $field['key'];
+                $field['width'] = isset($post_type_configs[$field_key]['width']) ? intval($post_type_configs[$field_key]['width']) : 1024;
+                $field['height'] = isset($post_type_configs[$field_key]['height']) ? intval($post_type_configs[$field_key]['height']) : 1024;
+                $field['quality'] = isset($post_type_configs[$field_key]['quality']) ? $post_type_configs[$field_key]['quality'] : 'auto';
+            }
+        }
+        unset($field); // Break reference
+        
         if (empty($all_fields)) {
             $this->add_debug('get_custom_fields_config', "No enabled fields found for post type: {$post_type}");
             throw new Exception("No enabled fields found for post type: {$post_type}");
@@ -282,7 +303,9 @@ class KeyContentAI_Content_Generator {
             return false;
         }
         
-        $text_response = $this->api_caller->generate_text($text_prompt, $cpt_settings['api_key']);
+        $text_response = $this->api_caller->generate_text($text_prompt, $cpt_settings['api_key'], array(
+            'model' => $cpt_settings['text_model']
+        ));
         
         // Parse JSON response
         $parsed_content = json_decode($text_response['content'], true);
@@ -307,7 +330,26 @@ class KeyContentAI_Content_Generator {
         
         $image_responses = array();
         foreach ($image_prompts as $field_key => $image_prompt) {
-            $image_responses[$field_key] = $this->api_caller->generate_image($image_prompt, $cpt_settings['api_key']);
+            // Find the field configuration for this image field
+            $field_config = null;
+            foreach ($cpt_settings['custom_fields'] as $field) {
+                if ($field['key'] === $field_key) {
+                    $field_config = $field;
+                    break;
+                }
+            }
+            
+            // Prepare image options from field config
+            $image_options = array(
+                'model' => $cpt_settings['image_model']
+            );
+            if ($field_config) {
+                $image_options['width'] = isset($field_config['width']) ? $field_config['width'] : 1024;
+                $image_options['height'] = isset($field_config['height']) ? $field_config['height'] : 1024;
+                $image_options['quality'] = isset($field_config['quality']) ? $field_config['quality'] : 'auto';
+            }
+            
+            $image_responses[$field_key] = $this->api_caller->generate_image($image_prompt, $cpt_settings['api_key'], $image_options);
         }
         
         // Process image responses and get attachment IDs

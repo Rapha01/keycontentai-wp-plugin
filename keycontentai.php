@@ -68,7 +68,6 @@ class KeyContentAI {
             
             // AJAX handlers
             add_action('wp_ajax_keycontentai_generate_content', array($this, 'ajax_generate_content'));
-            add_action('wp_ajax_keycontentai_fetch_models', array($this, 'ajax_fetch_models'));
             add_action('wp_ajax_keycontentai_load_keyword', array($this, 'ajax_load_keyword'));
         }
     }
@@ -300,7 +299,8 @@ class KeyContentAI {
                         'word_count' => isset($field_data['word_count']) ? absint($field_data['word_count']) : 0,
                         'enabled' => isset($field_data['enabled']) ? (bool) $field_data['enabled'] : false,
                         'width' => isset($field_data['width']) ? absint($field_data['width']) : 0,
-                        'height' => isset($field_data['height']) ? absint($field_data['height']) : 0
+                        'height' => isset($field_data['height']) ? absint($field_data['height']) : 0,
+                        'quality' => isset($field_data['quality']) ? sanitize_text_field($field_data['quality']) : 'auto'
                     );
                 }
             }
@@ -593,52 +593,6 @@ class KeyContentAI {
                 'message' => $result['message'],
                 'debug_log' => isset($result['debug_log']) ? $result['debug_log'] : array()
             ));
-        }
-    }
-    
-    /**
-     * AJAX handler to fetch available OpenAI models
-     */
-    public function ajax_fetch_models() {
-        // Check nonce
-        check_ajax_referer('keycontentai_settings_nonce', 'nonce');
-        
-        // Check permissions
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(array('message' => 'Unauthorized'));
-            return;
-        }
-        
-        // Get API key from POST or settings
-        $api_key = isset($_POST['api_key']) ? sanitize_text_field($_POST['api_key']) : get_option('keycontentai_openai_api_key', '');
-        
-        if (empty($api_key)) {
-            wp_send_json_error(array('message' => 'API key is required'));
-            return;
-        }
-        
-        try {
-            // Fetch models
-            $models = KeyContentAI_OpenAI_API_Caller::get_available_models($api_key);
-            
-            // Format all models for both dropdowns
-            $all_models = array();
-            
-            foreach ($models as $model) {
-                $model_id = $model['id'];
-                $all_models[] = array(
-                    'id' => $model_id,
-                    'name' => $model_id
-                );
-            }
-            
-            wp_send_json_success(array(
-                'text_models' => $all_models,
-                'image_models' => $all_models
-            ));
-            
-        } catch (Exception $e) {
-            wp_send_json_error(array('message' => $e->getMessage()));
         }
     }
     

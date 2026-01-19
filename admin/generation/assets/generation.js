@@ -254,16 +254,16 @@
                 nonce: keycontentaiGeneration.nonce
             },
             success: function(response) {
+                // Add debug data from response (works for both success and error)
+                if (response.data && response.data.debug_log) {
+                    response.data.debug_log.forEach(function(debugEntry) {
+                        addDebugEntry(debugEntry.step, debugEntry.data, false);
+                    });
+                }
+                
                 if (response.success) {
-                    // Add debug data from response
-                    if (response.data && response.data.debug_log) {
-                        response.data.debug_log.forEach(function(debugEntry) {
-                            addDebugEntry(debugEntry.step, debugEntry.data, false);
-                        });
-                    }
                     onPostSuccess($row);
                 } else {
-                    addDebugEntry('Generation failed', response.data, true);
                     onPostError($row, response.data);
                 }
             },

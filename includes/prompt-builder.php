@@ -362,7 +362,7 @@ class KeyContentAI_Prompt_Builder {
         $this->add_debug('build_image_prompts', array(
             'image_fields_count' => count($image_fields),
             'prompts' => $image_prompts,
-            'full_prompt' => !empty($image_prompts) ? implode("\n\n--- Next Image ---\n\n", $image_prompts) : ''
+            'prompt' => !empty($image_prompts) ? implode("\n\n--- Next Image ---\n\n", $image_prompts) : ''
         ));
         
         return $image_prompts;

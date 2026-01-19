@@ -56,9 +56,9 @@ class KeyContentAI_OpenAI_API_Caller {
         
         // Default options
         $defaults = array(
-            'model' => 'gpt-4o-mini',
+            'model' => 'gpt-5.2',
             'temperature' => 0.7,
-            'max_tokens' => 4000,
+            'max_completion_tokens' => 4000,
             'response_format' => array('type' => 'json_object')
         );
         
@@ -74,7 +74,7 @@ class KeyContentAI_OpenAI_API_Caller {
                 )
             ),
             'temperature' => $options['temperature'],
-            'max_tokens' => $options['max_tokens'],
+            'max_completion_tokens' => $options['max_completion_tokens'],
             'response_format' => $options['response_format']
         );
         
@@ -83,7 +83,7 @@ class KeyContentAI_OpenAI_API_Caller {
             'model' => $request_body['model'],
             'prompt_length' => strlen($prompt),
             'temperature' => $request_body['temperature'],
-            'max_tokens' => $request_body['max_tokens']
+            'max_completion_tokens' => $request_body['max_completion_tokens']
         ));
         
         // Prepare request headers
@@ -152,7 +152,7 @@ class KeyContentAI_OpenAI_API_Caller {
         if (!isset($response_data['choices'][0]['message']['content'])) {
             $this->add_debug('generate_text', array(
                 'error' => 'Invalid Response Structure',
-                'response_data' => $response_data
+                'full_api_response' => wp_json_encode($response_data, JSON_PRETTY_PRINT)
             ));
             throw new Exception('Invalid API response structure');
         }
@@ -210,11 +210,26 @@ class KeyContentAI_OpenAI_API_Caller {
         $defaults = array(
             'model' => 'gpt-image-1.5',
             'size' => '1024x1024',
-            'quality' => 'standard',  // 'standard' or 'hd'
+            'quality' => 'auto',  // 'low', 'medium', 'high', or 'auto'
             'n' => 1  // Number of images to generate
         );
         
         $options = wp_parse_args($options, $defaults);
+        
+        // Convert quality values for DALL-E models
+        // DALL-E uses 'standard' or 'hd', while gpt-image models use 'low', 'medium', 'high', 'auto'
+        if (strpos($options['model'], 'dall-e') !== false) {
+            $quality_map = array(
+                'low' => 'standard',
+                'medium' => 'standard',
+                'auto' => 'standard',
+                'high' => 'hd'
+            );
+            
+            if (isset($quality_map[$options['quality']])) {
+                $options['quality'] = $quality_map[$options['quality']];
+            }
+        }
         
         // Prepare the request body
         $request_body = array(
@@ -299,7 +314,7 @@ class KeyContentAI_OpenAI_API_Caller {
         if (!isset($response_data['data'][0]['url'])) {
             $this->add_debug('generate_image', array(
                 'error' => 'Invalid Response Structure',
-                'response_data' => $response_data
+                'full_api_response' => wp_json_encode($response_data, JSON_PRETTY_PRINT)
             ));
             throw new Exception('Invalid image API response structure');
         }
@@ -322,66 +337,6 @@ class KeyContentAI_OpenAI_API_Caller {
             'revised_prompt' => $revised_prompt,
             'model' => $options['model']
         );
-    }
-    
-    /**
-     * Fetch available models from OpenAI API
-     * 
-     * @param string $api_key OpenAI API key
-     * @return array Array of model objects
-     * @throws Exception If API call fails
-     */
-    public static function get_available_models($api_key) {
-        // Validate API key
-        if (empty($api_key)) {
-            throw new Exception('OpenAI API key is missing');
-        }
-        
-        // Prepare the API endpoint
-        $api_endpoint = 'https://api.openai.com/v1/models';
-        
-        // Prepare request headers
-        $headers = array(
-            'Authorization' => 'Bearer ' . $api_key
-        );
-        
-        // Make the API request using WordPress HTTP API
-        $response = wp_remote_get($api_endpoint, array(
-            'headers' => $headers,
-            'timeout' => 30,
-            'sslverify' => true
-        ));
-        
-        // Check for WordPress HTTP errors
-        if (is_wp_error($response)) {
-            throw new Exception('Failed to fetch models: ' . $response->get_error_message());
-        }
-        
-        // Get response code
-        $response_code = wp_remote_retrieve_response_code($response);
-        $response_body = wp_remote_retrieve_body($response);
-        
-        // Check for HTTP errors
-        if ($response_code !== 200) {
-            $error_data = json_decode($response_body, true);
-            $error_message = isset($error_data['error']['message']) 
-                ? $error_data['error']['message'] 
-                : 'Unknown API error';
-            throw new Exception('OpenAI API error (' . $response_code . '): ' . $error_message);
-        }
-        
-        // Parse the JSON response
-        $response_data = json_decode($response_body, true);
-        
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception('Failed to parse models response: ' . json_last_error_msg());
-        }
-        
-        if (!isset($response_data['data']) || !is_array($response_data['data'])) {
-            throw new Exception('Invalid models response structure');
-        }
-        
-        return $response_data['data'];
     }
     
     /**

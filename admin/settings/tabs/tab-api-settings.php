@@ -45,15 +45,6 @@ $image_model = get_option('keycontentai_image_model', 'dall-e-3');
                                 <?php esc_html_e('OpenAI Platform', 'keycontentai'); ?>
                             </a>
                         </p>
-                        <?php if (!empty($api_key)) : ?>
-                            <p>
-                                <button type="button" id="keycontentai-fetch-models-btn" class="button button-secondary">
-                                    <span class="dashicons dashicons-update" style="margin-top: 4px;"></span>
-                                    <?php esc_html_e('Fetch Available Models', 'keycontentai'); ?>
-                                </button>
-                                <span id="keycontentai-fetch-models-status" style="margin-left: 10px;"></span>
-                            </p>
-                        <?php endif; ?>
                     </td>
                 </tr>
                 
@@ -65,12 +56,11 @@ $image_model = get_option('keycontentai_image_model', 'dall-e-3');
                     </th>
                     <td>
                         <select id="keycontentai_text_model" name="keycontentai_text_model" class="regular-text">
-                            <option value="<?php echo esc_attr($text_model); ?>">
-                                <?php echo esc_html($text_model); ?>
-                            </option>
+                            <option value="gpt-5.2" <?php selected($text_model, 'gpt-5.2'); ?>>gpt-5.2</option>
+                            <option value="gpt-5.1" <?php selected($text_model, 'gpt-5.1'); ?>>gpt-5.1</option>
                         </select>
                         <p class="description">
-                            <?php esc_html_e('Select the GPT model to use for text content generation. Click "Fetch Available Models" to populate this dropdown with models from your API key.', 'keycontentai'); ?>
+                            <?php esc_html_e('Select the GPT model to use for text content generation.', 'keycontentai'); ?>
                         </p>
                     </td>
                 </tr>
@@ -83,12 +73,11 @@ $image_model = get_option('keycontentai_image_model', 'dall-e-3');
                     </th>
                     <td>
                         <select id="keycontentai_image_model" name="keycontentai_image_model" class="regular-text">
-                            <option value="<?php echo esc_attr($image_model); ?>">
-                                <?php echo esc_html($image_model); ?>
-                            </option>
+                            <option value="dall-e-3" <?php selected($image_model, 'dall-e-3'); ?>>dall-e-3</option>
+                            <option value="gpt-image-1.5" <?php selected($image_model, 'gpt-image-1.5'); ?>>gpt-image-1.5</option>
                         </select>
                         <p class="description">
-                            <?php esc_html_e('Select the DALL-E model to use for image generation. Click "Fetch Available Models" to populate this dropdown with models from your API key.', 'keycontentai'); ?>
+                            <?php esc_html_e('Select the model to use for image generation.', 'keycontentai'); ?>
                         </p>
                     </td>
                 </tr>

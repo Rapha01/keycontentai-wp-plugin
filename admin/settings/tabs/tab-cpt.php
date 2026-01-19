@@ -161,6 +161,7 @@ if (!empty($selected_post_type)) {
                         $is_image_field = in_array($field['type'], array('image', 'file', 'gallery'));
                         $current_width = isset($current_field_configs[$field['key']]['width']) ? $current_field_configs[$field['key']]['width'] : 1024;
                         $current_height = isset($current_field_configs[$field['key']]['height']) ? $current_field_configs[$field['key']]['height'] : 1024;
+                        $current_quality = isset($current_field_configs[$field['key']]['quality']) ? $current_field_configs[$field['key']]['quality'] : 'auto';
                         
                         // Determine which preset matches current dimensions (if any)
                         $current_dimension = 'custom';
@@ -262,6 +263,20 @@ if (!empty($selected_post_type)) {
                                             <?php esc_html_e('Width × Height in pixels', 'keycontentai'); ?>
                                         </p>
                                     </div>
+                                    
+                                    <!-- Image Quality Dropdown -->
+                                    <div style="margin-top: 8px;">
+                                        <select 
+                                            name="keycontentai_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][quality]"
+                                            class="regular-text keycontentai-quality-select"
+                                            data-field-key="<?php echo esc_attr($field['key']); ?>"
+                                        >
+                                            <option value="auto" <?php selected($current_quality, 'auto'); ?>><?php esc_html_e('Auto (Recommended)', 'keycontentai'); ?></option>
+                                            <option value="low" <?php selected($current_quality, 'low'); ?>><?php esc_html_e('Low', 'keycontentai'); ?></option>
+                                            <option value="medium" <?php selected($current_quality, 'medium'); ?>><?php esc_html_e('Medium', 'keycontentai'); ?></option>
+                                            <option value="high" <?php selected($current_quality, 'high'); ?>><?php esc_html_e('High', 'keycontentai'); ?></option>
+                                        </select>
+                                    </div>
                                 <?php else : ?>
                                     <!-- Word Count Input for Text Fields -->
                                     <input 
@@ -273,9 +288,6 @@ if (!empty($selected_post_type)) {
                                         step="1"
                                         placeholder="<?php esc_attr_e('Words', 'keycontentai'); ?>"
                                     />
-                                    <p class="description">
-                                        <?php esc_html_e('Target word count', 'keycontentai'); ?>
-                                    </p>
                                 <?php endif; ?>
                             </td>
                             <td style="text-align: center; vertical-align: middle;">

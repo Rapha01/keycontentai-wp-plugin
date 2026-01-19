@@ -9,8 +9,10 @@
     let debugVisible = false;
     let debugData = {
         all: [],
-        lastPrompt: null,
-        lastResponse: null
+        lastTextPrompt: null,
+        lastImagePrompt: null,
+        lastTextResponse: null,
+        lastImageResponse: null
     };
     
     // Export debug functions to global scope for use by generation.js
@@ -77,8 +79,10 @@
     function clearDebug() {
         debugData = {
             all: [],
-            lastPrompt: null,
-            lastResponse: null
+            lastTextPrompt: null,
+            lastImagePrompt: null,
+            lastTextResponse: null,
+            lastImageResponse: null
         };
         
         // Clear all tabs
@@ -89,17 +93,31 @@
             '</div>'
         );
         
-        $('#keycontentai-debug-tab-prompt').html(
+        $('#keycontentai-debug-tab-text-prompt').html(
             '<div class="keycontentai-generation-debug-empty">' +
             '<span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>' +
-            '<p>Last prompt will appear here after generation.</p>' +
+            '<p>Last text prompt will appear here after generation.</p>' +
             '</div>'
         );
         
-        $('#keycontentai-debug-tab-response').html(
+        $('#keycontentai-debug-tab-image-prompt').html(
             '<div class="keycontentai-generation-debug-empty">' +
             '<span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>' +
-            '<p>Last API response will appear here after generation.</p>' +
+            '<p>Last image prompt will appear here after generation.</p>' +
+            '</div>'
+        );
+        
+        $('#keycontentai-debug-tab-text-response').html(
+            '<div class="keycontentai-generation-debug-empty">' +
+            '<span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>' +
+            '<p>Last text API response will appear here after generation.</p>' +
+            '</div>'
+        );
+        
+        $('#keycontentai-debug-tab-image-response').html(
+            '<div class="keycontentai-generation-debug-empty">' +
+            '<span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>' +
+            '<p>Last image API response will appear here after generation.</p>' +
             '</div>'
         );
     }
@@ -120,36 +138,55 @@
         
         // Extract prompt and response if available
         if (typeof data === 'object' && data !== null) {
-            // Check for prompt in various formats
-            if (data.prompt) {
-                debugData.lastPrompt = data.prompt;
-            } else if (data.request_body && data.request_body.messages) {
-                // Extract from API request
-                const messages = data.request_body.messages;
-                debugData.lastPrompt = JSON.stringify(messages, null, 2);
+            // Check for text prompt (from build_text_prompt)
+            if (step === 'build_text_prompt' && data.prompt) {
+                debugData.lastTextPrompt = data.prompt;
             }
             
-            // Check for API response
+            // Check for image prompt (from build_image_prompts)
+            if (step === 'build_image_prompts' && data.prompt) {
+                debugData.lastImagePrompt = data.prompt;
+            }
+            
+            // Check for API request (alternative source for prompts)
+            if (data.request_body && data.request_body.messages) {
+                const messages = data.request_body.messages;
+                if (step === 'generate_text') {
+                    debugData.lastTextPrompt = JSON.stringify(messages, null, 2);
+                }
+            }
+            
+            // Check for API response (standardized as full_api_response)
             if (data.full_api_response) {
-                debugData.lastResponse = data.full_api_response;
-            } else if (data.api_response) {
-                debugData.lastResponse = JSON.stringify(data.api_response, null, 2);
-            } else if (data.response_data) {
-                debugData.lastResponse = JSON.stringify(data.response_data, null, 2);
+                if (step === 'generate_image') {
+                    debugData.lastImageResponse = data.full_api_response;
+                } else if (step === 'generate_text') {
+                    debugData.lastTextResponse = data.full_api_response;
+                }
             }
         }
         
         // Update all debug tab
         updateAllDebugTab();
         
-        // Update prompt tab if we have one
-        if (debugData.lastPrompt) {
-            updatePromptTab();
+        // Update text prompt tab if we have one
+        if (debugData.lastTextPrompt) {
+            updateTextPromptTab();
         }
         
-        // Update response tab if we have one
-        if (debugData.lastResponse) {
-            updateResponseTab();
+        // Update image prompt tab if we have one
+        if (debugData.lastImagePrompt) {
+            updateImagePromptTab();
+        }
+        
+        // Update text response tab if we have one
+        if (debugData.lastTextResponse) {
+            updateTextResponseTab();
+        }
+        
+        // Update image response tab if we have one
+        if (debugData.lastImageResponse) {
+            updateImageResponseTab();
         }
     }
     
@@ -185,21 +222,39 @@
     }
     
     /**
-     * Update "Last Prompt" tab
+     * Update "Last Text Prompt" tab
      */
-    function updatePromptTab() {
-        const $container = $('#keycontentai-debug-tab-prompt');
+    function updateTextPromptTab() {
+        const $container = $('#keycontentai-debug-tab-text-prompt');
         $container.html('<div class="keycontentai-debug-prompt"></div>');
-        $container.find('.keycontentai-debug-prompt').text(debugData.lastPrompt);
+        $container.find('.keycontentai-debug-prompt').text(debugData.lastTextPrompt);
     }
     
     /**
-     * Update "Last API Response" tab
+     * Update "Last Image Prompt" tab
      */
-    function updateResponseTab() {
-        const $container = $('#keycontentai-debug-tab-response');
+    function updateImagePromptTab() {
+        const $container = $('#keycontentai-debug-tab-image-prompt');
+        $container.html('<div class="keycontentai-debug-prompt"></div>');
+        $container.find('.keycontentai-debug-prompt').text(debugData.lastImagePrompt);
+    }
+    
+    /**
+     * Update "Last Text API Response" tab
+     */
+    function updateTextResponseTab() {
+        const $container = $('#keycontentai-debug-tab-text-response');
         $container.html('<div class="keycontentai-debug-response"></div>');
-        $container.find('.keycontentai-debug-response').text(debugData.lastResponse);
+        $container.find('.keycontentai-debug-response').text(debugData.lastTextResponse);
+    }
+    
+    /**
+     * Update "Last Image API Response" tab
+     */
+    function updateImageResponseTab() {
+        const $container = $('#keycontentai-debug-tab-image-response');
+        $container.html('<div class="keycontentai-debug-response"></div>');
+        $container.find('.keycontentai-debug-response').text(debugData.lastImageResponse);
     }
     
 })(jQuery);

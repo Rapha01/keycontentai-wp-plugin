@@ -163,11 +163,17 @@ if ($is_configured) {
                         <button class="keycontentai-debug-tab active" data-tab="all">
                             <?php esc_html_e('All Debug Data', 'keycontentai'); ?>
                         </button>
-                        <button class="keycontentai-debug-tab" data-tab="prompt">
-                            <?php esc_html_e('Last Prompt', 'keycontentai'); ?>
+                        <button class="keycontentai-debug-tab" data-tab="text-prompt">
+                            <?php esc_html_e('Last Text Prompt', 'keycontentai'); ?>
                         </button>
-                        <button class="keycontentai-debug-tab" data-tab="response">
-                            <?php esc_html_e('Last API Response', 'keycontentai'); ?>
+                        <button class="keycontentai-debug-tab" data-tab="text-response">
+                            <?php esc_html_e('Last Text API Response', 'keycontentai'); ?>
+                        </button>
+                        <button class="keycontentai-debug-tab" data-tab="image-prompt">
+                            <?php esc_html_e('Last Image Prompt', 'keycontentai'); ?>
+                        </button>
+                        <button class="keycontentai-debug-tab" data-tab="image-response">
+                            <?php esc_html_e('Last Image API Response', 'keycontentai'); ?>
                         </button>
                     </div>
                     
@@ -181,19 +187,35 @@ if ($is_configured) {
                             </div>
                         </div>
                         
-                        <!-- Last Prompt Tab -->
-                        <div id="keycontentai-debug-tab-prompt" class="keycontentai-debug-tab-content">
+                        <!-- Last Text Prompt Tab -->
+                        <div id="keycontentai-debug-tab-text-prompt" class="keycontentai-debug-tab-content">
                             <div class="keycontentai-generation-debug-empty">
                                 <span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>
-                                <p><?php esc_html_e('Last prompt will appear here after generation.', 'keycontentai'); ?></p>
+                                <p><?php esc_html_e('Last text prompt will appear here after generation.', 'keycontentai'); ?></p>
                             </div>
                         </div>
                         
-                        <!-- Last API Response Tab -->
-                        <div id="keycontentai-debug-tab-response" class="keycontentai-debug-tab-content">
+                        <!-- Last Text API Response Tab -->
+                        <div id="keycontentai-debug-tab-text-response" class="keycontentai-debug-tab-content">
                             <div class="keycontentai-generation-debug-empty">
                                 <span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>
-                                <p><?php esc_html_e('Last API response will appear here after generation.', 'keycontentai'); ?></p>
+                                <p><?php esc_html_e('Last text API response will appear here after generation.', 'keycontentai'); ?></p>
+                            </div>
+                        </div>
+                        
+                        <!-- Last Image Prompt Tab -->
+                        <div id="keycontentai-debug-tab-image-prompt" class="keycontentai-debug-tab-content">
+                            <div class="keycontentai-generation-debug-empty">
+                                <span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>
+                                <p><?php esc_html_e('Last image prompt will appear here after generation.', 'keycontentai'); ?></p>
+                            </div>
+                        </div>
+                        
+                        <!-- Last Image API Response Tab -->
+                        <div id="keycontentai-debug-tab-image-response" class="keycontentai-debug-tab-content">
+                            <div class="keycontentai-generation-debug-empty">
+                                <span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>
+                                <p><?php esc_html_e('Last image API response will appear here after generation.', 'keycontentai'); ?></p>
                             </div>
                         </div>
                     </div>

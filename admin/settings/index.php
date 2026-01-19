@@ -22,9 +22,6 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'client-
         <a href="?page=keycontentai-settings&tab=cpt" class="nav-tab <?php echo $active_tab === 'cpt' ? 'nav-tab-active' : ''; ?>">
             <?php esc_html_e('CPT', 'keycontentai'); ?>
         </a>
-        <a href="?page=keycontentai-settings&tab=internal-linking" class="nav-tab <?php echo $active_tab === 'internal-linking' ? 'nav-tab-active' : ''; ?>">
-            <?php esc_html_e('Internal Linking', 'keycontentai'); ?>
-        </a>
         <a href="?page=keycontentai-settings&tab=api-settings" class="nav-tab <?php echo $active_tab === 'api-settings' ? 'nav-tab-active' : ''; ?>">
             <?php esc_html_e('API', 'keycontentai'); ?>
         </a>
@@ -40,9 +37,6 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'client-
                 break;
             case 'cpt':
                 $tab_file = KEYCONTENTAI_PLUGIN_DIR . 'admin/settings/tabs/tab-cpt.php';
-                break;
-            case 'internal-linking':
-                $tab_file = KEYCONTENTAI_PLUGIN_DIR . 'admin/settings/tabs/tab-internal-linking.php';
                 break;
             case 'api-settings':
                 $tab_file = KEYCONTENTAI_PLUGIN_DIR . 'admin/settings/tabs/tab-api-settings.php';
