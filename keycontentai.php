@@ -134,6 +134,15 @@ class KeyContentAI {
         
         add_submenu_page(
             'keycontentai-load-keywords',                  // Parent slug
+            __('Internal Linking', 'keycontentai'),       // Page title
+            __('Internal Linking', 'keycontentai'),       // Menu title
+            'manage_options',                              // Capability
+            'keycontentai-internal-linking',               // Menu slug
+            array($this, 'render_internal_linking_page')  // Callback
+        );
+        
+        add_submenu_page(
+            'keycontentai-load-keywords',                  // Parent slug
             __('Settings', 'keycontentai'),               // Page title
             __('Settings', 'keycontentai'),               // Menu title
             'manage_options',                              // Capability
@@ -391,6 +400,18 @@ class KeyContentAI {
     }
     
     /**
+     * Render Internal Linking page
+     */
+    public function render_internal_linking_page() {
+        // Check user capabilities
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        
+        include KEYCONTENTAI_PLUGIN_DIR . 'admin/internal-linking/index.php';
+    }
+    
+    /**
      * Render Load Keywords page
      */
     public function render_load_keywords_page() {
@@ -409,6 +430,7 @@ class KeyContentAI {
         // Only load on our plugin pages
         if ($hook !== 'toplevel_page_keycontentai-load-keywords' 
             && $hook !== 'keycontentai_page_keycontentai-generation'
+            && $hook !== 'keycontentai_page_keycontentai-internal-linking'
             && $hook !== 'keycontentai_page_keycontentai-load-keywords'
             && $hook !== 'keycontentai_page_keycontentai-settings') {
             return;
@@ -474,6 +496,24 @@ class KeyContentAI {
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('keycontentai_generation_nonce')
             ));
+        }
+        
+        // Internal Linking page assets
+        if ($hook === 'keycontentai_page_keycontentai-internal-linking') {
+            wp_enqueue_style(
+                'keycontentai-internal-linking',
+                KEYCONTENTAI_PLUGIN_URL . 'admin/internal-linking/assets/internal-linking.css',
+                array(),
+                KEYCONTENTAI_VERSION
+            );
+            
+            wp_enqueue_script(
+                'keycontentai-internal-linking',
+                KEYCONTENTAI_PLUGIN_URL . 'admin/internal-linking/assets/internal-linking.js',
+                array('jquery'),
+                KEYCONTENTAI_VERSION,
+                true
+            );
         }
         
         // Load Keywords page assets

@@ -126,14 +126,14 @@
     function updatePostStatus($row, newStatus) {
         $row.attr('data-status', newStatus);
         
-        const $indicator = $row.find('.status-indicator');
+        const $indicator = $row.find('.keycontentai-status-indicator');
         const $button = $row.find('.keycontentai-toggle-queue');
         
         // Remove all status classes
-        $indicator.removeClass('status-unqueued status-queued status-processing status-finished status-error');
+        $indicator.removeClass('keycontentai-status-unqueued keycontentai-status-queued keycontentai-status-processing keycontentai-status-finished keycontentai-status-error');
         
         // Add new status class
-        $indicator.addClass('status-' + newStatus);
+        $indicator.addClass('keycontentai-status-' + newStatus);
         
         // Update button text
         switch(newStatus) {

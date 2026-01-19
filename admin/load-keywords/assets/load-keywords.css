@@ -139,22 +139,22 @@
     }
 }
 
-.keycontentai-loadkeywords-log-entry.log-info {
+.keycontentai-loadkeywords-log-entry.keycontentai-log-info {
     background: rgba(33, 113, 177, 0.15);
     border-left: 3px solid #2271b1;
 }
 
-.keycontentai-loadkeywords-log-entry.log-success {
+.keycontentai-loadkeywords-log-entry.keycontentai-log-success {
     background: rgba(70, 180, 80, 0.15);
     border-left: 3px solid #46b450;
 }
 
-.keycontentai-loadkeywords-log-entry.log-warning {
+.keycontentai-loadkeywords-log-entry.keycontentai-log-warning {
     background: rgba(255, 185, 0, 0.15);
     border-left: 3px solid #ffb900;
 }
 
-.keycontentai-loadkeywords-log-entry.log-error {
+.keycontentai-loadkeywords-log-entry.keycontentai-log-error {
     background: rgba(220, 38, 38, 0.15);
     border-left: 3px solid #dc2626;
 }

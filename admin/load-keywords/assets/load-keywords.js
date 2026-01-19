@@ -75,7 +75,7 @@ jQuery(document).ready(function($) {
         // Remove empty state if present
         $log.find('.keycontentai-loadkeywords-log-empty').remove();
         
-        var entry = $('<div class="keycontentai-loadkeywords-log-entry log-' + type + '">' +
+        var entry = $('<div class="keycontentai-loadkeywords-log-entry keycontentai-log-' + type + '">' +
             '<span class="keycontentai-loadkeywords-log-timestamp">[' + timestamp + ']</span>' +
             '<span class="keycontentai-loadkeywords-log-message">' + message + '</span>' +
             '</div>');

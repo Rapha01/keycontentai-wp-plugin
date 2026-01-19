@@ -18,7 +18,7 @@
     font-size: 14px;
 }
 
-.keycontentai-header-info .separator {
+.keycontentai-header-info .keycontentai-separator {
     margin: 0 10px;
     color: #c3c4c7;
 }
@@ -43,11 +43,11 @@
 }
 
 /* Status Indicators */
-.status-cell {
+.keycontentai-status-cell {
     text-align: center;
 }
 
-.status-indicator {
+.keycontentai-status-indicator {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -57,53 +57,53 @@
     transition: all 0.3s ease;
 }
 
-.status-indicator .dashicons {
+.keycontentai-status-indicator .dashicons {
     font-size: 20px;
     width: 20px;
     height: 20px;
 }
 
 /* Status States */
-.status-unqueued {
+.keycontentai-status-unqueued {
     background: #f0f0f1;
     color: #646970;
 }
 
-.status-queued {
+.keycontentai-status-queued {
     background: #fcf3cf;
     color: #856404;
 }
 
-.status-queued .dashicons:before {
+.keycontentai-status-queued .dashicons:before {
     content: "\f463"; /* clock icon */
 }
 
-.status-processing {
+.keycontentai-status-processing {
     background: #d1ecf1;
     color: #0c5460;
     animation: pulse 1.5s ease-in-out infinite;
 }
 
-.status-processing .dashicons:before {
+.keycontentai-status-processing .dashicons:before {
     content: "\f463"; /* update/spinner icon */
     animation: spin 2s linear infinite;
 }
 
-.status-finished {
+.keycontentai-status-finished {
     background: #d4edda;
     color: #155724;
 }
 
-.status-finished .dashicons:before {
+.keycontentai-status-finished .dashicons:before {
     content: "\f147"; /* checkmark icon */
 }
 
-.status-error {
+.keycontentai-status-error {
     background: #f8d7da;
     color: #721c24;
 }
 
-.status-error .dashicons:before {
+.keycontentai-status-error .dashicons:before {
     content: "\f534"; /* warning icon */
 }
 
@@ -213,12 +213,12 @@
         text-transform: uppercase;
     }
     
-    .status-cell:before {
+    .keycontentai-status-cell:before {
         content: "Status";
     }
     
     /* Status indicator on mobile */
-    .status-cell {
+    .keycontentai-status-cell {
         display: flex;
         align-items: center;
         gap: 10px;
@@ -240,7 +240,7 @@
         text-align: center;
     }
     
-    .keycontentai-header-info .separator {
+    .keycontentai-header-info .keycontentai-separator {
         display: block;
         margin: 5px 0;
     }
