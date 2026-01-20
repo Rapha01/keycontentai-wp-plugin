@@ -53,7 +53,7 @@ class KeyContentAI_Content_Generator {
             
             // 5. Generate image content
             $images_generated = $this->generate_image_content($post_id, $cpt_settings, $post_settings);
-            //throw new Exception("Test error");
+       
             $this->add_debug('Generation complete', array(
                 'status' => 'success',
                 'post_id' => $post_id,

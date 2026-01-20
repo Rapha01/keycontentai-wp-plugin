@@ -333,42 +333,6 @@ class KeyContentAI_Prompt_Builder {
     }
     
     /**
-     * Build image generation prompts for DALL-E (filters image fields and builds prompts)
-     * 
-     * @param array $cpt_settings CPT-level settings (including custom_fields)
-     * @param array $post_settings Post-specific settings
-     * @return array Array of prompts keyed by field name
-     */
-    public function build_image_prompts($cpt_settings, $post_settings) {
-        $this->add_debug('build_image_prompts', 'Building image prompts for DALL-E');
-        
-        $image_prompts = array();
-        
-        // Filter only image fields
-        $image_fields = array_filter($cpt_settings['custom_fields'], function($field) {
-            return $field['type'] === 'image';
-        });
-        
-        if (empty($image_fields)) {
-            $this->add_debug('build_image_prompts', 'No image fields found');
-            return array();
-        }
-        
-        // Build a prompt for each image field
-        foreach ($image_fields as $field) {
-            $image_prompts[$field['key']] = $this->build_image_prompt($cpt_settings, $post_settings, $field);
-        }
-        
-        $this->add_debug('build_image_prompts', array(
-            'image_fields_count' => count($image_fields),
-            'prompts' => $image_prompts,
-            'prompt' => !empty($image_prompts) ? implode("\n\n--- Next Image ---\n\n", $image_prompts) : ''
-        ));
-        
-        return $image_prompts;
-    }
-    
-    /**
      * Build image generation prompt for DALL-E (single field)
      * 
      * @param array $cpt_settings CPT-level settings
