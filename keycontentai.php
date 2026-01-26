@@ -170,7 +170,7 @@ class KeyContentAI {
         register_setting('keycontentai_api_settings', 'keycontentai_image_model', array(
             'type' => 'string',
             'sanitize_callback' => 'sanitize_text_field',
-            'default' => 'dall-e-3'
+            'default' => 'gpt-image-1.5'
         ));
         
         // Client Settings

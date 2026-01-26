@@ -187,12 +187,12 @@ class KeyContentAI_OpenAI_API_Caller {
     }
     
     /**
-     * Generate image using DALL-E API
+     * Generate image using OpenAI Image Generation API
      * 
      * @param string $prompt The image description prompt
      * @param string $api_key OpenAI API key
      * @param array $options Optional parameters (model, size, quality, etc.)
-     * @return array API response data with keys: url, revised_prompt
+     * @return array API response data
      * @throws Exception If API call fails
      */
     public function generate_image($prompt, $api_key, $options = array()) {
@@ -211,28 +211,12 @@ class KeyContentAI_OpenAI_API_Caller {
             'model' => 'gpt-image-1.5',
             'size' => 'auto',  // Supported: 'auto', '1024x1024', '1024x1536', '1536x1024'
             'quality' => 'auto',  // 'low', 'medium', 'high', or 'auto'
-            'n' => 1,  // Number of images to generate
-            'response_format' => 'url'  // 'url' or 'b64_json'
+            'n' => 1  // Number of images to generate
         );
         
         $options = wp_parse_args($options, $defaults);
         
-        // Convert quality values for DALL-E models
-        // DALL-E uses 'standard' or 'hd', while gpt-image models use 'low', 'medium', 'high', 'auto'
-        if (strpos($options['model'], 'dall-e') !== false) {
-            $quality_map = array(
-                'low' => 'standard',
-                'medium' => 'standard',
-                'auto' => 'standard',
-                'high' => 'hd'
-            );
-            
-            if (isset($quality_map[$options['quality']])) {
-                $options['quality'] = $quality_map[$options['quality']];
-            }
-        }
-        
-        // Prepare the request body
+        // Prepare the request body (gpt-image returns b64_json by default)
         $request_body = array(
             'model' => $options['model'],
             'prompt' => $prompt,
@@ -240,11 +224,6 @@ class KeyContentAI_OpenAI_API_Caller {
             'quality' => $options['quality'],
             'n' => $options['n']
         );
-        
-        // Only include response_format for DALL-E models (gpt-image doesn't support it)
-        if (strpos($options['model'], 'dall-e') !== false) {
-            $request_body['response_format'] = $options['response_format'];
-        }
         
         $this->add_debug('generate_image', array(
             'endpoint' => $api_endpoint,
@@ -316,8 +295,8 @@ class KeyContentAI_OpenAI_API_Caller {
             throw new Exception('Failed to parse image API response: ' . json_last_error_msg());
         }
         
-        // Extract the image URL
-        if (!isset($response_data['data'][0]['url'])) {
+        // Validate response structure (gpt-image returns b64_json)
+        if (!isset($response_data['data']) || !is_array($response_data['data']) || empty($response_data['data'])) {
             $this->add_debug('generate_image', array(
                 'error' => 'Invalid Response Structure',
                 'full_api_response' => wp_json_encode($response_data, JSON_PRETTY_PRINT)
@@ -325,24 +304,14 @@ class KeyContentAI_OpenAI_API_Caller {
             throw new Exception('Invalid image API response structure');
         }
         
-        $image_url = $response_data['data'][0]['url'];
-        $revised_prompt = isset($response_data['data'][0]['revised_prompt']) 
-            ? $response_data['data'][0]['revised_prompt'] 
-            : $prompt;
-        
         // Log success
         $this->add_debug('generate_image', array(
             'status' => 'success',
-            'image_url' => $image_url,
-            'revised_prompt' => $revised_prompt,
-            'model' => $options['model']
+            'model' => $options['model'],
+            'response_keys' => array_keys($response_data['data'][0])
         ));
         
-        return array(
-            'url' => $image_url,
-            'revised_prompt' => $revised_prompt,
-            'model' => $options['model']
-        );
+        return $response_data;
     }
     
     /**

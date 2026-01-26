@@ -333,17 +333,19 @@ class KeyContentAI_Prompt_Builder {
     }
     
     /**
-     * Build image generation prompt for DALL-E (single field)
+     * Build image generation prompt (single field)
      * 
      * @param array $cpt_settings CPT-level settings
      * @param array $post_settings Post-specific settings (including keyword)
      * @param array $field Image field configuration
+     * @param int $post_id The post ID to retrieve existing content from
      * @return string The image generation prompt
      */
-    public function build_image_prompt($cpt_settings, $post_settings, $field) {
+    public function build_image_prompt($cpt_settings, $post_settings, $field, $post_id) {
         $this->add_debug('build_image_prompt', array(
             'field_key' => $field['key'],
-            'field_label' => $field['label']
+            'field_label' => $field['label'],
+            'post_id' => $post_id
         ));
         
         $prompt_parts = array();
@@ -372,7 +374,13 @@ class KeyContentAI_Prompt_Builder {
         }
         
         // 5. Style requirements
-        $prompt_parts[] = "STYLE REQUIREMENTS:\n- Professional and modern\n- High-quality composition\n- Clear and well-lit\n- Suitable for commercial use";
+        $prompt_parts[] = "STYLE REQUIREMENTS:\n- Professional and modern\n- High-quality composition\n- Clear and well-lit\n- Suitable for commercial use\n- Match the tone and context of the post content";
+        
+        // 6. Retrieve existing post content for context (at the end for reference)
+        $post_content = $this->get_post_content($post_id);
+        if (!empty($post_content)) {
+            $prompt_parts[] = "EXISTING POST CONTENT (REFERENCE ONLY):\nThe following content is provided as additional context and may help you better understand the topic and tone of the image to generate. You may reference this content if the instructions above mention specific fields or require context from the post. However, this is optional reference material - focus primarily on the instructions and requirements specified above.\n\n" . $post_content;
+        }
         
         $full_prompt = implode("\n\n", $prompt_parts);
         
@@ -382,5 +390,89 @@ class KeyContentAI_Prompt_Builder {
         ));
         
         return $full_prompt;
+    }
+    
+    /**
+     * Get existing post content (both WordPress and ACF fields)
+     * 
+     * @param int $post_id The post ID
+     * @return string Formatted post content
+     */
+    private function get_post_content($post_id) {
+        $content_parts = array();
+        $wp_fields = array();
+        $acf_fields = array();
+        
+        // Get WordPress post object
+        $post = get_post($post_id);
+        if (!$post) {
+            return '';
+        }
+        
+        // Get WordPress baseline fields
+        if (!empty($post->post_title)) {
+            $wp_fields[] = "[Title]\n{$post->post_title}";
+        }
+        
+        if (!empty($post->post_excerpt)) {
+            $wp_fields[] = "[Excerpt]\n{$post->post_excerpt}";
+        }
+        
+        if (!empty($post->post_content)) {
+            // Strip HTML tags (no length limit)
+            $clean_content = wp_strip_all_tags($post->post_content);
+            $wp_fields[] = "[Content]\n{$clean_content}";
+        }
+        
+        // Get ALL ACF fields for this post (not just enabled ones)
+        if (function_exists('acf_get_field_groups')) {
+            $field_groups = acf_get_field_groups(array('post_type' => $post->post_type));
+            
+            if (!empty($field_groups)) {
+                foreach ($field_groups as $group) {
+                    $fields = acf_get_fields($group['key']);
+                    
+                    if ($fields) {
+                        foreach ($fields as $field) {
+                            // Only include text-based field types
+                            $text_based_types = array('text', 'textarea', 'wysiwyg');
+                            if (!in_array($field['type'], $text_based_types)) {
+                                continue;
+                            }
+                            
+                            // Get field value
+                            $field_value = get_field($field['name'], $post_id);
+                            
+                            // Add to content if not empty
+                            if (!empty($field_value)) {
+                                // Clean HTML tags (no length limit)
+                                $clean_value = is_string($field_value) ? wp_strip_all_tags($field_value) : $field_value;
+                                $acf_fields[] = "[{$field['label']}]\n{$clean_value}";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Build structured output
+        if (!empty($wp_fields)) {
+            $content_parts[] = "--- WordPress Fields ---";
+            $content_parts[] = implode("\n\n", $wp_fields);
+        }
+        
+        if (!empty($acf_fields)) {
+            $content_parts[] = "--- Custom Fields ---";
+            $content_parts[] = implode("\n\n", $acf_fields);
+        }
+        
+        $this->add_debug('get_post_content_result', array(
+            'post_id' => $post_id,
+            'wp_fields_count' => count($wp_fields),
+            'acf_fields_count' => count($acf_fields),
+            'total_parts' => count($content_parts)
+        ));
+        
+        return implode("\n\n", $content_parts);
     }
 }

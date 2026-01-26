@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
 
 $api_key = get_option('keycontentai_openai_api_key', '');
 $text_model = get_option('keycontentai_text_model', 'gpt-4o-mini');
-$image_model = get_option('keycontentai_image_model', 'dall-e-3');
+$image_model = get_option('keycontentai_image_model', 'gpt-image-1.5');
 ?>
 
 <div class="keycontentai-tab-panel">
@@ -57,7 +57,13 @@ $image_model = get_option('keycontentai_image_model', 'dall-e-3');
                     <td>
                         <select id="keycontentai_text_model" name="keycontentai_text_model" class="regular-text">
                             <option value="gpt-5.2" <?php selected($text_model, 'gpt-5.2'); ?>>gpt-5.2</option>
+                            <option value="gpt-5.2-pro" <?php selected($text_model, 'gpt-5.2-pro'); ?>>gpt-5.2-pro</option>
                             <option value="gpt-5.1" <?php selected($text_model, 'gpt-5.1'); ?>>gpt-5.1</option>
+                            <option value="gpt-5" <?php selected($text_model, 'gpt-5'); ?>>gpt-5</option>
+                            <option value="gpt-4.1" <?php selected($text_model, 'gpt-4.1'); ?>>gpt-4.1</option>
+                            <option value="gpt-5-mini" <?php selected($text_model, 'gpt-5-mini'); ?>>gpt-5-mini</option>
+                            <option value="gpt-5-nano" <?php selected($text_model, 'gpt-5-nano'); ?>>gpt-5-nano</option>
+                            <option value="gpt-3.5-turbo" <?php selected($text_model, 'gpt-3.5-turbo'); ?>>gpt-3.5-turbo</option>
                         </select>
                         <p class="description">
                             <?php esc_html_e('Select the GPT model to use for text content generation.', 'keycontentai'); ?>
@@ -73,8 +79,9 @@ $image_model = get_option('keycontentai_image_model', 'dall-e-3');
                     </th>
                     <td>
                         <select id="keycontentai_image_model" name="keycontentai_image_model" class="regular-text">
-                            <option value="dall-e-3" <?php selected($image_model, 'dall-e-3'); ?>>dall-e-3</option>
                             <option value="gpt-image-1.5" <?php selected($image_model, 'gpt-image-1.5'); ?>>gpt-image-1.5</option>
+                            <option value="gpt-image-1" <?php selected($image_model, 'gpt-image-1'); ?>>gpt-image-1</option>
+                            <option value="gpt-image-1-mini" <?php selected($image_model, 'gpt-image-1-mini'); ?>>gpt-image-1-mini</option>
                         </select>
                         <p class="description">
                             <?php esc_html_e('Select the model to use for image generation.', 'keycontentai'); ?>

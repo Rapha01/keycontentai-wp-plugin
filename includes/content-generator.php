@@ -49,7 +49,7 @@ class KeyContentAI_Content_Generator {
             $post_settings = $this->get_post_settings($post_id);
             
             // 4. Generate text content
-            $text_generated = $this->generate_text_content($post_id, $cpt_settings, $post_settings);
+            $texts_generated = $this->generate_text_content($post_id, $cpt_settings, $post_settings);
             
             // 5. Generate image content
             $images_generated = $this->generate_image_content($post_id, $cpt_settings, $post_settings);
@@ -57,7 +57,7 @@ class KeyContentAI_Content_Generator {
             $this->add_debug('Generation complete', array(
                 'status' => 'success',
                 'post_id' => $post_id,
-                'text_generated' => $text_generated,
+                'texts_generated' => $texts_generated,
                 'images_generated' => $images_generated
             ));
             
@@ -123,7 +123,7 @@ class KeyContentAI_Content_Generator {
             // API Settings
             'api_key' => get_option('keycontentai_openai_api_key', ''),
             'text_model' => get_option('keycontentai_text_model', 'gpt-5.2'),
-            'image_model' => get_option('keycontentai_image_model', 'dall-e-3'),
+            'image_model' => get_option('keycontentai_image_model', 'gpt-image-1.5'),
             
             // Post Type
             'post_type' => $post_type,
@@ -194,50 +194,31 @@ class KeyContentAI_Content_Generator {
     private function get_custom_fields_config($post_type) {
         $this->add_debug('get_custom_fields_config', "Retrieving field configuration for post type: {$post_type}");
         
-        // Get field configs from consolidated CPT configs
+        // Get user's field settings
         global $keycontentai;
         $cpt_configs = $keycontentai->get_cpt_configs();
+        $user_settings = isset($cpt_configs[$post_type]['fields']) ? $cpt_configs[$post_type]['fields'] : array();
         
-        if (!isset($cpt_configs[$post_type]['fields'])) {
-            $this->add_debug('get_custom_fields_config', "No field configuration found for post type: {$post_type}");
-            throw new Exception("No field configuration found for post type: {$post_type}");
-        }
-        
-        $post_type_configs = $cpt_configs[$post_type]['fields'];
         $all_fields = array();
         
-        // 1. Add WordPress baseline fields if configured
-        $baseline_fields = array('post_title', 'post_content', 'post_excerpt', '_thumbnail_id');
+        // 1. Collect all WordPress baseline fields that exist
+        $baseline_fields = array(
+            'post_title' => array('label' => 'Title', 'type' => 'text'),
+            'post_content' => array('label' => 'Content', 'type' => 'wysiwyg'),
+            'post_excerpt' => array('label' => 'Excerpt', 'type' => 'text'),
+            '_thumbnail_id' => array('label' => 'Featured Image', 'type' => 'image')
+        );
         
-        foreach ($baseline_fields as $field_key) {
-            if (isset($post_type_configs[$field_key]) && !empty($post_type_configs[$field_key]['enabled'])) {
-                $field_labels = array(
-                    'post_title' => 'Title',
-                    'post_content' => 'Content',
-                    'post_excerpt' => 'Excerpt',
-                    '_thumbnail_id' => 'Featured Image'
-                );
-                
-                $field_type = 'text';
-                if ($field_key === 'post_content') {
-                    $field_type = 'wysiwyg';
-                } elseif ($field_key === '_thumbnail_id') {
-                    $field_type = 'image';
-                }
-                
-                $all_fields[] = array(
-                    'key' => $field_key,
-                    'label' => $field_labels[$field_key],
-                    'type' => $field_type,
-                    'source' => 'wordpress',
-                    'description' => isset($post_type_configs[$field_key]['description']) ? $post_type_configs[$field_key]['description'] : '',
-                    'word_count' => isset($post_type_configs[$field_key]['word_count']) ? intval($post_type_configs[$field_key]['word_count']) : 0,
-                    'enabled' => true
-                );
-            }
+        foreach ($baseline_fields as $field_key => $field_info) {
+            $all_fields[$field_key] = array(
+                'key' => $field_key,
+                'label' => $field_info['label'],
+                'type' => $field_info['type'],
+                'source' => 'wordpress'
+            );
         }
         
-        // 2. Add ACF custom fields if ACF is active
+        // 2. Collect all ACF fields that exist
         if (function_exists('acf_get_field_groups')) {
             $field_groups = acf_get_field_groups(array('post_type' => $post_type));
             
@@ -247,51 +228,49 @@ class KeyContentAI_Content_Generator {
                     
                     if ($fields) {
                         foreach ($fields as $field) {
-                            $field_key = $field['name'];
-                            
-                            // Check if this field is configured and enabled
-                            if (isset($post_type_configs[$field_key]) && !empty($post_type_configs[$field_key]['enabled'])) {
-                                $all_fields[] = array(
-                                    'key' => $field_key,
-                                    'label' => $field['label'],
-                                    'type' => $field['type'],
-                                    'source' => 'acf',
-                                    'description' => isset($post_type_configs[$field_key]['description']) ? $post_type_configs[$field_key]['description'] : '',
-                                    'word_count' => isset($post_type_configs[$field_key]['word_count']) ? intval($post_type_configs[$field_key]['word_count']) : 0,
-                                    'enabled' => true
-                                );
-                            }
+                            $all_fields[$field['name']] = array(
+                                'key' => $field['name'],
+                                'label' => $field['label'],
+                                'type' => $field['type'],
+                                'source' => 'acf'
+                            );
                         }
                     }
                 }
             }
         }
         
-        // 3. Add image-specific options to all image fields (regardless of source)
-        foreach ($all_fields as &$field) {
-            if (in_array($field['type'], array('image', 'file', 'gallery'))) {
-                $field_key = $field['key'];
-                $field['width'] = isset($post_type_configs[$field_key]['width']) ? intval($post_type_configs[$field_key]['width']) : 1024;
-                $field['height'] = isset($post_type_configs[$field_key]['height']) ? intval($post_type_configs[$field_key]['height']) : 1024;
-                $field['quality'] = isset($post_type_configs[$field_key]['quality']) ? $post_type_configs[$field_key]['quality'] : 'auto';
+        // 3. Overlay user settings onto existing fields (left join)
+        $enabled_fields = array();
+        
+        foreach ($all_fields as $field_key => $field_data) {
+            // Check if user has enabled this field
+            if (isset($user_settings[$field_key]) && !empty($user_settings[$field_key]['enabled'])) {
+                // Merge field data with user settings
+                $enabled_fields[] = array_merge($field_data, array(
+                    'description' => isset($user_settings[$field_key]['description']) ? $user_settings[$field_key]['description'] : '',
+                    'word_count' => isset($user_settings[$field_key]['word_count']) ? intval($user_settings[$field_key]['word_count']) : 0,
+                    'size' => isset($user_settings[$field_key]['size']) ? $user_settings[$field_key]['size'] : 'auto',
+                    'quality' => isset($user_settings[$field_key]['quality']) ? $user_settings[$field_key]['quality'] : 'auto',
+                    'enabled' => true
+                ));
             }
         }
-        unset($field); // Break reference
         
-        if (empty($all_fields)) {
+        if (empty($enabled_fields)) {
             $this->add_debug('get_custom_fields_config', "No enabled fields found for post type: {$post_type}");
             throw new Exception("No enabled fields found for post type: {$post_type}");
         }
         
         $this->add_debug('get_custom_fields_config', array(
             'post_type' => $post_type,
-            'total_fields' => count($all_fields),
-            'wordpress_fields' => count(array_filter($all_fields, function($f) { return $f['source'] === 'wordpress'; })),
-            'acf_fields' => count(array_filter($all_fields, function($f) { return $f['source'] === 'acf'; })),
-            'fields' => $all_fields
+            'total_existing_fields' => count($all_fields),
+            'enabled_fields' => count($enabled_fields),
+            'wordpress_fields' => count(array_filter($enabled_fields, function($f) { return $f['source'] === 'wordpress'; })),
+            'acf_fields' => count(array_filter($enabled_fields, function($f) { return $f['source'] === 'acf'; }))
         ));
         
-        return $all_fields;
+        return $enabled_fields;
     }
     
     private function generate_text_content($post_id, $cpt_settings, $post_settings) {
@@ -300,7 +279,7 @@ class KeyContentAI_Content_Generator {
         
         // Generate text content if we have text fields
         if (empty($text_prompt)) {
-            return false;
+            return 0;
         }
         
         $text_response = $this->api_caller->generate_text($text_prompt, $cpt_settings['api_key'], array(
@@ -314,10 +293,8 @@ class KeyContentAI_Content_Generator {
             throw new Exception('Failed to parse GPT response: ' . json_last_error_msg());
         }
         
-        // Update post with generated text content
-        $this->update_post_with_texts($post_id, $parsed_content, $cpt_settings['custom_fields']);
-        
-        return true;
+        // Update post with generated text content and return count
+        return $this->update_post_with_texts($post_id, $parsed_content, $cpt_settings['custom_fields']);
     }
     
     private function generate_image_content($post_id, $cpt_settings, $post_settings) {
@@ -334,23 +311,22 @@ class KeyContentAI_Content_Generator {
         
         // Process each image field individually
         foreach ($image_fields as $field) {
-            // 1. Build prompt for this specific image
-            $image_prompt = $this->prompt_builder->build_image_prompt($cpt_settings, $post_settings, $field);
+            // 1. Build prompt for this specific image (passing post_id to retrieve existing content)
+            $image_prompt = $this->prompt_builder->build_image_prompt($cpt_settings, $post_settings, $field, $post_id);
             
             // 2. Prepare image options from field config
             $image_options = array(
                 'model' => $cpt_settings['image_model'],
                 'size' => isset($field['size']) ? $field['size'] : 'auto',
-                'quality' => isset($field['quality']) ? $field['quality'] : 'auto',
-                'response_format' => 'url'
+                'quality' => isset($field['quality']) ? $field['quality'] : 'auto'
             );
             
             // 3. Make API call to generate the image
             $image_response = $this->api_caller->generate_image($image_prompt, $cpt_settings['api_key'], $image_options);
             
-            // 4. Process and save the image immediately
-            if ($image_response && isset($image_response['data'][0]['url'])) {
-                $attachment_id = $this->save_image_from_url($image_response['data'][0]['url'], $post_id, $field);
+            // 4. Process and save the image immediately (gpt-image returns b64_json)
+            if ($image_response && isset($image_response['data'][0]['b64_json'])) {
+                $attachment_id = $this->save_image_from_base64($image_response['data'][0]['b64_json'], $post_id, $field);
                 
                 if ($attachment_id) {
                     // 5. Update the post with the generated image
@@ -423,6 +399,82 @@ class KeyContentAI_Content_Generator {
     }
     
     /**
+     * Save an image from base64 data to WordPress Media Library
+     * 
+     * @param string $base64_data The base64 encoded image data
+     * @param int $post_id The post ID to attach the image to
+     * @param array $field The field configuration
+     * @return int|false The attachment ID on success, false on failure
+     */
+    private function save_image_from_base64($base64_data, $post_id, $field) {
+        require_once(ABSPATH . 'wp-admin/includes/media.php');
+        require_once(ABSPATH . 'wp-admin/includes/file.php');
+        require_once(ABSPATH . 'wp-admin/includes/image.php'); 
+        
+        // Decode base64 data
+        $image_data = base64_decode($base64_data);
+        
+        if ($image_data === false) {
+            $this->add_debug('save_image_from_base64', array(
+                'error' => 'Failed to decode base64 data',
+                'field_key' => $field['key']
+            ));
+            return false;
+        }
+        
+        // Generate a unique filename
+        $filename = sanitize_file_name($field['label']) . '-' . time() . '.png';
+        
+        // Get WordPress upload directory
+        $upload_dir = wp_upload_dir();
+        $filepath = $upload_dir['path'] . '/' . $filename;
+        
+        // Save the decoded image to a file
+        $file_saved = file_put_contents($filepath, $image_data);
+        
+        if ($file_saved === false) {
+            $this->add_debug('save_image_from_base64', array(
+                'error' => 'Failed to save image file',
+                'filepath' => $filepath
+            ));
+            return false;
+        }
+        
+        // Prepare attachment data
+        $attachment = array(
+            'guid' => $upload_dir['url'] . '/' . $filename,
+            'post_mime_type' => 'image/png',
+            'post_title' => $field['label'],
+            'post_content' => '',
+            'post_status' => 'inherit'
+        );
+        
+        // Insert the attachment into the database
+        $attachment_id = wp_insert_attachment($attachment, $filepath, $post_id);
+        
+        if (is_wp_error($attachment_id)) {
+            $this->add_debug('save_image_from_base64', array(
+                'error' => 'Failed to create attachment',
+                'message' => $attachment_id->get_error_message()
+            ));
+            return false;
+        }
+        
+        // Generate attachment metadata and update
+        $attachment_data = wp_generate_attachment_metadata($attachment_id, $filepath);
+        wp_update_attachment_metadata($attachment_id, $attachment_data);
+        
+        $this->add_debug('save_image_from_base64', array(
+            'attachment_id' => $attachment_id,
+            'field_key' => $field['key'],
+            'filename' => $filename,
+            'filesize' => strlen($image_data)
+        ));
+        
+        return $attachment_id;
+    }
+    
+    /**
      * Update post with generated image
      * 
      * @param int $post_id The post ID
@@ -461,7 +513,7 @@ class KeyContentAI_Content_Generator {
         
         if (empty($parsed_content)) {
             $this->add_debug('update_post_with_texts', 'No content to update');
-            return;
+            return 0;
         }
         
         // Separate WordPress baseline fields from ACF fields
@@ -532,10 +584,14 @@ class KeyContentAI_Content_Generator {
             ));
         }
         
+        $total_updated = count($wp_fields) + count($acf_fields);
+        
         $this->add_debug('update_post_with_texts', array(
             'status' => 'completed',
-            'total_fields_updated' => count($wp_fields) + count($acf_fields)
+            'total_fields_updated' => $total_updated
         ));
+        
+        return $total_updated;
     }
     
 }
