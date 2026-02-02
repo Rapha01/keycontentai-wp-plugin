@@ -493,7 +493,7 @@ class KeyContentAI {
             // Localize script for AJAX
             wp_localize_script('keycontentai-generation', 'keycontentaiGeneration', array(
                 'ajaxUrl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('keycontentai_generation_nonce')
+                'nonce' => wp_create_nonce('keycontentai_nonce')
             ));
         }
         
@@ -535,19 +535,10 @@ class KeyContentAI {
             // Localize script for AJAX
             wp_localize_script('keycontentai-load-keywords', 'keycontentaiLoadKeywords', array(
                 'ajaxUrl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('keycontentai_generate'),
+                'nonce' => wp_create_nonce('keycontentai_nonce'),
                 'confirmClear' => __('Are you sure you want to clear all keywords?', 'keycontentai'),
                 'confirmStop' => __('Are you sure you want to stop the process?', 'keycontentai'),
-                'noKeywords' => __('Please enter at least one keyword.', 'keycontentai'),
-                'starting' => __('Starting post creation...', 'keycontentai'),
-                'found' => __('Found', 'keycontentai'),
-                'keywordsToProcess' => __('keyword(s) to process', 'keycontentai'),
-                'processing' => __('Processing keyword', 'keycontentai'),
-                'error' => __('Error:', 'keycontentai'),
-                'allProcessed' => __('All keywords processed!', 'keycontentai'),
-                'stoppedByUser' => __('Process stopped by user', 'keycontentai'),
-                'stopping' => __('Stopping process...', 'keycontentai'),
-                'logEmpty' => __('Activity log is empty. Enter keywords and click "Generate Posts" to start.', 'keycontentai')
+                'noKeywords' => __('Please enter at least one keyword.', 'keycontentai')
             ));
         }
     }
@@ -557,7 +548,7 @@ class KeyContentAI {
      */
     public function ajax_generate_content() {
         // Security check
-        check_ajax_referer('keycontentai_generation_nonce', 'nonce');
+        check_ajax_referer('keycontentai_nonce', 'nonce');
         
         // Check permissions
         if (!current_user_can('edit_posts')) {
@@ -600,7 +591,7 @@ class KeyContentAI {
      */
     public function ajax_load_keyword() {
         // Security check
-        check_ajax_referer('keycontentai_generate', 'nonce');
+        check_ajax_referer('keycontentai_nonce', 'nonce');
         
         // Get keyword from request
         if (!isset($_POST['keyword']) || empty($_POST['keyword'])) {
@@ -612,10 +603,11 @@ class KeyContentAI {
         $keyword = sanitize_text_field($_POST['keyword']);
         $debug_mode = isset($_POST['debug']) && $_POST['debug'] === '1';
         $auto_publish = isset($_POST['auto_publish']) && $_POST['auto_publish'] === '1';
+        $additional_context = isset($_POST['additional_context']) ? sanitize_textarea_field($_POST['additional_context']) : '';
         
         // Load keyword using the keyword loader class
         $loader = new KeyContentAI_Keyword_Loader();
-        $result = $loader->load_keyword($keyword, $debug_mode, $auto_publish);
+        $result = $loader->load_keyword($keyword, $debug_mode, $auto_publish, $additional_context);
         
         // Return response
         if ($result['success']) {

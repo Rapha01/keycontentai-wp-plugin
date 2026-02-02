@@ -63,13 +63,45 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
                     </p>
                     
                     <form id="keycontentai-load-keywords-form" method="post">
-                        <textarea 
-                            id="keycontentai-keywords" 
-                            name="keywords" 
-                            rows="20" 
-                            class="keycontentai-loadkeywords-keywords-textarea"
-                            placeholder="<?php esc_attr_e('WordPress Plugins&#10;SEO Best Practices&#10;Content Marketing Tips&#10;...', 'keycontentai'); ?>"
-                        ></textarea>
+                        <div class="keycontentai-textarea-container">
+                            <div class="keycontentai-textarea-wrapper" id="keycontentai-keywords-wrapper">
+                                <label for="keycontentai-keywords" class="keycontentai-textarea-label">
+                                    <?php esc_html_e('Keywords', 'keycontentai'); ?>
+                                </label>
+                                <textarea 
+                                    id="keycontentai-keywords" 
+                                    name="keywords" 
+                                    rows="20" 
+                                    class="keycontentai-loadkeywords-keywords-textarea"
+                                    placeholder="<?php esc_attr_e('WordPress Plugins&#10;SEO Best Practices&#10;Content Marketing Tips&#10;...', 'keycontentai'); ?>"
+                                ></textarea>
+                            </div>
+                            
+                            <div class="keycontentai-textarea-wrapper" id="keycontentai-context-wrapper" style="display: none;">
+                                <label for="keycontentai-additional-context" class="keycontentai-textarea-label">
+                                    <?php esc_html_e('Additional Context', 'keycontentai'); ?>
+                                </label>
+                                <textarea 
+                                    id="keycontentai-additional-context" 
+                                    name="additional_context" 
+                                    rows="20" 
+                                    class="keycontentai-loadkeywords-keywords-textarea"
+                                    placeholder="<?php esc_attr_e('Context for line 1&#10;Context for line 2&#10;Context for line 3&#10;...', 'keycontentai'); ?>"
+                                ></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="keycontentai-context-option" style="margin-top: 10px; padding: 6px 10px; background: #f6f7f7; border-left: 3px solid #2271b1; border-radius: 3px;">
+                            <label style="display: flex; align-items: center; cursor: pointer; margin: 0;">
+                                <input type="checkbox" id="keycontentai-enable-context" name="enable_context" value="1" style="margin: 0 8px 0 0;">
+                                <span style="font-weight: 500; font-size: 13px;">
+                                    <?php esc_html_e('Use additional context per keyword', 'keycontentai'); ?>
+                                </span>
+                            </label>
+                            <p class="description" style="margin: 3px 0 0 24px; font-size: 11px; line-height: 1.3;">
+                                <?php esc_html_e('When checked, you can provide specific context for each keyword. Each line in the additional context textarea corresponds to the same line number in the keywords textarea.', 'keycontentai'); ?>
+                            </p>
+                        </div>
                         
                         <div class="keycontentai-publish-option" style="margin-top: 10px; padding: 6px 10px; background: #f6f7f7; border-left: 3px solid #2271b1; border-radius: 3px;">
                             <label style="display: flex; align-items: center; cursor: pointer; margin: 0;">
@@ -101,27 +133,11 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
                         
                         <div class="keycontentai-loadkeywords-stats">
                             <span id="keycontentai-keyword-count">0</span> <?php esc_html_e('keywords', 'keycontentai'); ?>
+                            <span id="keycontentai-context-count-wrapper" style="display: none;"> | 
+                                <span id="keycontentai-context-count">0</span> <?php esc_html_e('context lines', 'keycontentai'); ?>
+                            </span>
                         </div>
                     </form>
-                </div>
-            </div>
-            
-            <!-- Right Column: Activity Log -->
-            <div class="keycontentai-loadkeywords-right">
-                <div class="card">
-                    <h2>
-                        <?php esc_html_e('Activity Log', 'keycontentai'); ?>
-                        <button type="button" id="keycontentai-clear-log-btn" class="button button-small" style="float: right;">
-                            <?php esc_html_e('Clear Log', 'keycontentai'); ?>
-                        </button>
-                    </h2>
-                    
-                    <div id="keycontentai-log" class="keycontentai-loadkeywords-log">
-                        <div class="keycontentai-loadkeywords-log-empty">
-                            <span class="dashicons dashicons-info" style="font-size: 48px; opacity: 0.3;"></span>
-                            <p><?php esc_html_e('Activity log is empty. Enter keywords and click "Generate Content" to start.', 'keycontentai'); ?></p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

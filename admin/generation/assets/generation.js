@@ -25,84 +25,46 @@
         $(document).on('click', '.keycontentai-toggle-queue', function(e) {
             e.preventDefault();
             const $row = $(this).closest('.keycontentai-post-row');
-            const status = $row.attr('data-status');
+            const status = $row.data('status');
             
-            // Don't allow toggling while processing
-            if (status === 'processing') {
-                return;
-            }
-            
-            // Toggle between unqueued and queued
-            if (status === 'unqueued') {
-                queuePost($row);
-            } else if (status === 'queued') {
-                unqueuePost($row);
-            } else if (status === 'finished') {
-                // Allow re-queueing finished posts
-                queuePost($row);
+            // Toggle queue state (not during processing)
+            if (status !== 'processing') {
+                setQueueState($row, status !== 'queued');
             }
         });
         
         // Queue All button
         $('#keycontentai-queue-all').on('click', function(e) {
             e.preventDefault();
-            $('.keycontentai-post-row').each(function() {
-                const status = $(this).attr('data-status');
-                if (status === 'unqueued' || status === 'finished') {
-                    queuePost($(this));
-                }
-            });
+            $('.keycontentai-post-row').filter((_, el) => ['unqueued', 'finished', 'error'].includes($(el).data('status')))
+                .each((_, el) => setQueueState($(el), true));
         });
         
         // Unqueue All button
         $('#keycontentai-unqueue-all').on('click', function(e) {
             e.preventDefault();
-            $('.keycontentai-post-row').each(function() {
-                const status = $(this).attr('data-status');
-                if (status === 'queued') {
-                    unqueuePost($(this));
-                }
-            });
+            $('.keycontentai-post-row[data-status="queued"]').each((_, el) => setQueueState($(el), false));
         });
         
-        // Start Generation button
+        // Start/Stop Generation button
         $('#keycontentai-start-generation').on('click', function(e) {
             e.preventDefault();
-            
-            if (isGenerating) {
-                // Stop generation
-                stopGeneration();
-            } else {
-                // Start generation
-                startGeneration();
-            }
+            isGenerating ? stopGeneration() : startGeneration();
         });
     }
     
     /**
-     * Add debug entry (wrapper for global debug function)
+     * Add debug entry
      */
     function addDebugEntry(step, data, isError) {
-        if (window.KeyContentAIDebug && typeof window.KeyContentAIDebug.addEntry === 'function') {
-            window.KeyContentAIDebug.addEntry(step, data, isError);
-        }
+        window.KeyContentAIDebug?.addEntry(step, data, isError);
     }
     
     /**
-     * Queue a post for generation
+     * Set post queue state
      */
-    function queuePost($row) {
-        // Update UI
-        updatePostStatus($row, 'queued');
-        updateQueueCount();
-    }
-    
-    /**
-     * Remove a post from queue
-     */
-    function unqueuePost($row) {
-        // Update UI
-        updatePostStatus($row, 'unqueued');
+    function setQueueState($row, queued) {
+        updatePostStatus($row, queued ? 'queued' : 'unqueued');
         updateQueueCount();
     }
     
@@ -120,38 +82,25 @@
         return $('.keycontentai-post-row[data-status="queued"]').first();
     }
     
+    // Button state configuration
+    const buttonStates = {
+        unqueued:   { text: 'Queue',         disabled: false },
+        queued:     { text: 'Unqueue',       disabled: false },
+        processing: { text: 'Processing...', disabled: true },
+        finished:   { text: 'Re-queue',      disabled: false },
+        error:      { text: 'Re-queue',      disabled: false }
+    };
+    
     /**
      * Update post row status
      */
     function updatePostStatus($row, newStatus) {
         $row.attr('data-status', newStatus);
+        $row.find('.keycontentai-status-indicator').attr('class', 'keycontentai-status-indicator keycontentai-status-' + newStatus);
         
-        const $indicator = $row.find('.keycontentai-status-indicator');
-        const $button = $row.find('.keycontentai-toggle-queue');
-        
-        // Remove all status classes
-        $indicator.removeClass('keycontentai-status-unqueued keycontentai-status-queued keycontentai-status-processing keycontentai-status-finished keycontentai-status-error');
-        
-        // Add new status class
-        $indicator.addClass('keycontentai-status-' + newStatus);
-        
-        // Update button text
-        switch(newStatus) {
-            case 'unqueued':
-                $button.text('Queue').prop('disabled', false);
-                break;
-            case 'queued':
-                $button.text('Unqueue').prop('disabled', false);
-                break;
-            case 'processing':
-                $button.text('Processing...').prop('disabled', true);
-                break;
-            case 'finished':
-                $button.text('Re-queue').prop('disabled', false);
-                break;
-            case 'error':
-                $button.text('Re-queue').prop('disabled', false);
-                break;
+        const state = buttonStates[newStatus];
+        if (state) {
+            $row.find('.keycontentai-toggle-queue').text(state.text).prop('disabled', state.disabled);
         }
     }
     
@@ -162,36 +111,22 @@
         const count = getQueuedCount();
         const $button = $('#keycontentai-start-generation');
         
-        if (isGenerating) {
-            // Show as Stop button during generation
-            $button
-                .prop('disabled', false)
-                .removeClass('button-primary')
-                .addClass('button-secondary')
-                .text('Stop Generation');
-        } else {
-            // Show as Start button when idle
-            $button
-                .prop('disabled', count === 0)
-                .removeClass('button-secondary')
-                .addClass('button-primary')
-                .text(count > 0 ? `Start Generation (${count})` : 'Start Generation');
-        }
+        $button
+            .prop('disabled', !isGenerating && count === 0)
+            .toggleClass('button-primary', !isGenerating)
+            .toggleClass('button-secondary', isGenerating)
+            .text(isGenerating ? 'Stop Generation' : (count > 0 ? `Start Generation (${count})` : 'Start Generation'));
     }
     
     /**
      * Start the generation process
      */
     function startGeneration() {
-        const queuedCount = getQueuedCount();
-        
-        if (queuedCount === 0 || isGenerating) {
-            return;
-        }
+        if (isGenerating) return;
         
         isGenerating = true;
         stopRequested = false;
-        console.log('Starting generation for', queuedCount, 'posts');
+        console.log('Starting generation for', getQueuedCount(), 'posts');
         
         // Disable queue management buttons
         $('#keycontentai-queue-all, #keycontentai-unqueue-all')
@@ -237,7 +172,7 @@
             return;
         }
         
-        const postId = $row.attr('data-post-id');
+        const postId = $row.data('post-id');
         
         // Update status to processing
         updatePostStatus($row, 'processing');
@@ -254,57 +189,29 @@
                 nonce: keycontentaiGeneration.nonce
             },
             success: function(response) {
-                // Add debug data from response (works for both success and error)
-                if (response.data && response.data.debug_log) {
-                    response.data.debug_log.forEach(function(debugEntry) {
-                        addDebugEntry(debugEntry.step, debugEntry.data, false);
-                    });
-                }
-                
-                if (response.success) {
-                    onPostSuccess($row);
-                } else {
-                    onPostError($row, response.data);
-                }
+                // Add debug data from response
+                response.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false));
+                onPostComplete($row, response.success, response.data);
             },
             error: function(xhr, status, error) {
-                addDebugEntry('Network error', {
-                    status: status,
-                    error: error
-                }, true);
-                onPostError($row, 'Network error');
+                addDebugEntry('Network error', { status, error }, true);
+                onPostComplete($row, false, 'Network error');
             }
         });
     }
     
     /**
-     * Handle successful generation
+     * Handle post generation result
      */
-    function onPostSuccess($row) {
-        // Update UI
-        updatePostStatus($row, 'finished');
+    function onPostComplete($row, success, errorMessage) {
+        updatePostStatus($row, success ? 'finished' : 'error');
         
-        // Update last generated timestamp
-        const now = new Date();
-        const timestamp = now.toLocaleString();
-        $row.find('.last-generated-cell').text(timestamp);
+        if (success) {
+            $row.find('.last-generated-cell').text(new Date().toLocaleString());
+        } else {
+            console.error('Generation failed for post', $row.data('post-id'), ':', errorMessage);
+        }
         
-        // Process next post
-        processNextPost();
-    }
-    
-    /**
-     * Handle generation error
-     */
-    function onPostError($row, errorMessage) {
-        const postId = $row.attr('data-post-id');
-        
-        // Update UI
-        updatePostStatus($row, 'error');
-        
-        console.error('Generation failed for post', postId, ':', errorMessage);
-        
-        // Process next post
         processNextPost();
     }
     
@@ -314,12 +221,7 @@
     function finishGeneration(wasStopped) {
         isGenerating = false;
         stopRequested = false;
-        
-        if (wasStopped) {
-            console.log('Generation stopped');
-        } else {
-            console.log('Generation complete!');
-        }
+        console.log(wasStopped ? 'Generation stopped' : 'Generation complete!');
         
         // Re-enable action buttons
         $('#keycontentai-queue-all, #keycontentai-unqueue-all').prop('disabled', false);
@@ -337,32 +239,21 @@
     /**
      * Show WordPress-style admin notice
      */
-    function showNotice(message, type) {
-        type = type || 'info'; // info, success, warning, error
-        
-        const $notice = $('<div class="notice notice-' + type + ' is-dismissible"><p>' + message + '</p></div>');
-        
-        // Insert after page title
+    function showNotice(message, type = 'info') {
+        const $notice = $(`<div class="notice notice-${type} is-dismissible"><p>${message}</p></div>`);
         $('.wrap > h1').after($notice);
         
-        // Add dismiss button functionality
-        $notice.find('.notice-dismiss').on('click', function() {
-            $notice.fadeOut(300, function() {
-                $(this).remove();
-            });
-        });
+        // WordPress will add dismiss functionality automatically
+        // Just make it dismissible
+        if (typeof wp !== 'undefined' && wp.notices) {
+            wp.notices.initialize();
+        }
         
         // Auto-dismiss after 5 seconds
-        setTimeout(function() {
-            $notice.fadeOut(300, function() {
-                $(this).remove();
-            });
-        }, 5000);
+        setTimeout(() => $notice.fadeOut(300, function() { $(this).remove(); }), 5000);
         
         // Scroll to notice
-        $('html, body').animate({
-            scrollTop: $notice.offset().top - 50
-        }, 300);
+        $('html, body').animate({ scrollTop: $notice.offset().top - 50 }, 300);
     }
     
 })(jQuery);

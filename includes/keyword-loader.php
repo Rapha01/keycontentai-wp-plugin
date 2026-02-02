@@ -24,9 +24,10 @@ class KeyContentAI_Keyword_Loader {
      * @param string $keyword The keyword to process
      * @param bool $debug_mode Whether to include debug information
      * @param bool $auto_publish Whether to publish the post immediately
+     * @param string $additional_context Optional additional context for the post
      * @return array Result array with success status, message, and data
      */
-    public function load_keyword($keyword, $debug_mode = false, $auto_publish = false) {
+    public function load_keyword($keyword, $debug_mode = false, $auto_publish = false, $additional_context = '') {
         // Get selected post type from settings
         $post_type = get_option('keycontentai_selected_post_type', 'post');
         
@@ -180,13 +181,19 @@ class KeyContentAI_Keyword_Loader {
         // Save the keyword to the custom field (normalized to lowercase)
         update_post_meta($post_id, 'keycontentai_keyword', $keyword_normalized);
         
+        // Save the additional context if provided
+        if (!empty($additional_context)) {
+            update_post_meta($post_id, 'keycontentai_additional_context', $additional_context);
+        }
+        
         if ($debug_mode) {
             $result['debug'][] = array(
                 'step' => 'save_keyword_meta',
                 'data' => array(
                     'post_id' => $post_id,
                     'keyword_original' => $keyword,
-                    'keyword_saved' => $keyword_normalized
+                    'keyword_saved' => $keyword_normalized,
+                    'additional_context' => $additional_context
                 )
             );
         }

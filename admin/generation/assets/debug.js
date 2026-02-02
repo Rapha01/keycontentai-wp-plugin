@@ -85,41 +85,17 @@
             lastImageResponse: null
         };
         
-        // Clear all tabs
-        $('#keycontentai-debug-tab-all').html(
+        const emptyState = (message) => 
             '<div class="keycontentai-generation-debug-empty">' +
             '<span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>' +
-            '<p>Debug information will appear here when generation starts.</p>' +
-            '</div>'
-        );
+            '<p>' + message + '</p>' +
+            '</div>';
         
-        $('#keycontentai-debug-tab-text-prompt').html(
-            '<div class="keycontentai-generation-debug-empty">' +
-            '<span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>' +
-            '<p>Last text prompt will appear here after generation.</p>' +
-            '</div>'
-        );
-        
-        $('#keycontentai-debug-tab-image-prompt').html(
-            '<div class="keycontentai-generation-debug-empty">' +
-            '<span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>' +
-            '<p>Last image prompt will appear here after generation.</p>' +
-            '</div>'
-        );
-        
-        $('#keycontentai-debug-tab-text-response').html(
-            '<div class="keycontentai-generation-debug-empty">' +
-            '<span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>' +
-            '<p>Last text API response will appear here after generation.</p>' +
-            '</div>'
-        );
-        
-        $('#keycontentai-debug-tab-image-response').html(
-            '<div class="keycontentai-generation-debug-empty">' +
-            '<span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>' +
-            '<p>Last image API response will appear here after generation.</p>' +
-            '</div>'
-        );
+        $('#keycontentai-debug-tab-all').html(emptyState('Debug information will appear here when generation starts.'));
+        $('#keycontentai-debug-tab-text-prompt').html(emptyState('Last text prompt will appear here after generation.'));
+        $('#keycontentai-debug-tab-image-prompt').html(emptyState('Last image prompt will appear here after generation.'));
+        $('#keycontentai-debug-tab-text-response').html(emptyState('Last text API response will appear here after generation.'));
+        $('#keycontentai-debug-tab-image-response').html(emptyState('Last image API response will appear here after generation.'));
     }
     
     /**
@@ -222,39 +198,39 @@
     }
     
     /**
+     * Update specific tab with content
+     */
+    function updateTab(tabId, content, className) {
+        const $container = $(`#keycontentai-debug-tab-${tabId}`);
+        $container.html(`<div class="${className}">${content}</div>`);
+    }
+    
+    /**
      * Update "Last Text Prompt" tab
      */
     function updateTextPromptTab() {
-        const $container = $('#keycontentai-debug-tab-text-prompt');
-        $container.html('<div class="keycontentai-debug-prompt"></div>');
-        $container.find('.keycontentai-debug-prompt').text(debugData.lastTextPrompt);
+        updateTab('text-prompt', debugData.lastTextPrompt, 'keycontentai-debug-prompt');
     }
     
     /**
      * Update "Last Image Prompt" tab
      */
     function updateImagePromptTab() {
-        const $container = $('#keycontentai-debug-tab-image-prompt');
-        $container.html('<div class="keycontentai-debug-prompt"></div>');
-        $container.find('.keycontentai-debug-prompt').text(debugData.lastImagePrompt);
+        updateTab('image-prompt', debugData.lastImagePrompt, 'keycontentai-debug-prompt');
     }
     
     /**
      * Update "Last Text API Response" tab
      */
     function updateTextResponseTab() {
-        const $container = $('#keycontentai-debug-tab-text-response');
-        $container.html('<div class="keycontentai-debug-response"></div>');
-        $container.find('.keycontentai-debug-response').text(debugData.lastTextResponse);
+        updateTab('text-response', debugData.lastTextResponse, 'keycontentai-debug-response');
     }
     
     /**
      * Update "Last Image API Response" tab
      */
     function updateImageResponseTab() {
-        const $container = $('#keycontentai-debug-tab-image-response');
-        $container.html('<div class="keycontentai-debug-response"></div>');
-        $container.find('.keycontentai-debug-response').text(debugData.lastImageResponse);
+        updateTab('image-response', debugData.lastImageResponse, 'keycontentai-debug-response');
     }
     
 })(jQuery);

@@ -4,12 +4,15 @@
 
 jQuery(document).ready(function($) {
     var $keywordsInput = $('#keycontentai-keywords');
+    var $additionalContextInput = $('#keycontentai-additional-context');
     var $keywordCount = $('#keycontentai-keyword-count');
+    var $contextCount = $('#keycontentai-context-count');
+    var $contextCountWrapper = $('#keycontentai-context-count-wrapper');
+    var $contextWrapper = $('#keycontentai-context-wrapper');
+    var $enableContext = $('#keycontentai-enable-context');
     var $startBtn = $('#keycontentai-start-btn');
     var $stopBtn = $('#keycontentai-stop-btn');
     var $clearBtn = $('#keycontentai-clear-btn');
-    var $clearLogBtn = $('#keycontentai-clear-log-btn');
-    var $log = $('#keycontentai-log');
     var $form = $('#keycontentai-load-keywords-form');
     var $toggleDebugBtn = $('#keycontentai-toggle-debug-btn');
     var $debugContainer = $('#keycontentai-debug-container');
@@ -18,6 +21,18 @@ jQuery(document).ready(function($) {
     var $autoPublish = $('#keycontentai-auto-publish');
     var isRunning = false;
     var debugVisible = false;
+    
+    // Toggle additional context textarea
+    $enableContext.on('change', function() {
+        if ($(this).is(':checked')) {
+            $contextWrapper.slideDown(300);
+            $contextCountWrapper.show();
+            updateContextCount();
+        } else {
+            $contextWrapper.slideUp(300);
+            $contextCountWrapper.hide();
+        }
+    });
     
     // Toggle debug container
     $toggleDebugBtn.on('click', function() {
@@ -52,37 +67,26 @@ jQuery(document).ready(function($) {
         $keywordCount.text(keywords.length);
     }
     
+    // Update context count
+    function updateContextCount() {
+        var contexts = $additionalContextInput.val().trim().split('\n').filter(function(line) {
+            return line.trim() !== '';
+        });
+        $contextCount.text(contexts.length);
+    }
+    
     $keywordsInput.on('input', updateKeywordCount);
+    $additionalContextInput.on('input', updateContextCount);
     
     // Clear keywords
     $clearBtn.on('click', function() {
         if (confirm(keycontentaiLoadKeywords.confirmClear)) {
             $keywordsInput.val('');
+            $additionalContextInput.val('');
             updateKeywordCount();
+            updateContextCount();
         }
     });
-    
-    // Clear log
-    $clearLogBtn.on('click', function() {
-        $log.html('<div class="keycontentai-loadkeywords-log-empty"><span class="dashicons dashicons-info" style="font-size: 48px; opacity: 0.3;"></span><p>' + keycontentaiLoadKeywords.logEmpty + '</p></div>');
-    });
-    
-    // Add log entry
-    function addLogEntry(message, type) {
-        type = type || 'info';
-        var timestamp = new Date().toLocaleTimeString();
-        
-        // Remove empty state if present
-        $log.find('.keycontentai-loadkeywords-log-empty').remove();
-        
-        var entry = $('<div class="keycontentai-loadkeywords-log-entry keycontentai-log-' + type + '">' +
-            '<span class="keycontentai-loadkeywords-log-timestamp">[' + timestamp + ']</span>' +
-            '<span class="keycontentai-loadkeywords-log-message">' + message + '</span>' +
-            '</div>');
-        
-        $log.append(entry);
-        $log.scrollTop($log[0].scrollHeight);
-    }
     
     // Add debug entry
     function addDebugEntry(title, content) {
@@ -99,15 +103,83 @@ jQuery(document).ready(function($) {
         $debugOutput.scrollTop($debugOutput[0].scrollHeight);
     }
     
+    // Get first keyword from textarea
+    function getFirstKeyword() {
+        var text = $keywordsInput.val();
+        var lines = text.split('\n');
+        
+        for (var i = 0; i < lines.length; i++) {
+            var keyword = lines[i].trim();
+            if (keyword !== '') {
+                return keyword;
+            }
+        }
+        
+        return null;
+    }
+    
+    // Get first context from textarea
+    function getFirstContext() {
+        if (!$enableContext.is(':checked')) {
+            return null;
+        }
+        
+        var text = $additionalContextInput.val();
+        var lines = text.split('\n');
+        
+        // Always get the FIRST line, even if empty, to maintain line correspondence
+        if (lines.length > 0) {
+            var context = lines[0].trim();
+            // Return null if empty, otherwise return the context
+            return context !== '' ? context : null;
+        }
+        
+        return null;
+    }
+    
+    // Remove first keyword from textarea
+    function removeFirstKeyword() {
+        var text = $keywordsInput.val();
+        var lines = text.split('\n');
+        var foundFirst = false;
+        
+        // Find and remove the first non-empty line
+        var newLines = [];
+        for (var i = 0; i < lines.length; i++) {
+            if (!foundFirst && lines[i].trim() !== '') {
+                foundFirst = true;
+                continue; // Skip this line (remove it)
+            }
+            newLines.push(lines[i]);
+        }
+        
+        $keywordsInput.val(newLines.join('\n'));
+        updateKeywordCount();
+    }
+    
+    // Remove first context from textarea
+    function removeFirstContext() {
+        if (!$enableContext.is(':checked')) {
+            return;
+        }
+        
+        var text = $additionalContextInput.val();
+        var lines = text.split('\n');
+        
+        // Always remove the FIRST line, even if empty, to maintain line correspondence
+        if (lines.length > 0) {
+            lines.shift(); // Remove first line
+            $additionalContextInput.val(lines.join('\n'));
+            updateContextCount();
+        }
+    }
+    
     // Form submission
     $form.on('submit', async function(e) {
         e.preventDefault();
         
-        var keywords = $keywordsInput.val().trim().split('\n').filter(function(line) {
-            return line.trim() !== '';
-        });
-        
-        if (keywords.length === 0) {
+        var firstKeyword = getFirstKeyword();
+        if (!firstKeyword) {
             alert(keycontentaiLoadKeywords.noKeywords);
             return;
         }
@@ -118,46 +190,38 @@ jQuery(document).ready(function($) {
         $keywordsInput.prop('readonly', true);
         isRunning = true;
         
-        // Initial log entries
-        addLogEntry(keycontentaiLoadKeywords.starting, 'info');
-        addLogEntry(keycontentaiLoadKeywords.found + ' ' + keywords.length + ' ' + keycontentaiLoadKeywords.keywordsToProcess, 'info');
-        addLogEntry('---', 'info');
-        
         // Process keywords sequentially
-        await processKeywords(keywords);
+        await processKeywords();
     });
     
     // Process keywords one by one with async/await
-    async function processKeywords(keywords) {
-        var index = 0;
+    async function processKeywords() {
         var createdCount = 0;
         var existingCount = 0;
         var autoPublish = $autoPublish.is(':checked');
+        var useContext = $enableContext.is(':checked');
         
-        while (index < keywords.length && isRunning) {
-            var keyword = keywords[index].trim();
-            var currentNum = index + 1;
+        while (isRunning) {
+            // Get the first keyword from textarea
+            var keyword = getFirstKeyword();
             
-            // Log processing start
-            addLogEntry(keycontentaiLoadKeywords.processing + ' [' + currentNum + '/' + keywords.length + ']: "' + keyword + '"', 'info');
+            // If no more keywords, stop
+            if (!keyword) {
+                break;
+            }
+            
+            // Get the first context if enabled
+            var additionalContext = useContext ? getFirstContext() : null;
             
             try {
                 // Call the AJAX endpoint
-                var result = await processKeyword(keyword, autoPublish);
+                var result = await processKeyword(keyword, autoPublish, additionalContext);
                 
-                // Log success with returned data
+                // Track counts
                 if (result.exists) {
-                    // Post already exists
-                    addLogEntry('  └─ ' + result.message, 'warning');
                     existingCount++;
                 } else {
-                    // New post created
-                    addLogEntry('  └─ ' + result.message, 'success');
                     createdCount++;
-                }
-                
-                if (result.post_id > 0) {
-                    addLogEntry('  └─ Post ID: ' + result.post_id, 'info');
                 }
                 
                 // Display debug info if available
@@ -165,44 +229,52 @@ jQuery(document).ready(function($) {
                     addDebugEntry('Keyword: ' + keyword, result.debug);
                 }
                 
+                // Remove the processed keyword from textarea
+                removeFirstKeyword();
+                
+                // Remove the processed context from textarea (if enabled)
+                if (useContext) {
+                    removeFirstContext();
+                }
+                
             } catch (error) {
-                addLogEntry('  └─ ' + keycontentaiLoadKeywords.error + ' ' + error, 'error');
+                // On error, still remove the keyword to prevent infinite loop
+                removeFirstKeyword();
+                if (useContext) {
+                    removeFirstContext();
+                }
             }
             
             // Small delay between keywords
             await sleep(500);
-            
-            index++;
-        }
-        
-        // Check if completed or stopped
-        if (isRunning) {
-            addLogEntry('---', 'info');
-            addLogEntry(keycontentaiLoadKeywords.allProcessed, 'success');
-            addLogEntry('Created: ' + createdCount + ' | Already existed: ' + existingCount + ' | Total: ' + keywords.length, 'info');
-        } else {
-            addLogEntry(keycontentaiLoadKeywords.stoppedByUser, 'warning');
         }
         
         resetForm();
     }
     
     // Process a single keyword
-    async function processKeyword(keyword, autoPublish) {
+    async function processKeyword(keyword, autoPublish, additionalContext) {
         // Check if debug container is visible
         var debugMode = $debugContainer.is(':visible');
+        
+        var ajaxData = {
+            action: 'keycontentai_load_keyword',
+            keyword: keyword,
+            nonce: keycontentaiLoadKeywords.nonce,
+            debug: debugMode ? '1' : '0',
+            auto_publish: autoPublish ? '1' : '0'
+        };
+        
+        // Add additional context if provided
+        if (additionalContext !== null && additionalContext !== undefined) {
+            ajaxData.additional_context = additionalContext;
+        }
         
         return new Promise((resolve, reject) => {
             $.ajax({
                 url: keycontentaiLoadKeywords.ajaxUrl,
                 type: 'POST',
-                data: {
-                    action: 'keycontentai_load_keyword',
-                    keyword: keyword,
-                    nonce: keycontentaiLoadKeywords.nonce,
-                    debug: debugMode ? '1' : '0',
-                    auto_publish: autoPublish ? '1' : '0'
-                },
+                data: ajaxData,
                 success: function(response) {
                     if (response.success) {
                         resolve(response.data);
@@ -234,7 +306,6 @@ jQuery(document).ready(function($) {
     $stopBtn.on('click', function() {
         if (confirm(keycontentaiLoadKeywords.confirmStop)) {
             isRunning = false;
-            addLogEntry(keycontentaiLoadKeywords.stopping, 'warning');
         }
     });
 });
