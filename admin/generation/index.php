@@ -9,8 +9,8 @@ if (!defined('ABSPATH')) {
 }
 
 // Get the selected post type from settings
-$selected_post_type = get_option('keycontentai_selected_post_type', 'post');
-$api_key = get_option('keycontentai_openai_api_key', '');
+$selected_post_type = get_option('sparkwp_selected_post_type', 'post');
+$api_key = get_option('sparkwp_openai_api_key', '');
 
 // Check if settings are configured
 $is_configured = !empty($api_key) && !empty($selected_post_type);
@@ -34,45 +34,45 @@ if ($is_configured) {
     <?php if (!$is_configured) : ?>
         <div class="notice notice-warning">
             <p>
-                <strong><?php esc_html_e('Configuration Required:', 'keycontentai'); ?></strong>
-                <?php esc_html_e('Please configure the plugin settings before generating content.', 'keycontentai'); ?>
+                <strong><?php esc_html_e('Configuration Required:', 'sparkwp'); ?></strong>
+                <?php esc_html_e('Please configure the plugin settings before generating content.', 'sparkwp'); ?>
             </p>
             <p>
                 <?php if (empty($api_key)) : ?>
-                    <a href="<?php echo esc_url(admin_url('admin.php?page=keycontentai-settings&tab=api-settings')); ?>" class="button button-primary">
-                        <?php esc_html_e('Set OpenAI API Key', 'keycontentai'); ?>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=sparkwp-settings&tab=api-settings')); ?>" class="button button-primary">
+                        <?php esc_html_e('Set OpenAI API Key', 'sparkwp'); ?>
                     </a>
                 <?php endif; ?>
                 
                 <?php if (empty($selected_post_type)) : ?>
-                    <a href="<?php echo esc_url(admin_url('admin.php?page=keycontentai-settings&tab=cpt')); ?>" class="button button-primary">
-                        <?php esc_html_e('Select Post Type', 'keycontentai'); ?>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=sparkwp-settings&tab=cpt')); ?>" class="button button-primary">
+                        <?php esc_html_e('Select Post Type', 'sparkwp'); ?>
                     </a>
                 <?php endif; ?>
             </p>
         </div>
     <?php else : ?>
-        <div class="keycontentai-generation-container">
-            <div class="keycontentai-generation-header">
-                <div class="keycontentai-header-info">
+        <div class="sparkwp-generation-container">
+            <div class="sparkwp-generation-header">
+                <div class="sparkwp-header-info">
                     <p>
-                        <strong><?php esc_html_e('Post Type:', 'keycontentai'); ?></strong> 
+                        <strong><?php esc_html_e('Post Type:', 'sparkwp'); ?></strong> 
                         <?php echo esc_html($selected_post_type); ?>
-                        <span class="keycontentai-separator">|</span>
-                        <strong><?php esc_html_e('Total Posts:', 'keycontentai'); ?></strong> 
+                        <span class="sparkwp-separator">|</span>
+                        <strong><?php esc_html_e('Total Posts:', 'sparkwp'); ?></strong> 
                         <?php echo count($posts); ?>
                     </p>
                 </div>
                 
-                <div class="keycontentai-header-actions">
-                    <button type="button" id="keycontentai-queue-all" class="button">
-                        <?php esc_html_e('Queue All', 'keycontentai'); ?>
+                <div class="sparkwp-header-actions">
+                    <button type="button" id="sparkwp-queue-all" class="button">
+                        <?php esc_html_e('Queue All', 'sparkwp'); ?>
                     </button>
-                    <button type="button" id="keycontentai-unqueue-all" class="button">
-                        <?php esc_html_e('Unqueue All', 'keycontentai'); ?>
+                    <button type="button" id="sparkwp-unqueue-all" class="button">
+                        <?php esc_html_e('Unqueue All', 'sparkwp'); ?>
                     </button>
-                    <button type="button" id="keycontentai-start-generation" class="button button-primary" disabled>
-                        <?php esc_html_e('Start Generation', 'keycontentai'); ?>
+                    <button type="button" id="sparkwp-start-generation" class="button button-primary" disabled>
+                        <?php esc_html_e('Start Generation', 'sparkwp'); ?>
                     </button>
                 </div>
             </div>
@@ -80,51 +80,51 @@ if ($is_configured) {
             <?php if (empty($posts)) : ?>
                 <div class="notice notice-info inline">
                     <p>
-                        <?php esc_html_e('No posts found for this post type.', 'keycontentai'); ?>
-                        <a href="<?php echo esc_url(admin_url('admin.php?page=keycontentai-load-keywords')); ?>">
-                            <?php esc_html_e('Load keywords to create posts.', 'keycontentai'); ?>
+                        <?php esc_html_e('No posts found for this post type.', 'sparkwp'); ?>
+                        <a href="<?php echo esc_url(admin_url('admin.php?page=sparkwp-load-keywords')); ?>">
+                            <?php esc_html_e('Load keywords to create posts.', 'sparkwp'); ?>
                         </a>
                     </p>
                 </div>
             <?php else : ?>
-                <div class="keycontentai-posts-list">
+                <div class="sparkwp-posts-list">
                     <table class="wp-list-table widefat fixed striped">
                         <thead>
                             <tr>
-                                <th style="width: 50px;"><?php esc_html_e('Status', 'keycontentai'); ?></th>
-                                <th style="width: 60px;"><?php esc_html_e('ID', 'keycontentai'); ?></th>
-                                <th><?php esc_html_e('Keyword', 'keycontentai'); ?></th>
-                                <th><?php esc_html_e('Title', 'keycontentai'); ?></th>
-                                <th style="width: 150px;"><?php esc_html_e('Last Generated', 'keycontentai'); ?></th>
-                                <th style="width: 120px;"><?php esc_html_e('Actions', 'keycontentai'); ?></th>
+                                <th style="width: 50px;"><?php esc_html_e('Status', 'sparkwp'); ?></th>
+                                <th style="width: 60px;"><?php esc_html_e('ID', 'sparkwp'); ?></th>
+                                <th><?php esc_html_e('Keyword', 'sparkwp'); ?></th>
+                                <th><?php esc_html_e('Title', 'sparkwp'); ?></th>
+                                <th style="width: 150px;"><?php esc_html_e('Last Generated', 'sparkwp'); ?></th>
+                                <th style="width: 120px;"><?php esc_html_e('Actions', 'sparkwp'); ?></th>
                             </tr>
                         </thead>
-                        <tbody id="keycontentai-posts-body">
+                        <tbody id="sparkwp-posts-body">
                             <?php foreach ($posts as $post) : 
-                                $keyword = get_post_meta($post->ID, 'keycontentai_keyword', true);
-                                $last_generation = get_post_meta($post->ID, 'keycontentai_last_generation', true);
+                                $keyword = get_post_meta($post->ID, 'sparkwp_keyword', true);
+                                $last_generation = get_post_meta($post->ID, 'sparkwp_last_generation', true);
                             ?>
-                                <tr class="keycontentai-post-row" data-post-id="<?php echo esc_attr($post->ID); ?>" data-status="unqueued">
-                                    <td class="keycontentai-status-cell" data-label="<?php esc_attr_e('Status', 'keycontentai'); ?>">
-                                        <span class="keycontentai-status-indicator keycontentai-status-unqueued" title="<?php esc_attr_e('Unqueued', 'keycontentai'); ?>">
+                                <tr class="sparkwp-post-row" data-post-id="<?php echo esc_attr($post->ID); ?>" data-status="unqueued">
+                                    <td class="sparkwp-status-cell" data-label="<?php esc_attr_e('Status', 'sparkwp'); ?>">
+                                        <span class="sparkwp-status-indicator sparkwp-status-unqueued" title="<?php esc_attr_e('Unqueued', 'sparkwp'); ?>">
                                             <span class="dashicons dashicons-minus"></span>
                                         </span>
                                     </td>
-                                    <td data-label="<?php esc_attr_e('ID', 'keycontentai'); ?>"><?php echo esc_html($post->ID); ?></td>
-                                    <td data-label="<?php esc_attr_e('Keyword', 'keycontentai'); ?>">
-                                        <strong><?php echo esc_html($keyword ?: __('(no keyword)', 'keycontentai')); ?></strong>
+                                    <td data-label="<?php esc_attr_e('ID', 'sparkwp'); ?>"><?php echo esc_html($post->ID); ?></td>
+                                    <td data-label="<?php esc_attr_e('Keyword', 'sparkwp'); ?>">
+                                        <strong><?php echo esc_html($keyword ?: __('(no keyword)', 'sparkwp')); ?></strong>
                                     </td>
-                                    <td data-label="<?php esc_attr_e('Title', 'keycontentai'); ?>">
+                                    <td data-label="<?php esc_attr_e('Title', 'sparkwp'); ?>">
                                         <a href="<?php echo esc_url(get_edit_post_link($post->ID)); ?>" target="_blank">
-                                            <?php echo esc_html($post->post_title ?: __('(no title)', 'keycontentai')); ?>
+                                            <?php echo esc_html($post->post_title ?: __('(no title)', 'sparkwp')); ?>
                                         </a>
                                     </td>
-                                    <td data-label="<?php esc_attr_e('Last Generated', 'keycontentai'); ?>">
-                                        <?php echo $last_generation ? esc_html($last_generation) : '<em>' . esc_html__('Never', 'keycontentai') . '</em>'; ?>
+                                    <td data-label="<?php esc_attr_e('Last Generated', 'sparkwp'); ?>">
+                                        <?php echo $last_generation ? esc_html($last_generation) : '<em>' . esc_html__('Never', 'sparkwp') . '</em>'; ?>
                                     </td>
-                                    <td data-label="<?php esc_attr_e('Actions', 'keycontentai'); ?>">
-                                        <button type="button" class="button button-small keycontentai-toggle-queue" data-post-id="<?php echo esc_attr($post->ID); ?>">
-                                            <?php esc_html_e('Queue', 'keycontentai'); ?>
+                                    <td data-label="<?php esc_attr_e('Actions', 'sparkwp'); ?>">
+                                        <button type="button" class="button button-small sparkwp-toggle-queue" data-post-id="<?php echo esc_attr($post->ID); ?>">
+                                            <?php esc_html_e('Queue', 'sparkwp'); ?>
                                         </button>
                                     </td>
                                 </tr>
@@ -135,87 +135,87 @@ if ($is_configured) {
             <?php endif; ?>
             
             <!-- Debug Toggle -->
-            <div class="keycontentai-generation-debug-toggle" style="margin-top: 30px; margin-bottom: 10px;">
-                <button type="button" id="keycontentai-toggle-debug-btn" class="button button-secondary">
+            <div class="sparkwp-generation-debug-toggle" style="margin-top: 30px; margin-bottom: 10px;">
+                <button type="button" id="sparkwp-toggle-debug-btn" class="button button-secondary">
                     <span class="dashicons dashicons-admin-tools" style="margin-top: 4px; margin-right: 5px;"></span>
-                    <span class="button-text"><?php esc_html_e('Show Debug Mode', 'keycontentai'); ?></span>
+                    <span class="button-text"><?php esc_html_e('Show Debug Mode', 'sparkwp'); ?></span>
                 </button>
                 <p class="description" style="margin-top: 8px;">
-                    <?php esc_html_e('Show detailed information about the content generation process', 'keycontentai'); ?>
+                    <?php esc_html_e('Show detailed information about the content generation process', 'sparkwp'); ?>
                 </p>
             </div>
             
             <!-- Debug Output Box (hidden by default) -->
-            <div id="keycontentai-debug-container" class="keycontentai-generation-debug-container" style="display: none;">
+            <div id="sparkwp-debug-container" class="sparkwp-generation-debug-container" style="display: none;">
                 <div class="card">
                     <h2 style="display: flex; justify-content: space-between; align-items: center;">
                         <span>
                             <span class="dashicons dashicons-admin-tools" style="margin-right: 5px;"></span>
-                            <?php esc_html_e('Debug Information', 'keycontentai'); ?>
+                            <?php esc_html_e('Debug Information', 'sparkwp'); ?>
                         </span>
-                        <button type="button" id="keycontentai-clear-debug-btn" class="button button-small">
-                            <?php esc_html_e('Clear', 'keycontentai'); ?>
+                        <button type="button" id="sparkwp-clear-debug-btn" class="button button-small">
+                            <?php esc_html_e('Clear', 'sparkwp'); ?>
                         </button>
                     </h2>
                     
                     <!-- Debug Tabs -->
-                    <div class="keycontentai-debug-tabs">
-                        <button class="keycontentai-debug-tab active" data-tab="all">
-                            <?php esc_html_e('All Debug Data', 'keycontentai'); ?>
+                    <div class="sparkwp-debug-tabs">
+                        <button class="sparkwp-debug-tab active" data-tab="all">
+                            <?php esc_html_e('All Debug Data', 'sparkwp'); ?>
                         </button>
-                        <button class="keycontentai-debug-tab" data-tab="text-prompt">
-                            <?php esc_html_e('Last Text Prompt', 'keycontentai'); ?>
+                        <button class="sparkwp-debug-tab" data-tab="text-prompt">
+                            <?php esc_html_e('Last Text Prompt', 'sparkwp'); ?>
                         </button>
-                        <button class="keycontentai-debug-tab" data-tab="text-response">
-                            <?php esc_html_e('Last Text API Response', 'keycontentai'); ?>
+                        <button class="sparkwp-debug-tab" data-tab="text-response">
+                            <?php esc_html_e('Last Text API Response', 'sparkwp'); ?>
                         </button>
-                        <button class="keycontentai-debug-tab" data-tab="image-prompt">
-                            <?php esc_html_e('Last Image Prompt', 'keycontentai'); ?>
+                        <button class="sparkwp-debug-tab" data-tab="image-prompt">
+                            <?php esc_html_e('Last Image Prompt', 'sparkwp'); ?>
                         </button>
-                        <button class="keycontentai-debug-tab" data-tab="image-response">
-                            <?php esc_html_e('Last Image API Response', 'keycontentai'); ?>
+                        <button class="sparkwp-debug-tab" data-tab="image-response">
+                            <?php esc_html_e('Last Image API Response', 'sparkwp'); ?>
                         </button>
                     </div>
                     
                     <!-- Debug Tab Content -->
-                    <div class="keycontentai-debug-content">
+                    <div class="sparkwp-debug-content">
                         <!-- All Debug Data Tab -->
-                        <div id="keycontentai-debug-tab-all" class="keycontentai-debug-tab-content active">
-                            <div class="keycontentai-generation-debug-empty">
+                        <div id="sparkwp-debug-tab-all" class="sparkwp-debug-tab-content active">
+                            <div class="sparkwp-generation-debug-empty">
                                 <span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>
-                                <p><?php esc_html_e('Debug information will appear here when generation starts.', 'keycontentai'); ?></p>
+                                <p><?php esc_html_e('Debug information will appear here when generation starts.', 'sparkwp'); ?></p>
                             </div>
                         </div>
                         
                         <!-- Last Text Prompt Tab -->
-                        <div id="keycontentai-debug-tab-text-prompt" class="keycontentai-debug-tab-content">
-                            <div class="keycontentai-generation-debug-empty">
+                        <div id="sparkwp-debug-tab-text-prompt" class="sparkwp-debug-tab-content">
+                            <div class="sparkwp-generation-debug-empty">
                                 <span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>
-                                <p><?php esc_html_e('Last text prompt will appear here after generation.', 'keycontentai'); ?></p>
+                                <p><?php esc_html_e('Last text prompt will appear here after generation.', 'sparkwp'); ?></p>
                             </div>
                         </div>
                         
                         <!-- Last Text API Response Tab -->
-                        <div id="keycontentai-debug-tab-text-response" class="keycontentai-debug-tab-content">
-                            <div class="keycontentai-generation-debug-empty">
+                        <div id="sparkwp-debug-tab-text-response" class="sparkwp-debug-tab-content">
+                            <div class="sparkwp-generation-debug-empty">
                                 <span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>
-                                <p><?php esc_html_e('Last text API response will appear here after generation.', 'keycontentai'); ?></p>
+                                <p><?php esc_html_e('Last text API response will appear here after generation.', 'sparkwp'); ?></p>
                             </div>
                         </div>
                         
                         <!-- Last Image Prompt Tab -->
-                        <div id="keycontentai-debug-tab-image-prompt" class="keycontentai-debug-tab-content">
-                            <div class="keycontentai-generation-debug-empty">
+                        <div id="sparkwp-debug-tab-image-prompt" class="sparkwp-debug-tab-content">
+                            <div class="sparkwp-generation-debug-empty">
                                 <span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>
-                                <p><?php esc_html_e('Last image prompt will appear here after generation.', 'keycontentai'); ?></p>
+                                <p><?php esc_html_e('Last image prompt will appear here after generation.', 'sparkwp'); ?></p>
                             </div>
                         </div>
                         
                         <!-- Last Image API Response Tab -->
-                        <div id="keycontentai-debug-tab-image-response" class="keycontentai-debug-tab-content">
-                            <div class="keycontentai-generation-debug-empty">
+                        <div id="sparkwp-debug-tab-image-response" class="sparkwp-debug-tab-content">
+                            <div class="sparkwp-generation-debug-empty">
                                 <span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>
-                                <p><?php esc_html_e('Last image API response will appear here after generation.', 'keycontentai'); ?></p>
+                                <p><?php esc_html_e('Last image API response will appear here after generation.', 'sparkwp'); ?></p>
                             </div>
                         </div>
                     </div>

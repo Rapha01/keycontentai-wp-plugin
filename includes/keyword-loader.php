@@ -4,7 +4,7 @@
  * 
  * Handles loading keywords and creating posts
  * 
- * @package KeyContentAI
+ * @package SparkWP
  */
 
 if (!defined('ABSPATH')) {
@@ -12,11 +12,11 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Class KeyContentAI_Keyword_Loader
+ * Class SparkWP_Keyword_Loader
  * 
  * Manages keyword loading and post creation
  */
-class KeyContentAI_Keyword_Loader {
+class SparkWP_Keyword_Loader {
     
     /**
      * Load a keyword and create a post if it doesn't exist
@@ -29,7 +29,7 @@ class KeyContentAI_Keyword_Loader {
      */
     public function load_keyword($keyword, $debug_mode = false, $auto_publish = false, $additional_context = '') {
         // Get selected post type from settings
-        $post_type = get_option('keycontentai_selected_post_type', 'post');
+        $post_type = get_option('sparkwp_selected_post_type', 'post');
         
         // Normalize keyword to lowercase for consistency
         $keyword_normalized = strtolower(trim($keyword));
@@ -62,7 +62,7 @@ class KeyContentAI_Keyword_Loader {
         // Check if a post with this keyword already exists
         $existing_posts = get_posts(array(
             'post_type' => $post_type,
-            'meta_key' => 'keycontentai_keyword',
+            'meta_key' => 'sparkwp_keyword',
             'meta_value' => $keyword_normalized,
             'posts_per_page' => 1,
             'post_status' => 'any'
@@ -79,7 +79,7 @@ class KeyContentAI_Keyword_Loader {
                         'post_id' => $existing_post->ID,
                         'post_title' => $existing_post->post_title,
                         'post_status' => $existing_post->post_status,
-                        'keyword_meta' => get_post_meta($existing_post->ID, 'keycontentai_keyword', true)
+                        'keyword_meta' => get_post_meta($existing_post->ID, 'sparkwp_keyword', true)
                     )
                 );
             }
@@ -105,7 +105,7 @@ class KeyContentAI_Keyword_Loader {
                 
                 if (!is_wp_error($update_result)) {
                     $result['success'] = true;
-                    $result['message'] = sprintf(__('Post with keyword "%s" already exists and has been published: "%s" (ID: %d)', 'keycontentai'), $keyword, $existing_post->post_title, $existing_post->ID);
+                    $result['message'] = sprintf(__('Post with keyword "%s" already exists and has been published: "%s" (ID: %d)', 'sparkwp'), $keyword, $existing_post->post_title, $existing_post->ID);
                     $result['post_id'] = $existing_post->ID;
                     $result['exists'] = true;
                     $result['published'] = true;
@@ -115,7 +115,7 @@ class KeyContentAI_Keyword_Loader {
             }
             
             $result['success'] = true;
-            $result['message'] = sprintf(__('Post with keyword "%s" already exists: "%s" (ID: %d)', 'keycontentai'), $keyword, $existing_post->post_title, $existing_post->ID);
+            $result['message'] = sprintf(__('Post with keyword "%s" already exists: "%s" (ID: %d)', 'sparkwp'), $keyword, $existing_post->post_title, $existing_post->ID);
             $result['post_id'] = $existing_post->ID;
             $result['exists'] = true;
             
@@ -161,7 +161,7 @@ class KeyContentAI_Keyword_Loader {
             }
             
             $result['success'] = false;
-            $result['message'] = sprintf(__('Failed to create post: %s', 'keycontentai'), $post_id->get_error_message());
+            $result['message'] = sprintf(__('Failed to create post: %s', 'sparkwp'), $post_id->get_error_message());
             
             return $result;
         }
@@ -179,11 +179,11 @@ class KeyContentAI_Keyword_Loader {
         }
         
         // Save the keyword to the custom field (normalized to lowercase)
-        update_post_meta($post_id, 'keycontentai_keyword', $keyword_normalized);
+        update_post_meta($post_id, 'sparkwp_keyword', $keyword_normalized);
         
         // Save the additional context if provided
         if (!empty($additional_context)) {
-            update_post_meta($post_id, 'keycontentai_additional_context', $additional_context);
+            update_post_meta($post_id, 'sparkwp_additional_context', $additional_context);
         }
         
         if ($debug_mode) {
@@ -201,8 +201,8 @@ class KeyContentAI_Keyword_Loader {
         // Success
         $result['success'] = true;
         $result['message'] = $auto_publish 
-            ? sprintf(__('Post created and published successfully: "%s"', 'keycontentai'), $keyword)
-            : sprintf(__('Post created successfully: "%s"', 'keycontentai'), $keyword);
+            ? sprintf(__('Post created and published successfully: "%s"', 'sparkwp'), $keyword)
+            : sprintf(__('Post created successfully: "%s"', 'sparkwp'), $keyword);
         $result['post_id'] = $post_id;
         $result['exists'] = false;
         $result['published'] = $auto_publish;

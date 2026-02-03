@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class KeyContentAI_Prompt_Builder {
+class SparkWP_Prompt_Builder {
     private $debug_callback = null;
     
     /**
@@ -95,7 +95,7 @@ class KeyContentAI_Prompt_Builder {
         $language = $settings['language'];
         
         // Get language name from utility function
-        $language_name = keycontentai_get_language_name($language);
+        $language_name = sparkwp_get_language_name($language);
         
         $instruction = "IMPORTANT: Write all content in {$language_name}.";
         // Add addressing style only for German

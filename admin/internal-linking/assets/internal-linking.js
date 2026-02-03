@@ -1,8 +1,8 @@
 /**
- * KeyContentAI Internal Linking Page JavaScript
+ * SparkWP Internal Linking Page JavaScript
  */
 
 jQuery(document).ready(function($) {
     // Placeholder for internal linking functionality
-    console.log('KeyContentAI Internal Linking page loaded');
+    console.log('SparkWP Internal Linking page loaded');
 });

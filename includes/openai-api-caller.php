@@ -4,7 +4,7 @@
  * 
  * Handles all communication with the OpenAI API
  * 
- * @package KeyContentAI
+ * @package SparkWP
  */
 
 if (!defined('ABSPATH')) {
@@ -12,11 +12,11 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Class KeyContentAI_OpenAI_API_Caller
+ * Class SparkWP_OpenAI_API_Caller
  * 
  * Manages API calls to OpenAI's chat completions endpoint
  */
-class KeyContentAI_OpenAI_API_Caller {
+class SparkWP_OpenAI_API_Caller {
     
     /**
      * Debug callback function

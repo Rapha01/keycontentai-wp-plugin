@@ -1,17 +1,17 @@
 /**
- * KeyContentAI Internal Linking Page Styles
+ * SparkWP Internal Linking Page Styles
  */
 
-.keycontentai-interlinking-container {
+.sparkwp-interlinking-container {
     margin-top: 20px;
 }
 
-.keycontentai-interlinking-container .card {
+.sparkwp-interlinking-container .card {
     padding: 20px;
     max-width: 100%;
 }
 
-.keycontentai-interlinking-container .card h2 {
+.sparkwp-interlinking-container .card h2 {
     margin-top: 0;
     color: #2271b1;
     font-size: 18px;
@@ -20,7 +20,7 @@
     margin-bottom: 15px;
 }
 
-.keycontentai-interlinking-placeholder {
+.sparkwp-interlinking-placeholder {
     padding: 40px 20px;
     text-align: center;
     background: #f6f7f7;
@@ -28,7 +28,7 @@
     margin-top: 20px;
 }
 
-.keycontentai-interlinking-placeholder p {
+.sparkwp-interlinking-placeholder p {
     color: #646970;
     font-size: 14px;
     margin: 0;

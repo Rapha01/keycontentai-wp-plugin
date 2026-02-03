@@ -1,5 +1,5 @@
 /**
- * KeyContentAI Settings Page JavaScript
+ * SparkWP Settings Page JavaScript
  */
 
 jQuery(document).ready(function($) {

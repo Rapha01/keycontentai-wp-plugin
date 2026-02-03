@@ -14,17 +14,17 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class KeyContentAI_Content_Generator {
+class SparkWP_Content_Generator {
     private $debug_log = array();
     private $api_caller = null;
     private $prompt_builder = null;
 
     public function __construct() {
         // Initialize API caller with debug callback
-        $this->api_caller = new KeyContentAI_OpenAI_API_Caller(array($this, 'add_debug'));
+        $this->api_caller = new SparkWP_OpenAI_API_Caller(array($this, 'add_debug'));
         
         // Initialize prompt builder with debug callback
-        $this->prompt_builder = new KeyContentAI_Prompt_Builder(array($this, 'add_debug'));
+        $this->prompt_builder = new SparkWP_Prompt_Builder(array($this, 'add_debug'));
     }
     
     public function generate_content($post_id) {
@@ -34,7 +34,7 @@ class KeyContentAI_Content_Generator {
             // 1. Validate post exists
             $post = get_post($post_id);
             if (!$post) {
-                throw new Exception(__('Post not found', 'keycontentai'));
+                throw new Exception(__('Post not found', 'sparkwp'));
             }
             
             $this->add_debug('Starting content generation for existing post', array(
@@ -62,14 +62,14 @@ class KeyContentAI_Content_Generator {
             ));
             
             // Update last generation timestamp
-            update_post_meta($post_id, 'keycontentai_last_generation', current_time('mysql'));
+            update_post_meta($post_id, 'sparkwp_last_generation', current_time('mysql'));
             
             // Return success response
             return array(
                 'success' => true,
                 'post_id' => $post_id,
                 'keyword' => $post_settings['keyword'],
-                'message' => sprintf(__('Successfully updated post (ID: %d) for keyword: %s', 'keycontentai'), $post_id, $post_settings['keyword']),
+                'message' => sprintf(__('Successfully updated post (ID: %d) for keyword: %s', 'sparkwp'), $post_id, $post_settings['keyword']),
                 'debug_log' => $this->debug_log
             );
             
@@ -111,9 +111,9 @@ class KeyContentAI_Content_Generator {
     private function get_cpt_settings($post_type) {
         // Get CPT-specific additional context from consolidated configs
         $cpt_additional_context = '';
-        global $keycontentai;
-        if ($keycontentai && method_exists($keycontentai, 'get_cpt_configs')) {
-            $cpt_configs = $keycontentai->get_cpt_configs();
+        global $sparkwp;
+        if ($sparkwp && method_exists($sparkwp, 'get_cpt_configs')) {
+            $cpt_configs = $sparkwp->get_cpt_configs();
             if (isset($cpt_configs[$post_type]['additional_context'])) {
                 $cpt_additional_context = $cpt_configs[$post_type]['additional_context'];
             }
@@ -121,9 +121,9 @@ class KeyContentAI_Content_Generator {
         
         $settings = array(
             // API Settings
-            'api_key' => get_option('keycontentai_openai_api_key', ''),
-            'text_model' => get_option('keycontentai_text_model', 'gpt-5.2'),
-            'image_model' => get_option('keycontentai_image_model', 'gpt-image-1.5'),
+            'api_key' => get_option('sparkwp_openai_api_key', ''),
+            'text_model' => get_option('sparkwp_text_model', 'gpt-5.2'),
+            'image_model' => get_option('sparkwp_image_model', 'gpt-image-1.5'),
             
             // Post Type
             'post_type' => $post_type,
@@ -132,19 +132,19 @@ class KeyContentAI_Content_Generator {
             'language' => $this->get_site_language(),
             
             // Client Information
-            'addressing' => get_option('keycontentai_addressing', 'formal'),
-            'company_name' => get_option('keycontentai_company_name', ''),
-            'industry' => get_option('keycontentai_industry', ''),
-            'target_group' => get_option('keycontentai_target_group', ''),
-            'usp' => get_option('keycontentai_usp', ''),
-            'advantages' => get_option('keycontentai_advantages', ''),
-            'buying_reasons' => get_option('keycontentai_buying_reasons', ''),
+            'addressing' => get_option('sparkwp_addressing', 'formal'),
+            'company_name' => get_option('sparkwp_company_name', ''),
+            'industry' => get_option('sparkwp_industry', ''),
+            'target_group' => get_option('sparkwp_target_group', ''),
+            'usp' => get_option('sparkwp_usp', ''),
+            'advantages' => get_option('sparkwp_advantages', ''),
+            'buying_reasons' => get_option('sparkwp_buying_reasons', ''),
             
             // Custom Fields for this post type
             'custom_fields' => $this->get_custom_fields_config($post_type),
             
             // Two levels of additional context (Client + CPT)
-            'client_additional_context' => get_option('keycontentai_additional_context', ''),
+            'client_additional_context' => get_option('sparkwp_additional_context', ''),
             'cpt_additional_context' => $cpt_additional_context
         );
         
@@ -161,11 +161,11 @@ class KeyContentAI_Content_Generator {
         
         // Validate required settings
         if (empty($settings['api_key'])) {
-            throw new Exception(__('OpenAI API key is not configured. Please add it in the settings.', 'keycontentai'));
+            throw new Exception(__('OpenAI API key is not configured. Please add it in the settings.', 'sparkwp'));
         }
         
         if (empty($settings['post_type'])) {
-            throw new Exception(__('No post type selected. Please configure in the settings.', 'keycontentai'));
+            throw new Exception(__('No post type selected. Please configure in the settings.', 'sparkwp'));
         }
         
         return $settings;
@@ -173,8 +173,8 @@ class KeyContentAI_Content_Generator {
     
     private function get_post_settings($post_id) {
         $settings = array(
-            'keyword' => get_post_meta($post_id, 'keycontentai_keyword', true),
-            'post_additional_context' => get_post_meta($post_id, 'keycontentai_additional_context', true)
+            'keyword' => get_post_meta($post_id, 'sparkwp_keyword', true),
+            'post_additional_context' => get_post_meta($post_id, 'sparkwp_additional_context', true)
         );
         
         $this->add_debug('get_post_settings', array(
@@ -185,7 +185,7 @@ class KeyContentAI_Content_Generator {
         
         // Validate keyword exists
         if (empty($settings['keyword'])) {
-            throw new Exception(__('No keyword found for this post', 'keycontentai'));
+            throw new Exception(__('No keyword found for this post', 'sparkwp'));
         }
         
         return $settings;
@@ -195,8 +195,8 @@ class KeyContentAI_Content_Generator {
         $this->add_debug('get_custom_fields_config', "Retrieving field configuration for post type: {$post_type}");
         
         // Get user's field settings
-        global $keycontentai;
-        $cpt_configs = $keycontentai->get_cpt_configs();
+        global $sparkwp;
+        $cpt_configs = $sparkwp->get_cpt_configs();
         $user_settings = isset($cpt_configs[$post_type]['fields']) ? $cpt_configs[$post_type]['fields'] : array();
         
         $all_fields = array();

@@ -1,9 +1,9 @@
 /**
- * KeyContentAI Generation Page Styles
+ * SparkWP Generation Page Styles
  */
 
 /* Header Section */
-.keycontentai-generation-header {
+.sparkwp-generation-header {
     background: #fff;
     border: 1px solid #c3c4c7;
     padding: 15px 20px;
@@ -13,41 +13,41 @@
     align-items: center;
 }
 
-.keycontentai-header-info p {
+.sparkwp-header-info p {
     margin: 0;
     font-size: 14px;
 }
 
-.keycontentai-header-info .keycontentai-separator {
+.sparkwp-header-info .sparkwp-separator {
     margin: 0 10px;
     color: #c3c4c7;
 }
 
-.keycontentai-header-actions {
+.sparkwp-header-actions {
     display: flex;
     gap: 10px;
 }
 
 /* Posts List Table */
-.keycontentai-posts-list {
+.sparkwp-posts-list {
     background: #fff;
     border: 1px solid #c3c4c7;
 }
 
-.keycontentai-posts-list table {
+.sparkwp-posts-list table {
     margin: 0;
 }
 
-.keycontentai-post-row {
+.sparkwp-post-row {
     transition: background-color 0.2s ease;
 }
 
 /* Status Indicators */
-.keycontentai-status-cell {
+.sparkwp-status-cell {
     text-align: center;
 }
 
-.keycontentai-status-indicator {
+.sparkwp-status-indicator {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -57,53 +57,53 @@
     transition: all 0.3s ease;
 }
 
-.keycontentai-status-indicator .dashicons {
+.sparkwp-status-indicator .dashicons {
     font-size: 20px;
     width: 20px;
     height: 20px;
 }
 
 /* Status States */
-.keycontentai-status-unqueued {
+.sparkwp-status-unqueued {
     background: #f0f0f1;
     color: #646970;
 }
 
-.keycontentai-status-queued {
+.sparkwp-status-queued {
     background: #fcf3cf;
     color: #856404;
 }
 
-.keycontentai-status-queued .dashicons:before {
+.sparkwp-status-queued .dashicons:before {
     content: "\f463"; /* clock icon */
 }
 
-.keycontentai-status-processing {
+.sparkwp-status-processing {
     background: #d1ecf1;
     color: #0c5460;
     animation: pulse 1.5s ease-in-out infinite;
 }
 
-.keycontentai-status-processing .dashicons:before {
+.sparkwp-status-processing .dashicons:before {
     content: "\f463"; /* update/spinner icon */
     animation: spin 2s linear infinite;
 }
 
-.keycontentai-status-finished {
+.sparkwp-status-finished {
     background: #d4edda;
     color: #155724;
 }
 
-.keycontentai-status-finished .dashicons:before {
+.sparkwp-status-finished .dashicons:before {
     content: "\f147"; /* checkmark icon */
 }
 
-.keycontentai-status-error {
+.sparkwp-status-error {
     background: #f8d7da;
     color: #721c24;
 }
 
-.keycontentai-status-error .dashicons:before {
+.sparkwp-status-error .dashicons:before {
     content: "\f534"; /* warning icon */
 }
 
@@ -127,62 +127,62 @@
 }
 
 /* Row Hover Effects */
-.keycontentai-post-row:hover {
+.sparkwp-post-row:hover {
     background: #f6f7f7 !important;
 }
 
 /* Toggle Queue Button States */
-.keycontentai-toggle-queue {
+.sparkwp-toggle-queue {
     min-width: 80px;
 }
 
-.keycontentai-post-row[data-status="queued"] .keycontentai-toggle-queue,
-.keycontentai-post-row[data-status="processing"] .keycontentai-toggle-queue,
-.keycontentai-post-row[data-status="finished"] .keycontentai-toggle-queue {
+.sparkwp-post-row[data-status="queued"] .sparkwp-toggle-queue,
+.sparkwp-post-row[data-status="processing"] .sparkwp-toggle-queue,
+.sparkwp-post-row[data-status="finished"] .sparkwp-toggle-queue {
     background: #f0f0f1;
 }
 
-.keycontentai-post-row[data-status="processing"] .keycontentai-toggle-queue {
+.sparkwp-post-row[data-status="processing"] .sparkwp-toggle-queue {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
 /* Start Generation Button */
-#keycontentai-start-generation:disabled {
+#sparkwp-start-generation:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
 /* Responsive */
 @media screen and (max-width: 782px) {
-    .keycontentai-generation-header {
+    .sparkwp-generation-header {
         flex-direction: column;
         gap: 15px;
     }
     
-    .keycontentai-header-actions {
+    .sparkwp-header-actions {
         width: 100%;
         flex-direction: column;
     }
     
-    .keycontentai-header-actions button {
+    .sparkwp-header-actions button {
         width: 100%;
     }
     
     /* Mobile Card Layout */
-    .keycontentai-posts-list table {
+    .sparkwp-posts-list table {
         border: 0;
     }
     
-    .keycontentai-posts-list thead {
+    .sparkwp-posts-list thead {
         display: none;
     }
     
-    .keycontentai-posts-list tbody {
+    .sparkwp-posts-list tbody {
         display: block;
     }
     
-    .keycontentai-post-row {
+    .sparkwp-post-row {
         display: block;
         margin-bottom: 15px;
         border: 1px solid #c3c4c7;
@@ -190,7 +190,7 @@
         background: #fff;
     }
     
-    .keycontentai-post-row td {
+    .sparkwp-post-row td {
         display: block;
         text-align: left !important;
         padding: 12px 15px !important;
@@ -198,12 +198,12 @@
         border-bottom: 1px solid #f0f0f1;
     }
     
-    .keycontentai-post-row td:last-child {
+    .sparkwp-post-row td:last-child {
         border-bottom: none;
     }
     
     /* Add labels for mobile */
-    .keycontentai-post-row td:before {
+    .sparkwp-post-row td:before {
         content: attr(data-label);
         font-weight: 600;
         display: block;
@@ -213,34 +213,34 @@
         text-transform: uppercase;
     }
     
-    .keycontentai-status-cell:before {
+    .sparkwp-status-cell:before {
         content: "Status";
     }
     
     /* Status indicator on mobile */
-    .keycontentai-status-cell {
+    .sparkwp-status-cell {
         display: flex;
         align-items: center;
         gap: 10px;
     }
     
-    .keycontentai-status-indicator {
+    .sparkwp-status-indicator {
         margin-left: auto;
     }
     
     /* Action buttons full width on mobile */
-    .keycontentai-toggle-queue {
+    .sparkwp-toggle-queue {
         width: 100%;
         justify-content: center;
     }
 }
 
 @media screen and (max-width: 600px) {
-    .keycontentai-header-info {
+    .sparkwp-header-info {
         text-align: center;
     }
     
-    .keycontentai-header-info .keycontentai-separator {
+    .sparkwp-header-info .sparkwp-separator {
         display: block;
         margin: 5px 0;
     }

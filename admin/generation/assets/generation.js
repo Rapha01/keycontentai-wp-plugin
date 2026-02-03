@@ -1,5 +1,5 @@
 /**
- * KeyContentAI Generation Page JavaScript
+ * SparkWP Generation Page JavaScript
  */
 
 (function($) {
@@ -10,7 +10,7 @@
     let stopRequested = false;
     
     $(document).ready(function() {
-        console.log('KeyContentAI Generation Page loaded');
+        console.log('SparkWP Generation Page loaded');
         
         // Initialize event listeners
         initEventListeners();
@@ -22,9 +22,9 @@
      */
     function initEventListeners() {
         // Individual queue toggle buttons
-        $(document).on('click', '.keycontentai-toggle-queue', function(e) {
+        $(document).on('click', '.sparkwp-toggle-queue', function(e) {
             e.preventDefault();
-            const $row = $(this).closest('.keycontentai-post-row');
+            const $row = $(this).closest('.sparkwp-post-row');
             const status = $row.data('status');
             
             // Toggle queue state (not during processing)
@@ -34,20 +34,20 @@
         });
         
         // Queue All button
-        $('#keycontentai-queue-all').on('click', function(e) {
+        $('#sparkwp-queue-all').on('click', function(e) {
             e.preventDefault();
-            $('.keycontentai-post-row').filter((_, el) => ['unqueued', 'finished', 'error'].includes($(el).data('status')))
+            $('.sparkwp-post-row').filter((_, el) => ['unqueued', 'finished', 'error'].includes($(el).data('status')))
                 .each((_, el) => setQueueState($(el), true));
         });
         
         // Unqueue All button
-        $('#keycontentai-unqueue-all').on('click', function(e) {
+        $('#sparkwp-unqueue-all').on('click', function(e) {
             e.preventDefault();
-            $('.keycontentai-post-row[data-status="queued"]').each((_, el) => setQueueState($(el), false));
+            $('.sparkwp-post-row[data-status="queued"]').each((_, el) => setQueueState($(el), false));
         });
         
         // Start/Stop Generation button
-        $('#keycontentai-start-generation').on('click', function(e) {
+        $('#sparkwp-start-generation').on('click', function(e) {
             e.preventDefault();
             isGenerating ? stopGeneration() : startGeneration();
         });
@@ -57,7 +57,7 @@
      * Add debug entry
      */
     function addDebugEntry(step, data, isError) {
-        window.KeyContentAIDebug?.addEntry(step, data, isError);
+        window.SparkWPDebug?.addEntry(step, data, isError);
     }
     
     /**
@@ -72,14 +72,14 @@
      * Get count of queued posts
      */
     function getQueuedCount() {
-        return $('.keycontentai-post-row[data-status="queued"]').length;
+        return $('.sparkwp-post-row[data-status="queued"]').length;
     }
     
     /**
      * Get next queued post
      */
     function getNextQueuedPost() {
-        return $('.keycontentai-post-row[data-status="queued"]').first();
+        return $('.sparkwp-post-row[data-status="queued"]').first();
     }
     
     // Button state configuration
@@ -96,11 +96,11 @@
      */
     function updatePostStatus($row, newStatus) {
         $row.attr('data-status', newStatus);
-        $row.find('.keycontentai-status-indicator').attr('class', 'keycontentai-status-indicator keycontentai-status-' + newStatus);
+        $row.find('.sparkwp-status-indicator').attr('class', 'sparkwp-status-indicator sparkwp-status-' + newStatus);
         
         const state = buttonStates[newStatus];
         if (state) {
-            $row.find('.keycontentai-toggle-queue').text(state.text).prop('disabled', state.disabled);
+            $row.find('.sparkwp-toggle-queue').text(state.text).prop('disabled', state.disabled);
         }
     }
     
@@ -109,7 +109,7 @@
      */
     function updateQueueCount() {
         const count = getQueuedCount();
-        const $button = $('#keycontentai-start-generation');
+        const $button = $('#sparkwp-start-generation');
         
         $button
             .prop('disabled', !isGenerating && count === 0)
@@ -129,7 +129,7 @@
         console.log('Starting generation for', getQueuedCount(), 'posts');
         
         // Disable queue management buttons
-        $('#keycontentai-queue-all, #keycontentai-unqueue-all')
+        $('#sparkwp-queue-all, #sparkwp-unqueue-all')
             .prop('disabled', true);
         
         // Update button to show "Stop"
@@ -147,7 +147,7 @@
         console.log('Stop requested - will finish current post and stop');
         
         // Update button text to show stopping
-        $('#keycontentai-start-generation')
+        $('#sparkwp-start-generation')
             .prop('disabled', true)
             .text('Stopping...');
     }
@@ -181,12 +181,12 @@
         
         // AJAX call to generate content
         $.ajax({
-            url: keycontentaiGeneration.ajaxUrl,
+            url: sparkwpGeneration.ajaxUrl,
             type: 'POST',
             data: {
-                action: 'keycontentai_generate_content',
+                action: 'sparkwp_generate_content',
                 post_id: postId,
-                nonce: keycontentaiGeneration.nonce
+                nonce: sparkwpGeneration.nonce
             },
             success: function(response) {
                 // Add debug data from response
@@ -224,7 +224,7 @@
         console.log(wasStopped ? 'Generation stopped' : 'Generation complete!');
         
         // Re-enable action buttons
-        $('#keycontentai-queue-all, #keycontentai-unqueue-all').prop('disabled', false);
+        $('#sparkwp-queue-all, #sparkwp-unqueue-all').prop('disabled', false);
         updateQueueCount();
         
         // Show completion message as WordPress notice

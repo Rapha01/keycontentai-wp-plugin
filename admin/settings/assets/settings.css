@@ -1,17 +1,17 @@
 /**
- * KeyContentAI Settings Page Styles
+ * SparkWP Settings Page Styles
  */
 
 /* Page Layout */
-.keycontentai-settings-wrap h1 {
+.sparkwp-settings-wrap h1 {
     margin-bottom: 20px;
 }
 
-.keycontentai-nav-tab-wrapper {
+.sparkwp-nav-tab-wrapper {
     margin-bottom: 0;
 }
 
-.keycontentai-tab-content {
+.sparkwp-tab-content {
     background: #fff;
     border: 1px solid #c3c4c7;
     border-top: none;
@@ -19,11 +19,11 @@
     margin-top: 0;
 }
 
-.keycontentai-tab-panel {
-    animation: keycontentai-fadeIn 0.3s ease-in;
+.sparkwp-tab-panel {
+    animation: sparkwp-fadeIn 0.3s ease-in;
 }
 
-@keyframes keycontentai-fadeIn {
+@keyframes sparkwp-fadeIn {
     from {
         opacity: 0;
         transform: translateY(-10px);
@@ -35,18 +35,18 @@
 }
 
 /* Form Table */
-.keycontentai-tab-content .form-table {
+.sparkwp-tab-content .form-table {
     margin-top: 20px;
 }
 
 /* Fields Table Styling */
-.keycontentai-fields-table {
+.sparkwp-fields-table {
     border-collapse: collapse;
     margin-top: 15px;
     background: #fff;
 }
 
-.keycontentai-fields-table thead th {
+.sparkwp-fields-table thead th {
     background: #f6f7f7;
     border-bottom: 2px solid #c3c4c7;
     padding: 10px 15px;
@@ -55,42 +55,42 @@
     text-align: left;
 }
 
-.keycontentai-fields-table tbody tr {
+.sparkwp-fields-table tbody tr {
     border-bottom: 1px solid #e0e0e0;
 }
 
-.keycontentai-fields-table tbody tr:last-child {
+.sparkwp-fields-table tbody tr:last-child {
     border-bottom: none;
 }
 
-.keycontentai-fields-table tbody tr:hover {
+.sparkwp-fields-table tbody tr:hover {
     background: #f9f9f9;
 }
 
-.keycontentai-fields-table tbody td {
+.sparkwp-fields-table tbody td {
     padding: 15px;
     vertical-align: top;
 }
 
-.keycontentai-fields-table textarea {
+.sparkwp-fields-table textarea {
     width: 100%;
     font-size: 13px;
     resize: vertical;
     margin: 0;
 }
 
-.keycontentai-fields-table input[type="number"] {
+.sparkwp-fields-table input[type="number"] {
     margin: 0;
 }
 
-.keycontentai-fields-table code {
+.sparkwp-fields-table code {
     background: #f0f0f1;
     padding: 2px 6px;
     border-radius: 3px;
 }
 
 /* Field Type Badge */
-.keycontentai-field-type {
+.sparkwp-field-type {
     display: inline-block;
     padding: 3px 8px;
     background: #f0f0f1;
@@ -101,7 +101,7 @@
 }
 
 /* Source Badge */
-.keycontentai-field-source {
+.sparkwp-field-source {
     display: inline-block;
     padding: 3px 8px;
     border-radius: 3px;
@@ -111,30 +111,30 @@
     letter-spacing: 0.5px;
 }
 
-.keycontentai-source-acf {
+.sparkwp-source-acf {
     background: #d4edda;
     color: #155724;
 }
 
-.keycontentai-source-wp {
+.sparkwp-source-wp {
     background: #e7f3ff;
     color: #0073aa;
     border: 1px solid #0073aa;
 }
 
-.keycontentai-source-meta {
+.sparkwp-source-meta {
     background: #cce5ff;
     color: #004085;
 }
 
 /* Checkbox column styling */
-.keycontentai-fields-table input[type="checkbox"] {
+.sparkwp-fields-table input[type="checkbox"] {
     width: 18px;
     height: 18px;
     cursor: pointer;
 }
 
-.keycontentai-fields-table td p.description {
+.sparkwp-fields-table td p.description {
     margin: 5px 0 0 0;
     font-size: 12px;
 }

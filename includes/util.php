@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
  * 
  * @return array Language code => Language name
  */
-function keycontentai_get_language_names() {
+function sparkwp_get_language_names() {
     return array(
         // Germanic languages
         'de' => 'German',
@@ -93,7 +93,7 @@ function keycontentai_get_language_names() {
  * @param string $code Language code (ISO 639-1)
  * @return string Language name or capitalized code if not found
  */
-function keycontentai_get_language_name($code) {
-    $language_names = keycontentai_get_language_names();
+function sparkwp_get_language_name($code) {
+    $language_names = sparkwp_get_language_names();
     return isset($language_names[$code]) ? $language_names[$code] : ucfirst($code);
 }
