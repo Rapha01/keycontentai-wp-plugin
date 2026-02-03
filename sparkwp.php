@@ -65,10 +65,6 @@ class SparkWP {
             add_action('admin_menu', array($this, 'add_admin_menu'));
             add_action('admin_init', array($this, 'register_settings'));
             add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
-            
-            // AJAX handlers
-            add_action('wp_ajax_sparkwp_generate_content', array($this, 'ajax_generate_content'));
-            add_action('wp_ajax_sparkwp_load_keyword', array($this, 'ajax_load_keyword'));
         }
     }
     
@@ -91,9 +87,13 @@ class SparkWP {
         // Load keyword loader class
         require_once SPARKWP_PLUGIN_DIR . 'includes/keyword-loader.php';
         
-        // Load admin meta box (only in admin)
+        // Load admin components (only in admin)
         if (is_admin()) {
             require_once SPARKWP_PLUGIN_DIR . 'admin/edit-meta-box.php';
+            require_once SPARKWP_PLUGIN_DIR . 'includes/admin-ajax-handler.php';
+            
+            // Initialize AJAX handler
+            new SparkWP_Admin_Ajax_Handler();
         }
     }
     
@@ -173,50 +173,50 @@ class SparkWP {
             'default' => 'gpt-image-1.5'
         ));
         
-        // Client Settings
-        register_setting('sparkwp_client_settings', 'sparkwp_addressing', array(
+        // General Context Settings
+        register_setting('sparkwp_general_context_settings', 'sparkwp_addressing', array(
             'type' => 'string',
             'sanitize_callback' => 'sanitize_text_field',
             'default' => 'formal'
         ));
         
-        register_setting('sparkwp_client_settings', 'sparkwp_company_name', array(
+        register_setting('sparkwp_general_context_settings', 'sparkwp_company_name', array(
             'type' => 'string',
             'sanitize_callback' => 'sanitize_text_field',
             'default' => ''
         ));
         
-        register_setting('sparkwp_client_settings', 'sparkwp_industry', array(
+        register_setting('sparkwp_general_context_settings', 'sparkwp_industry', array(
             'type' => 'string',
             'sanitize_callback' => 'sanitize_text_field',
             'default' => ''
         ));
         
-        register_setting('sparkwp_client_settings', 'sparkwp_target_group', array(
+        register_setting('sparkwp_general_context_settings', 'sparkwp_target_group', array(
             'type' => 'string',
             'sanitize_callback' => 'sanitize_text_field',
             'default' => ''
         ));
         
-        register_setting('sparkwp_client_settings', 'sparkwp_usp', array(
+        register_setting('sparkwp_general_context_settings', 'sparkwp_usp', array(
             'type' => 'string',
             'sanitize_callback' => 'sanitize_textarea_field',
             'default' => ''
         ));
         
-        register_setting('sparkwp_client_settings', 'sparkwp_advantages', array(
+        register_setting('sparkwp_general_context_settings', 'sparkwp_advantages', array(
             'type' => 'string',
             'sanitize_callback' => 'sanitize_textarea_field',
             'default' => ''
         ));
         
-        register_setting('sparkwp_client_settings', 'sparkwp_buying_reasons', array(
+        register_setting('sparkwp_general_context_settings', 'sparkwp_buying_reasons', array(
             'type' => 'string',
             'sanitize_callback' => 'sanitize_textarea_field',
             'default' => ''
         ));
         
-        register_setting('sparkwp_client_settings', 'sparkwp_additional_context', array(
+        register_setting('sparkwp_general_context_settings', 'sparkwp_additional_context', array(
             'type' => 'string',
             'sanitize_callback' => 'sanitize_textarea_field',
             'default' => ''
@@ -539,83 +539,6 @@ class SparkWP {
                 'confirmClear' => __('Are you sure you want to clear all keywords?', 'sparkwp'),
                 'confirmStop' => __('Are you sure you want to stop the process?', 'sparkwp'),
                 'noKeywords' => __('Please enter at least one keyword.', 'sparkwp')
-            ));
-        }
-    }
-    
-    /**
-     * AJAX handler for content generation
-     */
-    public function ajax_generate_content() {
-        // Security check
-        check_ajax_referer('sparkwp_nonce', 'nonce');
-        
-        // Check permissions
-        if (!current_user_can('edit_posts')) {
-            wp_send_json_error(array(
-                'message' => __('Unauthorized', 'sparkwp')
-            ));
-            return;
-        }
-        
-        // Get post_id from request
-        $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
-        
-        if (empty($post_id)) {
-            wp_send_json_error(array(
-                'message' => __('No post ID provided', 'sparkwp')
-            ));
-            return;
-        }
-        
-        // Generate content for existing post
-        $generator = new SparkWP_Content_Generator();
-        $result = $generator->generate_content($post_id);
-        
-        // Return response with debug log
-        if ($result['success']) {
-            wp_send_json_success(array(
-                'message' => __('Content generated successfully', 'sparkwp'),
-                'debug_log' => isset($result['debug_log']) ? $result['debug_log'] : array()
-            ));
-        } else {
-            wp_send_json_error(array(
-                'message' => $result['message'],
-                'debug_log' => isset($result['debug_log']) ? $result['debug_log'] : array()
-            ));
-        }
-    }
-    
-    /**
-     * AJAX handler to load a keyword and create a post
-     */
-    public function ajax_load_keyword() {
-        // Security check
-        check_ajax_referer('sparkwp_nonce', 'nonce');
-        
-        // Get keyword from request
-        if (!isset($_POST['keyword']) || empty($_POST['keyword'])) {
-            wp_send_json_error(array(
-                'message' => __('No keyword provided', 'sparkwp')
-            ));
-        }
-        
-        $keyword = sanitize_text_field($_POST['keyword']);
-        $debug_mode = isset($_POST['debug']) && $_POST['debug'] === '1';
-        $auto_publish = isset($_POST['auto_publish']) && $_POST['auto_publish'] === '1';
-        $additional_context = isset($_POST['additional_context']) ? sanitize_textarea_field($_POST['additional_context']) : '';
-        
-        // Load keyword using the keyword loader class
-        $loader = new SparkWP_Keyword_Loader();
-        $result = $loader->load_keyword($keyword, $debug_mode, $auto_publish, $additional_context);
-        
-        // Return response
-        if ($result['success']) {
-            wp_send_json_success($result);
-        } else {
-            wp_send_json_error(array(
-                'message' => $result['message'],
-                'debug' => isset($result['debug']) ? $result['debug'] : array()
             ));
         }
     }

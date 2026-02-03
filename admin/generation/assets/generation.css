@@ -235,6 +235,73 @@
     }
 }
 
+/* Post Details (Collapsible) */
+.sparkwp-post-details-row {
+    background: #f9f9f9;
+}
+
+.sparkwp-post-details {
+    padding: 20px;
+    border-top: 1px solid #dcdcde;
+}
+
+.sparkwp-detail-field {
+    margin-bottom: 15px;
+}
+
+.sparkwp-detail-field label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.sparkwp-detail-field input[type="text"],
+.sparkwp-detail-field textarea {
+    width: 100%;
+    max-width: 600px;
+}
+
+.sparkwp-detail-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sparkwp-save-status {
+    font-size: 13px;
+    font-style: italic;
+}
+
+.sparkwp-save-status.success {
+    color: #00a32a;
+}
+
+.sparkwp-save-status.error {
+    color: #d63638;
+}
+
+.sparkwp-actions-cell {
+    white-space: nowrap;
+}
+
+.sparkwp-toggle-details {
+    padding: 2px 6px !important;
+    min-width: auto !important;
+    margin-right: 5px;
+    line-height: 1 !important;
+}
+
+.sparkwp-toggle-details .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 1;
+    transition: transform 0.2s ease;
+}
+
+.sparkwp-toggle-details.expanded .dashicons {
+    transform: rotate(180deg);
+}
+
 @media screen and (max-width: 600px) {
     .sparkwp-header-info {
         text-align: center;

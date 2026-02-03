@@ -1,6 +1,6 @@
 <?php
 /**
- * Client Settings Tab Content
+ * General Context Settings Tab Content
  */
 
 // Exit if accessed directly
@@ -20,16 +20,16 @@ $additional_context = get_option('sparkwp_additional_context', '');
 ?>
 
 <div class="sparkwp-tab-panel">
-    <?php settings_errors('sparkwp_client_settings'); ?>
+    <?php settings_errors('sparkwp_general_context_settings'); ?>
     
     <p class="description" style="margin-bottom: 20px;">
-        <?php esc_html_e('Configure your client and business information. This data will be used to personalize AI-generated content.', 'sparkwp'); ?>
+        <?php esc_html_e('Configure your general context and business information. This data will be used to personalize AI-generated content.', 'sparkwp'); ?>
     </p>
     
     <form method="post" action="options.php">
         <?php
-        settings_fields('sparkwp_client_settings');
-        do_settings_sections('sparkwp_client_settings');
+        settings_fields('sparkwp_general_context_settings');
+        do_settings_sections('sparkwp_general_context_settings');
         ?>
         
         <table class="form-table" role="presentation">

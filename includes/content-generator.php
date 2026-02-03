@@ -131,7 +131,7 @@ class SparkWP_Content_Generator {
             // WordPress Site Language
             'language' => $this->get_site_language(),
             
-            // Client Information
+            // General Context Information
             'addressing' => get_option('sparkwp_addressing', 'formal'),
             'company_name' => get_option('sparkwp_company_name', ''),
             'industry' => get_option('sparkwp_industry', ''),
@@ -143,8 +143,8 @@ class SparkWP_Content_Generator {
             // Custom Fields for this post type
             'custom_fields' => $this->get_custom_fields_config($post_type),
             
-            // Two levels of additional context (Client + CPT)
-            'client_additional_context' => get_option('sparkwp_additional_context', ''),
+            // Two levels of additional context (General Context + CPT)
+            'general_context_additional_context' => get_option('sparkwp_additional_context', ''),
             'cpt_additional_context' => $cpt_additional_context
         );
         
@@ -155,7 +155,7 @@ class SparkWP_Content_Generator {
             'company_name' => $settings['company_name'],
             'industry' => $settings['industry'],
             'custom_fields_count' => count($settings['custom_fields']),
-            'has_client_context' => !empty($settings['client_additional_context']),
+            'has_general_context' => !empty($settings['general_context_additional_context']),
             'has_cpt_context' => !empty($settings['cpt_additional_context'])
         ));
         

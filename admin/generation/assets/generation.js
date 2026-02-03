@@ -21,11 +21,70 @@
      * Initialize all event listeners
      */
     function initEventListeners() {
+        // Toggle post details
+        $(document).on('click', '.sparkwp-toggle-details', function(e) {
+            e.preventDefault();
+            const $button = $(this);
+            const $row = $button.closest('.sparkwp-post-row');
+            const $detailsRow = $row.next('.sparkwp-post-details-row');
+            
+            $detailsRow.slideToggle(200);
+            $button.toggleClass('expanded');
+        });
+        
+        // Save post meta
+        $(document).on('click', '.sparkwp-save-meta', function(e) {
+            e.preventDefault();
+            const $button = $(this);
+            const postId = $button.data('post-id');
+            const $detailsRow = $button.closest('.sparkwp-post-details-row');
+            const $status = $detailsRow.find('.sparkwp-save-status');
+            
+            const keyword = $detailsRow.find(`#sparkwp-keyword-${postId}`).val();
+            const context = $detailsRow.find(`#sparkwp-context-${postId}`).val();
+            
+            // Disable button and show loading
+            $button.prop('disabled', true).text('Saving...');
+            $status.removeClass('success error').text('');
+            
+            $.ajax({
+                url: sparkwpGeneration.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'sparkwp_save_post_meta',
+                    post_id: postId,
+                    keyword: keyword,
+                    additional_context: context,
+                    nonce: sparkwpGeneration.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $status.addClass('success').text('Saved successfully!');
+                        
+                        // Update keyword display in main row
+                        const $row = $detailsRow.prev('.sparkwp-post-row');
+                        $row.find('td[data-label="Keyword"] strong').text(keyword || '(no keyword)');
+                        
+                        // Clear status after 2 seconds
+                        setTimeout(() => $status.fadeOut(300, function() { $(this).text('').show(); }), 2000);
+                    } else {
+                        $status.addClass('error').text(response.data || 'Save failed');
+                    }
+                },
+                error: function() {
+                    $status.addClass('error').text('Network error');
+                },
+                complete: function() {
+                    $button.prop('disabled', false).text('Save');
+                }
+            });
+        });
+        
         // Individual queue toggle buttons
         $(document).on('click', '.sparkwp-toggle-queue', function(e) {
             e.preventDefault();
             const $row = $(this).closest('.sparkwp-post-row');
-            const status = $row.data('status');
+            const status = $row.attr('data-status');
             
             // Toggle queue state (not during processing)
             if (status !== 'processing') {
@@ -243,11 +302,14 @@
         const $notice = $(`<div class="notice notice-${type} is-dismissible"><p>${message}</p></div>`);
         $('.wrap > h1').after($notice);
         
-        // WordPress will add dismiss functionality automatically
-        // Just make it dismissible
-        if (typeof wp !== 'undefined' && wp.notices) {
-            wp.notices.initialize();
-        }
+        // Add dismiss button manually
+        const $dismissButton = $('<button type="button" class="notice-dismiss"><span class="screen-reader-text">Dismiss this notice.</span></button>');
+        $notice.append($dismissButton);
+        
+        // Handle dismiss click
+        $dismissButton.on('click', function() {
+            $notice.fadeOut(300, function() { $(this).remove(); });
+        });
         
         // Auto-dismiss after 5 seconds
         setTimeout(() => $notice.fadeOut(300, function() { $(this).remove(); }), 5000);

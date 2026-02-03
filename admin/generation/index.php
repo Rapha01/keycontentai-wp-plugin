@@ -102,6 +102,7 @@ if ($is_configured) {
                         <tbody id="sparkwp-posts-body">
                             <?php foreach ($posts as $post) : 
                                 $keyword = get_post_meta($post->ID, 'sparkwp_keyword', true);
+                                $additional_context = get_post_meta($post->ID, 'sparkwp_additional_context', true);
                                 $last_generation = get_post_meta($post->ID, 'sparkwp_last_generation', true);
                             ?>
                                 <tr class="sparkwp-post-row" data-post-id="<?php echo esc_attr($post->ID); ?>" data-status="unqueued">
@@ -122,10 +123,48 @@ if ($is_configured) {
                                     <td data-label="<?php esc_attr_e('Last Generated', 'sparkwp'); ?>">
                                         <?php echo $last_generation ? esc_html($last_generation) : '<em>' . esc_html__('Never', 'sparkwp') . '</em>'; ?>
                                     </td>
-                                    <td data-label="<?php esc_attr_e('Actions', 'sparkwp'); ?>">
+                                    <td data-label="<?php esc_attr_e('Actions', 'sparkwp'); ?>" class="sparkwp-actions-cell">
+                                        <button type="button" class="button button-small sparkwp-toggle-details" title="<?php esc_attr_e('Toggle details', 'sparkwp'); ?>">
+                                            <span class="dashicons dashicons-arrow-down-alt2"></span>
+                                        </button>
                                         <button type="button" class="button button-small sparkwp-toggle-queue" data-post-id="<?php echo esc_attr($post->ID); ?>">
                                             <?php esc_html_e('Queue', 'sparkwp'); ?>
                                         </button>
+                                    </td>
+                                </tr>
+                                <tr class="sparkwp-post-details-row" style="display: none;">
+                                    <td colspan="6">
+                                        <div class="sparkwp-post-details">
+                                            <div class="sparkwp-detail-field">
+                                                <label for="sparkwp-keyword-<?php echo esc_attr($post->ID); ?>">
+                                                    <strong><?php esc_html_e('Keyword:', 'sparkwp'); ?></strong>
+                                                </label>
+                                                <input 
+                                                    type="text" 
+                                                    id="sparkwp-keyword-<?php echo esc_attr($post->ID); ?>" 
+                                                    class="regular-text sparkwp-keyword-input" 
+                                                    value="<?php echo esc_attr($keyword); ?>"
+                                                    placeholder="<?php esc_attr_e('Enter keyword...', 'sparkwp'); ?>"
+                                                />
+                                            </div>
+                                            <div class="sparkwp-detail-field">
+                                                <label for="sparkwp-context-<?php echo esc_attr($post->ID); ?>">
+                                                    <strong><?php esc_html_e('Additional Context:', 'sparkwp'); ?></strong>
+                                                </label>
+                                                <textarea 
+                                                    id="sparkwp-context-<?php echo esc_attr($post->ID); ?>" 
+                                                    class="large-text sparkwp-context-input" 
+                                                    rows="3"
+                                                    placeholder="<?php esc_attr_e('Enter additional context for this post...', 'sparkwp'); ?>"
+                                                ><?php echo esc_textarea($additional_context); ?></textarea>
+                                            </div>
+                                            <div class="sparkwp-detail-actions">
+                                                <button type="button" class="button button-primary sparkwp-save-meta" data-post-id="<?php echo esc_attr($post->ID); ?>">
+                                                    <?php esc_html_e('Save', 'sparkwp'); ?>
+                                                </button>
+                                                <span class="sparkwp-save-status"></span>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

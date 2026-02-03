@@ -19,8 +19,8 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'cpt';
         <a href="?page=sparkwp-settings&tab=cpt" class="nav-tab <?php echo $active_tab === 'cpt' ? 'nav-tab-active' : ''; ?>">
             <?php esc_html_e('CPT', 'sparkwp'); ?>
         </a>
-        <a href="?page=sparkwp-settings&tab=client-settings" class="nav-tab <?php echo $active_tab === 'client-settings' ? 'nav-tab-active' : ''; ?>">
-            <?php esc_html_e('Client', 'sparkwp'); ?>
+        <a href="?page=sparkwp-settings&tab=general-context" class="nav-tab <?php echo $active_tab === 'general-context' ? 'nav-tab-active' : ''; ?>">
+            <?php esc_html_e('General Context', 'sparkwp'); ?>
         </a>
         <a href="?page=sparkwp-settings&tab=api-settings" class="nav-tab <?php echo $active_tab === 'api-settings' ? 'nav-tab-active' : ''; ?>">
             <?php esc_html_e('API', 'sparkwp'); ?>
@@ -35,8 +35,8 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'cpt';
             case 'cpt':
                 $tab_file = SPARKWP_PLUGIN_DIR . 'admin/settings/tabs/tab-cpt.php';
                 break;
-            case 'client-settings':
-                $tab_file = SPARKWP_PLUGIN_DIR . 'admin/settings/tabs/tab-client-settings.php';
+            case 'general-context':
+                $tab_file = SPARKWP_PLUGIN_DIR . 'admin/settings/tabs/tab-general-context.php';
                 break;
             case 'api-settings':
                 $tab_file = SPARKWP_PLUGIN_DIR . 'admin/settings/tabs/tab-api-settings.php';

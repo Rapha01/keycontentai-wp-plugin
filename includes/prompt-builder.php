@@ -52,8 +52,8 @@ class SparkWP_Prompt_Builder {
         // 3. Topic/Keyword
         $prompt_parts[] = $this->build_topic_section($post_settings);
         
-        // 4. Company/Client Information
-        $prompt_parts[] = $this->build_client_context($cpt_settings);
+        // 4. Company/General Context Information
+        $prompt_parts[] = $this->build_general_context($cpt_settings);
         
         // 5. Target Audience
         $prompt_parts[] = $this->build_target_audience_section($cpt_settings);
@@ -122,12 +122,12 @@ class SparkWP_Prompt_Builder {
     }
     
     /**
-     * Build client/company context
+     * Build general context/company context
      */
-    private function build_client_context($settings) {
+    private function build_general_context($settings) {
         $context_parts = array();
         
-        $context_parts[] = "CLIENT INFORMATION:";
+        $context_parts[] = "GENERAL CONTEXT:";
         
         if (!empty($settings['company_name'])) {
             $context_parts[] = "- Company: {$settings['company_name']}";
@@ -149,8 +149,8 @@ class SparkWP_Prompt_Builder {
             $context_parts[] = "- Why Customers Choose Us: {$settings['buying_reasons']}";
         }
         
-        if (!empty($settings['client_additional_context'])) {
-            $context_parts[] = "- Additional Context: {$settings['client_additional_context']}";
+        if (!empty($settings['general_context_additional_context'])) {
+            $context_parts[] = "- Additional Context: {$settings['general_context_additional_context']}";
         }
         
         return implode("\n", $context_parts);

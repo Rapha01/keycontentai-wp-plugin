@@ -31,8 +31,8 @@ class SparkWP_Keyword_Loader {
         // Get selected post type from settings
         $post_type = get_option('sparkwp_selected_post_type', 'post');
         
-        // Normalize keyword to lowercase for consistency
-        $keyword_normalized = strtolower(trim($keyword));
+        // Trim keyword but preserve case
+        $keyword = trim($keyword);
         
         // Initialize result
         $result = array(
@@ -50,8 +50,7 @@ class SparkWP_Keyword_Loader {
             $result['debug'][] = array(
                 'step' => 'start',
                 'data' => array(
-                    'keyword_original' => $keyword,
-                    'keyword_normalized' => $keyword_normalized,
+                    'keyword' => $keyword,
                     'post_type' => $post_type,
                     'auto_publish' => $auto_publish,
                     'timestamp' => current_time('mysql')
@@ -63,7 +62,7 @@ class SparkWP_Keyword_Loader {
         $existing_posts = get_posts(array(
             'post_type' => $post_type,
             'meta_key' => 'sparkwp_keyword',
-            'meta_value' => $keyword_normalized,
+            'meta_value' => $keyword,
             'posts_per_page' => 1,
             'post_status' => 'any'
         ));
@@ -178,8 +177,8 @@ class SparkWP_Keyword_Loader {
             );
         }
         
-        // Save the keyword to the custom field (normalized to lowercase)
-        update_post_meta($post_id, 'sparkwp_keyword', $keyword_normalized);
+        // Save the keyword to the custom field (preserve original case)
+        update_post_meta($post_id, 'sparkwp_keyword', $keyword);
         
         // Save the additional context if provided
         if (!empty($additional_context)) {
@@ -191,8 +190,7 @@ class SparkWP_Keyword_Loader {
                 'step' => 'save_keyword_meta',
                 'data' => array(
                     'post_id' => $post_id,
-                    'keyword_original' => $keyword,
-                    'keyword_saved' => $keyword_normalized,
+                    'keyword' => $keyword,
                     'additional_context' => $additional_context
                 )
             );
