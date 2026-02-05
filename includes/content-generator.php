@@ -324,15 +324,42 @@ class SparkWP_Content_Generator {
             // 3. Make API call to generate the image
             $image_response = $this->api_caller->generate_image($image_prompt, $cpt_settings['api_key'], $image_options);
             
-            // 4. Process and save the image immediately (gpt-image returns b64_json)
+            // 4. Process and save the image as WebP (gpt-image returns b64_json)
             if ($image_response && isset($image_response['data'][0]['b64_json'])) {
-                $attachment_id = $this->save_image_from_base64($image_response['data'][0]['b64_json'], $post_id, $field);
+                // Convert to WebP format
+                $webp_data = sparkwp_convert_image_to_webp($image_response['data'][0]['b64_json'], 90);
                 
-                if ($attachment_id) {
-                    // 5. Update the post with the generated image
-                    $this->update_post_with_image($post_id, $field, $attachment_id);
-                    $images_generated_count++;
+                if (is_wp_error($webp_data)) {
+                    throw new Exception(sprintf(
+                        __('Failed to convert image to WebP for field "%s": %s', 'sparkwp'),
+                        $field['label'],
+                        $webp_data->get_error_message()
+                    ));
                 }
+                
+                // Save WebP to media library
+                $filename = sanitize_file_name($field['label']) . '-' . time();
+                $attachment_id = sparkwp_save_webp_to_media_library($webp_data, $post_id, $filename, $field['label']);
+                
+                if (is_wp_error($attachment_id)) {
+                    throw new Exception(sprintf(
+                        __('Failed to save WebP image for field "%s": %s', 'sparkwp'),
+                        $field['label'],
+                        $attachment_id->get_error_message()
+                    ));
+                }
+                
+                // 5. Update the post with the generated image
+                $this->update_post_with_image($post_id, $field, $attachment_id);
+                
+                $this->add_debug('generate_image_content', array(
+                    'field_key' => $field['key'],
+                    'attachment_id' => $attachment_id,
+                    'format' => 'webp',
+                    'success' => true
+                ));
+                
+                $images_generated_count++;
             }
         }
         
