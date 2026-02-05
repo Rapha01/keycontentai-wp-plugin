@@ -146,12 +146,12 @@ if (!empty($selected_post_type)) {
             <table class="form-table sparkwp-fields-table" role="presentation">
                 <thead>
                     <tr>
-                        <th style="width: 18%;"><?php esc_html_e('Field Name', 'sparkwp'); ?></th>
-                        <th style="width: 10%;"><?php esc_html_e('Type', 'sparkwp'); ?></th>
-                        <th style="width: 8%;"><?php esc_html_e('Source', 'sparkwp'); ?></th>
-                        <th style="width: 40%;"><?php esc_html_e('Description / Prompt', 'sparkwp'); ?></th>
-                        <th style="width: 12%;"><?php esc_html_e('WordCount/Dimensions', 'sparkwp'); ?></th>
-                        <th style="width: 12%; text-align: center;"><?php esc_html_e('Generate', 'sparkwp'); ?></th>
+                        <th style="width: 8% !important; text-align: center;"><?php esc_html_e('Generate', 'sparkwp'); ?></th>
+                        <th style="width: 20% !important;"><?php esc_html_e('Field Name', 'sparkwp'); ?></th>
+                        <th style="width: 10% !important;"><?php esc_html_e('Type', 'sparkwp'); ?></th>
+                        <th style="width: 8% !important;"><?php esc_html_e('Source', 'sparkwp'); ?></th>
+                        <th style="width: 45% !important;"><?php esc_html_e('Description / Prompt', 'sparkwp'); ?></th>
+                        <th style="width: 9% !important;"><?php esc_html_e('WordCount/Dimensions', 'sparkwp'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -163,6 +163,29 @@ if (!empty($selected_post_type)) {
                         $current_quality = isset($current_field_configs[$field['key']]['quality']) ? $current_field_configs[$field['key']]['quality'] : 'auto';
                         ?>
                         <tr>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <label style="display: inline-block; margin: 0;">
+                                    <input 
+                                        type="checkbox" 
+                                        name="sparkwp_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][enabled]"
+                                        value="1"
+                                        class="sparkwp-field-enable-checkbox"
+                                        <?php 
+                                        // Check if this field has been saved before
+                                        if (isset($current_field_configs[$field['key']])) {
+                                            // Use saved value
+                                            checked($current_field_configs[$field['key']]['enabled'], true);
+                                        } else {
+                                            // Default to checked for new fields
+                                            checked(true, true);
+                                        }
+                                        ?>
+                                    />
+                                    <span class="screen-reader-text">
+                                        <?php echo esc_html(sprintf(__('Enable generation for %s', 'sparkwp'), $field['label'])); ?>
+                                    </span>
+                                </label>
+                            </td>
                             <td>
                                 <strong><?php echo esc_html($field['label']); ?></strong>
                                 <br>
@@ -191,7 +214,7 @@ if (!empty($selected_post_type)) {
                                     <!-- Image Size Dropdown -->
                                     <select 
                                         name="sparkwp_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][size]"
-                                        class="regular-text"
+                                        style="width: 100%;"
                                     >
                                         <option value="auto" <?php selected($current_size, 'auto'); ?>><?php esc_html_e('Auto (Recommended)', 'sparkwp'); ?></option>
                                         <option value="1024x1024" <?php selected($current_size, '1024x1024'); ?>>1024 x 1024 (Square)</option>
@@ -203,8 +226,9 @@ if (!empty($selected_post_type)) {
                                     <div style="margin-top: 8px;">
                                         <select 
                                             name="sparkwp_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][quality]"
-                                            class="regular-text sparkwp-quality-select"
+                                            class="sparkwp-quality-select"
                                             data-field-key="<?php echo esc_attr($field['key']); ?>"
+                                            style="width: 100%;"
                                         >
                                             <option value="auto" <?php selected($current_quality, 'auto'); ?>><?php esc_html_e('Auto (Recommended)', 'sparkwp'); ?></option>
                                             <option value="low" <?php selected($current_quality, 'low'); ?>><?php esc_html_e('Low', 'sparkwp'); ?></option>
@@ -224,31 +248,6 @@ if (!empty($selected_post_type)) {
                                         placeholder="<?php esc_attr_e('Words', 'sparkwp'); ?>"
                                     />
                                 <?php endif; ?>
-                            </td>
-                            <td style="text-align: center; vertical-align: middle;">
-                                <label style="display: inline-block; margin: 0;">
-                                    <input 
-                                        type="checkbox" 
-                                        name="sparkwp_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][enabled]"
-                                        value="1"
-                                        <?php 
-                                        // Check if this field has been saved before
-                                        if (isset($current_field_configs[$field['key']])) {
-                                            // Use saved value
-                                            checked($current_field_configs[$field['key']]['enabled'], true);
-                                        } else {
-                                            // Default to checked for new fields
-                                            checked(true, true);
-                                        }
-                                        ?>
-                                    />
-                                    <span class="screen-reader-text">
-                                        <?php echo esc_html(sprintf(__('Enable generation for %s', 'sparkwp'), $field['label'])); ?>
-                                    </span>
-                                </label>
-                                <p class="description" style="margin-top: 5px;">
-                                    <?php esc_html_e('Enable AI generation', 'sparkwp'); ?>
-                                </p>
                             </td>
                         </tr>
                     <?php endforeach; ?>
