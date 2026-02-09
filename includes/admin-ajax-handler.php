@@ -18,6 +18,7 @@ class SparkWP_Admin_Ajax_Handler {
         add_action('wp_ajax_sparkwp_load_keyword', array($this, 'load_keyword'));
         add_action('wp_ajax_sparkwp_save_post_meta', array($this, 'save_post_meta'));
         add_action('wp_ajax_sparkwp_save_settings', array($this, 'save_settings'));
+        add_action('wp_ajax_sparkwp_reset_settings', array($this, 'reset_settings'));
     }
     
     /**
@@ -228,5 +229,76 @@ class SparkWP_Admin_Ajax_Handler {
                 $updated
             )
         ));
+    }
+    
+    /**
+     * AJAX handler to reset plugin settings or post meta
+     */
+    public function reset_settings() {
+        // Security check
+        check_ajax_referer('sparkwp_settings_nonce', 'nonce');
+        
+        // Check if user has permission
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array(
+                'message' => __('Unauthorized', 'sparkwp')
+            ));
+        }
+        
+        $target = isset($_POST['target']) ? sanitize_text_field($_POST['target']) : '';
+        
+        global $wpdb;
+        
+        switch ($target) {
+            case 'settings':
+                $deleted = $wpdb->query(
+                    $wpdb->prepare(
+                        "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+                        'sparkwp_%'
+                    )
+                );
+                wp_send_json_success(array(
+                    'message' => sprintf(
+                        __('Removed %d options.', 'sparkwp'),
+                        $deleted
+                    )
+                ));
+                break;
+                
+            case 'meta':
+                $post_type = isset($_POST['post_type']) ? sanitize_key($_POST['post_type']) : '';
+                
+                if (empty($post_type)) {
+                    wp_send_json_error(array(
+                        'message' => __('No post type specified.', 'sparkwp')
+                    ));
+                }
+                
+                $post_type_object = get_post_type_object($post_type);
+                $post_type_label = $post_type_object ? $post_type_object->labels->name : $post_type;
+                
+                $deleted = $wpdb->query(
+                    $wpdb->prepare(
+                        "DELETE pm FROM {$wpdb->postmeta} pm
+                         INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+                         WHERE pm.meta_key LIKE %s AND p.post_type = %s",
+                        'sparkwp_%',
+                        $post_type
+                    )
+                );
+                wp_send_json_success(array(
+                    'message' => sprintf(
+                        __('Removed %d post meta entries from "%s".', 'sparkwp'),
+                        $deleted,
+                        $post_type_label
+                    )
+                ));
+                break;
+                
+            default:
+                wp_send_json_error(array(
+                    'message' => __('Invalid reset target.', 'sparkwp')
+                ));
+        }
     }
 }

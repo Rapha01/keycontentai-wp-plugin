@@ -106,4 +106,65 @@ jQuery(document).ready(function($) {
         });
     });
     
+    // ─── Reset Tab ───
+    $('#sparkwp-reset-settings-trigger').on('click', function() {
+        $('#sparkwp-reset-settings-modal').fadeIn(200);
+    });
+    
+    $('#sparkwp-reset-meta-trigger').on('click', function() {
+        $('#sparkwp-reset-meta-modal').fadeIn(200);
+    });
+    
+    // Close modal on cancel or overlay click
+    $('.sparkwp-modal-cancel, .sparkwp-modal-overlay').on('click', function(e) {
+        if (e.target === this) {
+            $(this).closest('.sparkwp-modal-overlay').fadeOut(200);
+        }
+    });
+    
+    $('.sparkwp-modal').on('click', function(e) {
+        e.stopPropagation();
+    });
+    
+    // Confirm reset
+    $('.sparkwp-modal-confirm').on('click', function() {
+        var $button = $(this);
+        var target = $button.data('target');
+        var $modal = $button.closest('.sparkwp-modal-overlay');
+        var $cancelButton = $modal.find('.sparkwp-modal-cancel');
+        var $status = $('#sparkwp-reset-' + target + '-status');
+        var originalText = $button.text();
+        
+        $button.prop('disabled', true).text(sparkwpSettings.saving);
+        $cancelButton.prop('disabled', true);
+        $status.removeClass('success error').text('');
+        
+        $.ajax({
+            url: sparkwpSettings.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'sparkwp_reset_settings',
+                nonce: sparkwpSettings.nonce,
+                target: target,
+                post_type: $button.data('post-type') || ''
+            },
+            success: function(response) {
+                $modal.fadeOut(200);
+                if (response.success) {
+                    $status.addClass('success').text('✓ ' + response.data.message);
+                } else {
+                    $status.addClass('error').text('✗ ' + (response.data.message || sparkwpSettings.error));
+                }
+                $button.prop('disabled', false).text(originalText);
+                $cancelButton.prop('disabled', false);
+            },
+            error: function() {
+                $modal.fadeOut(200);
+                $status.addClass('error').text('✗ ' + sparkwpSettings.error);
+                $button.prop('disabled', false).text(originalText);
+                $cancelButton.prop('disabled', false);
+            }
+        });
+    });
+    
 });

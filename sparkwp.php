@@ -48,6 +48,10 @@ define('SPARKWP_PLUGIN_BASENAME', plugin_basename(__FILE__));
  * CPT Settings (tab: cpt)
  *   sparkwp_selected_post_type string  Currently selected post type (default: 'post')
  *   sparkwp_cpt_configs        json    Per-post-type field configs and additional context
+ *
+ * Reset (tab: reset)
+ *   Deletes all options matching sparkwp_% and all post meta matching sparkwp_%
+ *   See SparkWP_Admin_Ajax_Handler::reset_settings()
  * ───────────────────────────────────────────────────────────────────
  */
 

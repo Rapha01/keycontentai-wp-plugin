@@ -25,6 +25,9 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'cpt';
         <a href="?page=sparkwp-settings&tab=api-settings" class="nav-tab <?php echo $active_tab === 'api-settings' ? 'nav-tab-active' : ''; ?>">
             <?php esc_html_e('API', 'sparkwp'); ?>
         </a>
+        <a href="?page=sparkwp-settings&tab=reset" class="nav-tab <?php echo $active_tab === 'reset' ? 'nav-tab-active' : ''; ?>">
+            <?php esc_html_e('Reset', 'sparkwp'); ?>
+        </a>
     </h2>
     
     <div class="tab-content sparkwp-tab-content">
@@ -40,6 +43,9 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'cpt';
                 break;
             case 'api-settings':
                 $tab_file = SPARKWP_PLUGIN_DIR . 'admin/settings/tabs/tab-api-settings.php';
+                break;
+            case 'reset':
+                $tab_file = SPARKWP_PLUGIN_DIR . 'admin/settings/tabs/tab-reset.php';
                 break;
             default:
                 $tab_file = SPARKWP_PLUGIN_DIR . 'admin/settings/tabs/tab-cpt.php';
