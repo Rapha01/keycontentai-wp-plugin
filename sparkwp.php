@@ -222,6 +222,19 @@ class SparkWP {
             'default' => ''
         ));
         
+        register_setting('sparkwp_general_context_settings', 'sparkwp_wysiwyg_formatting', array(
+            'type' => 'array',
+            'sanitize_callback' => array($this, 'sanitize_wysiwyg_formatting'),
+            'default' => array(
+                'paragraphs' => true,
+                'bold' => true,
+                'italic' => true,
+                'headings' => true,
+                'lists' => true,
+                'links' => true
+            )
+        ));
+        
         // CPT Settings
         register_setting('sparkwp_cpt_settings', 'sparkwp_selected_post_type', array(
             'type' => 'string',
@@ -307,6 +320,34 @@ class SparkWP {
         
         // Return as JSON string
         return wp_json_encode($sanitized);
+    }
+    
+    /**
+     * Sanitize WYSIWYG formatting options
+     * 
+     * @param array|string $input Input data from the form
+     * @return array Sanitized formatting options
+     */
+    public function sanitize_wysiwyg_formatting($input) {
+        // Valid formatting options
+        $valid_options = array('paragraphs', 'bold', 'italic', 'headings', 'lists', 'links');
+        $sanitized = array();
+        
+        // If input is not an array, return default (all enabled)
+        if (!is_array($input)) {
+            foreach ($valid_options as $option) {
+                $sanitized[$option] = true;
+            }
+            return $sanitized;
+        }
+        
+        // Process each valid option
+        foreach ($valid_options as $option) {
+            // Checkbox values: if checked, value is '1', if unchecked, key doesn't exist
+            $sanitized[$option] = isset($input[$option]) && $input[$option] == '1';
+        }
+        
+        return $sanitized;
     }
     
     /**

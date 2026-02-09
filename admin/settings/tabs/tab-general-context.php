@@ -17,6 +17,16 @@ $usp = get_option('sparkwp_usp', '');
 $advantages = get_option('sparkwp_advantages', '');
 $buying_reasons = get_option('sparkwp_buying_reasons', '');
 $additional_context = get_option('sparkwp_additional_context', '');
+
+// Get WYSIWYG formatting options
+$wysiwyg_formatting = get_option('sparkwp_wysiwyg_formatting', array(
+    'bold' => true,
+    'italic' => true,
+    'headings' => true,
+    'lists' => true,
+    'links' => true,
+    'paragraphs' => true
+));
 ?>
 
 <div class="sparkwp-tab-panel">
@@ -199,6 +209,100 @@ $additional_context = get_option('sparkwp_additional_context', '');
                         <p class="description">
                             <?php esc_html_e('Any other relevant information about your brand, tone of voice, or specific requirements.', 'sparkwp'); ?>
                         </p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h2><?php esc_html_e('WYSIWYG Formatting', 'sparkwp'); ?></h2>
+        <p class="description" style="margin-bottom: 20px;">
+            <?php esc_html_e('Select which HTML formatting elements the AI can use when generating content for WYSIWYG fields (like post content and rich text fields).', 'sparkwp'); ?>
+        </p>
+        
+        <table class="form-table" role="presentation">
+            <tbody>
+                <tr>
+                    <th scope="row">
+                        <?php esc_html_e('Allowed HTML Elements', 'sparkwp'); ?>
+                    </th>
+                    <td>
+                        <fieldset>
+                            <legend class="screen-reader-text">
+                                <span><?php esc_html_e('Allowed HTML Elements', 'sparkwp'); ?></span>
+                            </legend>
+                            
+                            <label style="display: inline-block; margin-right: 20px; margin-bottom: 10px;">
+                                <input 
+                                    type="checkbox" 
+                                    name="sparkwp_wysiwyg_formatting[paragraphs]" 
+                                    value="1"
+                                    <?php checked(isset($wysiwyg_formatting['paragraphs']) ? $wysiwyg_formatting['paragraphs'] : true, true); ?>
+                                />
+                                <?php esc_html_e('Paragraphs', 'sparkwp'); ?>
+                                <code>&lt;p&gt;</code>
+                            </label>
+                            
+                            <label style="display: inline-block; margin-right: 20px; margin-bottom: 10px;">
+                                <input 
+                                    type="checkbox" 
+                                    name="sparkwp_wysiwyg_formatting[bold]" 
+                                    value="1"
+                                    <?php checked(isset($wysiwyg_formatting['bold']) ? $wysiwyg_formatting['bold'] : true, true); ?>
+                                />
+                                <?php esc_html_e('Bold', 'sparkwp'); ?>
+                                <code>&lt;strong&gt;</code>
+                            </label>
+                            
+                            <label style="display: inline-block; margin-right: 20px; margin-bottom: 10px;">
+                                <input 
+                                    type="checkbox" 
+                                    name="sparkwp_wysiwyg_formatting[italic]" 
+                                    value="1"
+                                    <?php checked(isset($wysiwyg_formatting['italic']) ? $wysiwyg_formatting['italic'] : true, true); ?>
+                                />
+                                <?php esc_html_e('Italic', 'sparkwp'); ?>
+                                <code>&lt;em&gt;</code>
+                            </label>
+                            
+                            <br>
+                            
+                            <label style="display: inline-block; margin-right: 20px; margin-bottom: 10px;">
+                                <input 
+                                    type="checkbox" 
+                                    name="sparkwp_wysiwyg_formatting[headings]" 
+                                    value="1"
+                                    <?php checked(isset($wysiwyg_formatting['headings']) ? $wysiwyg_formatting['headings'] : true, true); ?>
+                                />
+                                <?php esc_html_e('Headings', 'sparkwp'); ?>
+                                <code>&lt;h2&gt; &lt;h3&gt; &lt;h4&gt;</code>
+                            </label>
+                            
+                            <label style="display: inline-block; margin-right: 20px; margin-bottom: 10px;">
+                                <input 
+                                    type="checkbox" 
+                                    name="sparkwp_wysiwyg_formatting[lists]" 
+                                    value="1"
+                                    <?php checked(isset($wysiwyg_formatting['lists']) ? $wysiwyg_formatting['lists'] : true, true); ?>
+                                />
+                                <?php esc_html_e('Lists', 'sparkwp'); ?>
+                                <code>&lt;ul&gt; &lt;ol&gt; &lt;li&gt;</code>
+                            </label>
+                            
+                            <label style="display: inline-block; margin-right: 20px; margin-bottom: 10px;">
+                                <input 
+                                    type="checkbox" 
+                                    name="sparkwp_wysiwyg_formatting[links]" 
+                                    value="1"
+                                    <?php checked(isset($wysiwyg_formatting['links']) ? $wysiwyg_formatting['links'] : true, true); ?>
+                                />
+                                <?php esc_html_e('Links', 'sparkwp'); ?>
+                                <code>&lt;a&gt;</code>
+                            </label>
+                            
+                            <p class="description" style="margin-top: 10px;">
+                                <?php esc_html_e('The AI will only use the selected HTML elements when generating content for WYSIWYG fields. Uncheck elements you don\'t want the AI to use.', 'sparkwp'); ?>
+                            </p>
+                        </fieldset>
                     </td>
                 </tr>
             </tbody>

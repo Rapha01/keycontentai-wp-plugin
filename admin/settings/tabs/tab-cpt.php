@@ -146,12 +146,12 @@ if (!empty($selected_post_type)) {
             <table class="form-table sparkwp-fields-table" role="presentation">
                 <thead>
                     <tr>
-                        <th style="width: 8% !important; text-align: center;"><?php esc_html_e('Generate', 'sparkwp'); ?></th>
-                        <th style="width: 20% !important;"><?php esc_html_e('Field Name', 'sparkwp'); ?></th>
-                        <th style="width: 10% !important;"><?php esc_html_e('Type', 'sparkwp'); ?></th>
-                        <th style="width: 8% !important;"><?php esc_html_e('Source', 'sparkwp'); ?></th>
-                        <th style="width: 45% !important;"><?php esc_html_e('Description / Prompt', 'sparkwp'); ?></th>
-                        <th style="width: 9% !important;"><?php esc_html_e('WordCount/Dimensions', 'sparkwp'); ?></th>
+                        <th style="width: 8%; text-align: center;"><?php esc_html_e('Generate', 'sparkwp'); ?></th>
+                        <th style="width: 20%;"><?php esc_html_e('Field Name', 'sparkwp'); ?></th>
+                        <th style="width: 10%;"><?php esc_html_e('Type', 'sparkwp'); ?></th>
+                        <th style="width: 8%;"><?php esc_html_e('Source', 'sparkwp'); ?></th>
+                        <th style="width: 45%;"><?php esc_html_e('Description / Prompt', 'sparkwp'); ?></th>
+                        <th style="width: 9%;"><?php esc_html_e('WordCount/Dimensions', 'sparkwp'); ?></th>
                     </tr>
                 </thead>
                 <tbody>

@@ -64,13 +64,16 @@ class SparkWP_Prompt_Builder {
         // 7. Post-Specific Additional Context
         $prompt_parts[] = $this->build_post_specific_context($post_settings);
         
-        // 8. Custom Fields Instructions
+        // 8. WYSIWYG Formatting Rules (if applicable)
+        $prompt_parts[] = $this->build_wysiwyg_formatting_rules($custom_fields);
+        
+        // 9. Custom Fields Instructions
         $prompt_parts[] = $this->build_custom_fields_instructions($custom_fields);
         
-        // 9. Output Format Instructions
+        // 10. Output Format Instructions
         $prompt_parts[] = $this->build_output_format_instructions($custom_fields);
         
-        // 10. Final Instructions
+        // 11. Final Instructions
         $prompt_parts[] = $this->build_final_instructions($cpt_settings);
         
         // Combine all parts with double line breaks
@@ -203,6 +206,78 @@ class SparkWP_Prompt_Builder {
     }
     
     /**
+     * Build WYSIWYG formatting rules (if there are WYSIWYG fields)
+     */
+    private function build_wysiwyg_formatting_rules($custom_fields) {
+        // Check if any WYSIWYG fields exist
+        $has_wysiwyg = false;
+        foreach ($custom_fields as $field) {
+            if ($field['type'] === 'wysiwyg') {
+                $has_wysiwyg = true;
+                break;
+            }
+        }
+        
+        // Return empty if no WYSIWYG fields
+        if (!$has_wysiwyg) {
+            return '';
+        }
+        
+        // Get WYSIWYG formatting settings
+        $wysiwyg_formatting = get_option('sparkwp_wysiwyg_formatting', array(
+            'paragraphs' => true,
+            'bold' => true,
+            'italic' => true,
+            'headings' => true,
+            'lists' => true,
+            'links' => true
+        ));
+        
+        $allowed_html = $this->build_allowed_html_tags($wysiwyg_formatting);
+        
+        // Return empty if no HTML tags are allowed
+        if (empty($allowed_html)) {
+            return '';
+        }
+        
+        $instructions = array();
+        $instructions[] = "WYSIWYG FIELD FORMATTING:";
+        $instructions[] = "For fields marked as type 'wysiwyg', you may use HTML formatting when it enhances readability and structure.";
+        $instructions[] = "Available HTML tags: {$allowed_html}";
+        $instructions[] = "";
+        $instructions[] = "Use HTML formatting when appropriate:";
+        
+        if (!empty($wysiwyg_formatting['paragraphs'])) {
+            $instructions[] = "- <p> tags for paragraph breaks when content has multiple paragraphs";
+        }
+        
+        if (!empty($wysiwyg_formatting['headings'])) {
+            $instructions[] = "- <h2>, <h3>, <h4> for section headings when content benefits from clear structure";
+        }
+        
+        if (!empty($wysiwyg_formatting['bold'])) {
+            $instructions[] = "- <strong> to emphasize important points or key terms when needed";
+        }
+        
+        if (!empty($wysiwyg_formatting['italic'])) {
+            $instructions[] = "- <em> for subtle emphasis or technical terms when appropriate";
+        }
+        
+        if (!empty($wysiwyg_formatting['lists'])) {
+            $instructions[] = "- <ul>/<ol> with <li> for lists when presenting multiple items or steps";
+        }
+        
+        if (!empty($wysiwyg_formatting['links'])) {
+            $instructions[] = "- <a href=\"URL\"> for hyperlinks when relevant (use placeholder URLs like https://example.com)";
+        }
+        
+        $instructions[] = "";
+        $instructions[] = "Plain text is perfectly acceptable if HTML formatting doesn't add value. Use your judgment to create well-structured, readable content.";
+        
+        return implode("\n", $instructions);
+    }
+    
+    /**
      * Build custom fields instructions
      */
     private function build_custom_fields_instructions($custom_fields) {
@@ -214,6 +289,7 @@ class SparkWP_Prompt_Builder {
         foreach ($custom_fields as $index => $field) {
             $field_num = $index + 1;
             $instructions[] = "{$field_num}. Field: {$field['label']} ({$field['key']})";
+            $instructions[] = "   Field Type: {$field['type']}";
             
             if (!empty($field['description'])) {
                 $instructions[] = "   Description: {$field['description']}";
@@ -223,7 +299,6 @@ class SparkWP_Prompt_Builder {
                 $instructions[] = "   Target Word Count: approximately {$field['word_count']} words";
             }
             
-            $instructions[] = "   Field Type: {$field['type']}";
             $instructions[] = "";
         }
         
@@ -251,11 +326,51 @@ class SparkWP_Prompt_Builder {
         $instructions[] = "- Return ONLY valid JSON, no additional text before or after";
         $instructions[] = "- Use double quotes for all keys and string values";
         $instructions[] = "- Properly escape special characters (quotes, newlines, etc.)";
-        $instructions[] = "- For multi-paragraph content, use \\n for line breaks";
-        $instructions[] = "- Do not include markdown formatting unless specifically requested";
+        $instructions[] = "- For WYSIWYG fields: include HTML tags as specified in the field instructions";
+        $instructions[] = "- For non-WYSIWYG fields: use plain text with \\n for line breaks, no HTML";
         $instructions[] = "- Each field value should be a string containing the generated content";
         
         return implode("\n", $instructions);
+    }
+    
+    /**
+     * Build allowed HTML tags string based on formatting options
+     * 
+     * @param array $wysiwyg_formatting Formatting options
+     * @return string Comma-separated list of allowed HTML tags
+     */
+    private function build_allowed_html_tags($wysiwyg_formatting) {
+        $allowed_tags = array();
+        
+        if (!empty($wysiwyg_formatting['paragraphs'])) {
+            $allowed_tags[] = '<p>';
+        }
+        
+        if (!empty($wysiwyg_formatting['bold'])) {
+            $allowed_tags[] = '<strong>';
+        }
+        
+        if (!empty($wysiwyg_formatting['italic'])) {
+            $allowed_tags[] = '<em>';
+        }
+        
+        if (!empty($wysiwyg_formatting['headings'])) {
+            $allowed_tags[] = '<h2>';
+            $allowed_tags[] = '<h3>';
+            $allowed_tags[] = '<h4>';
+        }
+        
+        if (!empty($wysiwyg_formatting['lists'])) {
+            $allowed_tags[] = '<ul>';
+            $allowed_tags[] = '<ol>';
+            $allowed_tags[] = '<li>';
+        }
+        
+        if (!empty($wysiwyg_formatting['links'])) {
+            $allowed_tags[] = '<a>';
+        }
+        
+        return implode(', ', $allowed_tags);
     }
     
     /**
