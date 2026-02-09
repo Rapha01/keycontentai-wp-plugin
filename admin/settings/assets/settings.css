@@ -221,3 +221,30 @@
         transform: scale(2) !important;
     }
 }
+/* AJAX Save Status Message */
+.sparkwp-save-status {
+    margin-left: 12px;
+    font-weight: 500;
+    font-style: italic;
+    display: inline-block;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.sparkwp-save-status.success {
+    color: #00a32a;
+}
+
+.sparkwp-save-status.error {
+    color: #d63638;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

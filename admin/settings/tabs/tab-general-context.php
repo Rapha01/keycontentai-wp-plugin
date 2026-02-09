@@ -30,17 +30,12 @@ $wysiwyg_formatting = get_option('sparkwp_wysiwyg_formatting', array(
 ?>
 
 <div class="sparkwp-tab-panel">
-    <?php settings_errors('sparkwp_general_context_settings'); ?>
     
     <p class="description" style="margin-bottom: 20px;">
         <?php esc_html_e('Configure your general context and business information. This data will be used to personalize AI-generated content.', 'sparkwp'); ?>
     </p>
     
-    <form method="post" action="options.php">
-        <?php
-        settings_fields('sparkwp_general_context_settings');
-        do_settings_sections('sparkwp_general_context_settings');
-        ?>
+    <form method="post" class="sparkwp-settings-form" data-tab="general-context">
         
         <table class="form-table" role="presentation">
             <tbody>
@@ -308,6 +303,9 @@ $wysiwyg_formatting = get_option('sparkwp_wysiwyg_formatting', array(
             </tbody>
         </table>
         
-        <?php submit_button(); ?>
+        <p class="submit">
+            <input type="submit" class="button button-primary sparkwp-save-button" value="<?php esc_attr_e('Save Changes', 'sparkwp'); ?>" />
+            <span class="sparkwp-save-status"></span>
+        </p>
     </form>
 </div>

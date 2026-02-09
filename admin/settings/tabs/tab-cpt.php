@@ -86,13 +86,8 @@ if (!empty($selected_post_type)) {
 ?>
 
 <div class="sparkwp-tab-panel">
-    <?php settings_errors('sparkwp_cpt_settings'); ?>
     
-    <form method="post" action="options.php">
-        <?php
-        settings_fields('sparkwp_cpt_settings');
-        do_settings_sections('sparkwp_cpt_settings');
-        ?>
+    <form method="post" class="sparkwp-settings-form" data-tab="cpt">
         
         <!-- Hidden field to save the currently selected post type -->
         <input type="hidden" name="sparkwp_selected_post_type" value="<?php echo esc_attr($selected_post_type); ?>" />
@@ -288,61 +283,9 @@ if (!empty($selected_post_type)) {
             </tbody>
         </table>
         
-        <?php submit_button(); ?>
+        <p class="submit">
+            <input type="submit" class="button button-primary sparkwp-save-button" value="<?php esc_attr_e('Save Changes', 'sparkwp'); ?>" />
+            <span class="sparkwp-save-status"></span>
+        </p>
     </form>
 </div>
-
-<script type="text/javascript">
-jQuery(document).ready(function($) {
-    // Handle post type change
-    $('#sparkwp_selected_post_type').on('change', function() {
-        var selectedPostType = $(this).val();
-        
-        // Update hidden field
-        $('input[name="sparkwp_selected_post_type"]').val(selectedPostType);
-        
-        // Build URL with current page parameters
-        var currentUrl = window.location.href;
-        var baseUrl = currentUrl.split('?')[0];
-        var params = new URLSearchParams(window.location.search);
-        params.set('cpt', selectedPostType);
-        
-        // Reload page with new post type parameter
-        window.location.href = baseUrl + '?' + params.toString();
-    });
-    
-    // Handle dimension dropdown change - show/hide custom dimension fields and update hidden inputs
-    $('.sparkwp-dimension-select').on('change', function() {
-        var fieldKey = $(this).data('field-key');
-        var selectedValue = $(this).val();
-        var customDimensionsDiv = $('.sparkwp-custom-dimensions[data-field-key="' + fieldKey + '"]');
-        var widthInput = $('.sparkwp-dimension-width[data-field-key="' + fieldKey + '"]');
-        var heightInput = $('.sparkwp-dimension-height[data-field-key="' + fieldKey + '"]');
-        
-        if (selectedValue === 'custom') {
-            customDimensionsDiv.slideDown();
-        } else {
-            customDimensionsDiv.slideUp();
-            
-            // Parse the preset dimension and update hidden inputs
-            var dimensions = selectedValue.split('x');
-            if (dimensions.length === 2) {
-                widthInput.val(dimensions[0]);
-                heightInput.val(dimensions[1]);
-            }
-        }
-    });
-    
-    // Handle custom dimension input changes - update hidden inputs
-    $('.sparkwp-custom-width, .sparkwp-custom-height').on('input', function() {
-        var fieldKey = $(this).data('field-key');
-        var customWidth = $('.sparkwp-custom-width[data-field-key="' + fieldKey + '"]').val();
-        var customHeight = $('.sparkwp-custom-height[data-field-key="' + fieldKey + '"]').val();
-        var widthInput = $('.sparkwp-dimension-width[data-field-key="' + fieldKey + '"]');
-        var heightInput = $('.sparkwp-dimension-height[data-field-key="' + fieldKey + '"]');
-        
-        widthInput.val(customWidth);
-        heightInput.val(customHeight);
-    });
-});
-</script>

@@ -14,13 +14,8 @@ $image_model = get_option('sparkwp_image_model', 'gpt-image-1.5');
 ?>
 
 <div class="sparkwp-tab-panel">
-    <?php settings_errors('sparkwp_api_settings'); ?>
     
-    <form method="post" action="options.php">
-        <?php
-        settings_fields('sparkwp_api_settings');
-        do_settings_sections('sparkwp_api_settings');
-        ?>
+    <form method="post" class="sparkwp-settings-form" data-tab="api-settings">
         
         <table class="form-table" role="presentation">
             <tbody>
@@ -91,6 +86,9 @@ $image_model = get_option('sparkwp_image_model', 'gpt-image-1.5');
             </tbody>
         </table>
         
-        <?php submit_button(); ?>
+        <p class="submit">
+            <input type="submit" class="button button-primary sparkwp-save-button" value="<?php esc_attr_e('Save Changes', 'sparkwp'); ?>" />
+            <span class="sparkwp-save-status"></span>
+        </p>
     </form>
 </div>

@@ -17,6 +17,7 @@ class SparkWP_Admin_Ajax_Handler {
         add_action('wp_ajax_sparkwp_generate_content', array($this, 'generate_content'));
         add_action('wp_ajax_sparkwp_load_keyword', array($this, 'load_keyword'));
         add_action('wp_ajax_sparkwp_save_post_meta', array($this, 'save_post_meta'));
+        add_action('wp_ajax_sparkwp_save_settings', array($this, 'save_settings'));
     }
     
     /**
@@ -128,6 +129,104 @@ class SparkWP_Admin_Ajax_Handler {
         
         wp_send_json_success(array(
             'message' => __('Post meta updated successfully', 'sparkwp')
+        ));
+    }
+    
+    /**
+     * AJAX handler to save settings from any tab
+     */
+    public function save_settings() {
+        // Security check
+        check_ajax_referer('sparkwp_settings_nonce', 'nonce');
+        
+        // Check if user has permission
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array(
+                'message' => __('Unauthorized', 'sparkwp')
+            ));
+        }
+        
+        // Get the tab being saved
+        $tab = isset($_POST['tab']) ? sanitize_text_field($_POST['tab']) : '';
+        
+        if (empty($tab)) {
+            wp_send_json_error(array(
+                'message' => __('No tab specified', 'sparkwp')
+            ));
+        }
+        
+        $updated = 0;
+        
+        switch ($tab) {
+            case 'api-settings':
+                // API Key
+                if (isset($_POST['sparkwp_openai_api_key'])) {
+                    update_option('sparkwp_openai_api_key', sanitize_text_field($_POST['sparkwp_openai_api_key']));
+                    $updated++;
+                }
+                // Text Model
+                if (isset($_POST['sparkwp_text_model'])) {
+                    update_option('sparkwp_text_model', sanitize_text_field($_POST['sparkwp_text_model']));
+                    $updated++;
+                }
+                // Image Model
+                if (isset($_POST['sparkwp_image_model'])) {
+                    update_option('sparkwp_image_model', sanitize_text_field($_POST['sparkwp_image_model']));
+                    $updated++;
+                }
+                break;
+                
+            case 'general-context':
+                // Simple text fields
+                $text_fields = array('sparkwp_addressing', 'sparkwp_company_name', 'sparkwp_industry', 'sparkwp_target_group');
+                foreach ($text_fields as $field) {
+                    if (isset($_POST[$field])) {
+                        update_option($field, sanitize_text_field($_POST[$field]));
+                        $updated++;
+                    }
+                }
+                
+                // Textarea fields
+                $textarea_fields = array('sparkwp_usp', 'sparkwp_advantages', 'sparkwp_buying_reasons', 'sparkwp_additional_context');
+                foreach ($textarea_fields as $field) {
+                    if (isset($_POST[$field])) {
+                        update_option($field, sanitize_textarea_field($_POST[$field]));
+                        $updated++;
+                    }
+                }
+                
+                // WYSIWYG formatting (checkbox array)
+                $wysiwyg_input = isset($_POST['sparkwp_wysiwyg_formatting']) ? $_POST['sparkwp_wysiwyg_formatting'] : array();
+                update_option('sparkwp_wysiwyg_formatting', SparkWP_Sanitizer::wysiwyg_formatting($wysiwyg_input));
+                $updated++;
+                break;
+                
+            case 'cpt':
+                // Selected post type
+                if (isset($_POST['sparkwp_selected_post_type'])) {
+                    update_option('sparkwp_selected_post_type', sanitize_text_field($_POST['sparkwp_selected_post_type']));
+                    $updated++;
+                }
+                
+                // CPT configs (complex nested array → JSON)
+                if (isset($_POST['sparkwp_cpt_configs'])) {
+                    $sanitized = SparkWP_Sanitizer::cpt_configs($_POST['sparkwp_cpt_configs']);
+                    update_option('sparkwp_cpt_configs', $sanitized);
+                    $updated++;
+                }
+                break;
+                
+            default:
+                wp_send_json_error(array(
+                    'message' => __('Unknown settings tab', 'sparkwp')
+                ));
+        }
+        
+        wp_send_json_success(array(
+            'message' => sprintf(
+                __('Settings saved successfully.', 'sparkwp'),
+                $updated
+            )
         ));
     }
 }

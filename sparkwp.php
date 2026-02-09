@@ -23,6 +23,34 @@ define('SPARKWP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SPARKWP_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('SPARKWP_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
+/*
+ * ─── Plugin Settings Reference ─────────────────────────────────────
+ *
+ * All settings are saved via AJAX (see SparkWP_Admin_Ajax_Handler::save_settings()).
+ * Sanitization is handled in that method and in SparkWP_Sanitizer.
+ *
+ * API Settings (tab: api-settings)
+ *   sparkwp_openai_api_key    string   OpenAI API key
+ *   sparkwp_text_model        string   Text generation model (default: 'gpt-5.2')
+ *   sparkwp_image_model       string   Image generation model (default: 'gpt-image-1.5')
+ *
+ * General Context (tab: general-context)
+ *   sparkwp_addressing        string   Formal/informal tone (default: 'formal')
+ *   sparkwp_company_name      string   Company or brand name
+ *   sparkwp_industry          string   Business industry/sector
+ *   sparkwp_target_group      string   Target audience description
+ *   sparkwp_usp               text     Unique selling proposition
+ *   sparkwp_advantages        text     Product advantages
+ *   sparkwp_buying_reasons    text     Reasons for buying
+ *   sparkwp_additional_context text    Additional brand context
+ *   sparkwp_wysiwyg_formatting array   Allowed HTML elements (paragraphs, bold, italic, headings, lists, links)
+ *
+ * CPT Settings (tab: cpt)
+ *   sparkwp_selected_post_type string  Currently selected post type (default: 'post')
+ *   sparkwp_cpt_configs        json    Per-post-type field configs and additional context
+ * ───────────────────────────────────────────────────────────────────
+ */
+
 /**
  * Main SparkWP Class
  */
@@ -63,7 +91,6 @@ class SparkWP {
         // Initialize admin
         if (is_admin()) {
             add_action('admin_menu', array($this, 'add_admin_menu'));
-            add_action('admin_init', array($this, 'register_settings'));
             add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
         }
     }
@@ -154,107 +181,6 @@ class SparkWP {
     }
     
     /**
-     * Register plugin settings
-     */
-    public function register_settings() {
-        // API Settings
-        register_setting('sparkwp_api_settings', 'sparkwp_openai_api_key', array(
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_text_field',
-            'default' => ''
-        ));
-        
-        register_setting('sparkwp_api_settings', 'sparkwp_text_model', array(
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_text_field',
-            'default' => 'gpt-5.2'
-        ));
-        
-        register_setting('sparkwp_api_settings', 'sparkwp_image_model', array(
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_text_field',
-            'default' => 'gpt-image-1.5'
-        ));
-        
-        // General Context Settings
-        register_setting('sparkwp_general_context_settings', 'sparkwp_addressing', array(
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_text_field',
-            'default' => 'formal'
-        ));
-        
-        register_setting('sparkwp_general_context_settings', 'sparkwp_company_name', array(
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_text_field',
-            'default' => ''
-        ));
-        
-        register_setting('sparkwp_general_context_settings', 'sparkwp_industry', array(
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_text_field',
-            'default' => ''
-        ));
-        
-        register_setting('sparkwp_general_context_settings', 'sparkwp_target_group', array(
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_text_field',
-            'default' => ''
-        ));
-        
-        register_setting('sparkwp_general_context_settings', 'sparkwp_usp', array(
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_textarea_field',
-            'default' => ''
-        ));
-        
-        register_setting('sparkwp_general_context_settings', 'sparkwp_advantages', array(
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_textarea_field',
-            'default' => ''
-        ));
-        
-        register_setting('sparkwp_general_context_settings', 'sparkwp_buying_reasons', array(
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_textarea_field',
-            'default' => ''
-        ));
-        
-        register_setting('sparkwp_general_context_settings', 'sparkwp_additional_context', array(
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_textarea_field',
-            'default' => ''
-        ));
-        
-        register_setting('sparkwp_general_context_settings', 'sparkwp_wysiwyg_formatting', array(
-            'type' => 'array',
-            'sanitize_callback' => 'SparkWP_Sanitizer::wysiwyg_formatting',
-            'default' => array(
-                'paragraphs' => true,
-                'bold' => true,
-                'italic' => true,
-                'headings' => true,
-                'lists' => true,
-                'links' => true
-            )
-        ));
-        
-        // CPT Settings
-        register_setting('sparkwp_cpt_settings', 'sparkwp_selected_post_type', array(
-            'type' => 'string',
-            'sanitize_callback' => 'sanitize_text_field',
-            'default' => 'post'
-        ));
-        
-        // CPT Configurations (consolidated) - Stored as JSON
-        // Structure: array('post_type' => array('additional_context' => '', 'fields' => array('field_key' => array(...))))
-        register_setting('sparkwp_cpt_settings', 'sparkwp_cpt_configs', array(
-            'type' => 'string',
-            'sanitize_callback' => 'SparkWP_Sanitizer::cpt_configs',
-            'default' => ''
-        ));
-    }
-    
-    /**
      * Get CPT configs (reads from JSON format)
      */
     public function get_cpt_configs() {
@@ -268,9 +194,6 @@ class SparkWP {
         return is_array($data) ? $data : array();
     }
     
-    /**
-     * Sanitize CPT configurations and save as JSON
-     */
     /**
      * Register post meta fields for content generation
      * Registers for all post types that have been configured in the plugin
@@ -416,7 +339,11 @@ class SparkWP {
             
             // Localize script for AJAX
             wp_localize_script('sparkwp-settings', 'sparkwpSettings', array(
-                'nonce' => wp_create_nonce('sparkwp_settings_nonce')
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce'   => wp_create_nonce('sparkwp_settings_nonce'),
+                'saving'  => __('Saving...', 'sparkwp'),
+                'saved'   => __('Saved!', 'sparkwp'),
+                'error'   => __('Error saving settings', 'sparkwp'),
             ));
         }
         
