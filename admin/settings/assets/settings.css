@@ -139,3 +139,85 @@
     margin: 5px 0 0 0;
     font-size: 12px;
 }
+/* Mobile Responsive */
+@media screen and (max-width: 782px) {
+    /* Hide table header on mobile */
+    .sparkwp-fields-table thead {
+        display: none;
+    }
+    
+    /* Stack table cells vertically */
+    .sparkwp-fields-table tbody tr {
+        display: block;
+        margin-bottom: 20px;
+        border: 1px solid #c3c4c7;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .sparkwp-fields-table tbody td {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        padding: 10px 15px;
+        border-bottom: 1px solid #e0e0e0;
+        box-sizing: border-box;
+    }
+    
+    .sparkwp-fields-table tbody td:last-child {
+        border-bottom: none;
+    }
+    
+    /* Add labels for mobile using data attributes */
+    .sparkwp-fields-table tbody td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        display: block;
+        margin-bottom: 5px;
+        color: #1e1e1e;
+    }
+    
+    /* Hide label for checkbox column (first column) */
+    .sparkwp-fields-table tbody td:first-child:before {
+        display: none;
+    }
+    
+    /* Hide label for field name column (second column) - field name is already prominent */
+    .sparkwp-fields-table tbody td:nth-child(2):before {
+        display: none;
+    }
+    
+    /* Center checkbox on mobile with proper spacing */
+    .sparkwp-fields-table tbody td:first-child {
+        text-align: center;
+        background: #f6f7f7;
+        padding: 20px 15px;
+    }
+    
+    /* Add extra padding to field name cell */
+    .sparkwp-fields-table tbody td:nth-child(2) {
+        padding: 15px;
+    }
+    
+    /* Adjust textarea and inputs for mobile */
+    .sparkwp-fields-table textarea {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .sparkwp-fields-table input[type="number"],
+    .sparkwp-fields-table select {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .sparkwp-fields-table select {
+        width: 100% !important;
+    }
+    
+    /* Scale down checkbox slightly on mobile */
+    .sparkwp-field-enable-checkbox {
+        transform: scale(2) !important;
+    }
+}

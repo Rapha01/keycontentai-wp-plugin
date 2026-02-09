@@ -106,29 +106,36 @@ if ($is_configured) {
                                 $last_generation = get_post_meta($post->ID, 'sparkwp_last_generation', true);
                             ?>
                                 <tr class="sparkwp-post-row" data-post-id="<?php echo esc_attr($post->ID); ?>" data-status="unqueued">
-                                    <td class="sparkwp-status-cell" data-label="<?php esc_attr_e('Status', 'sparkwp'); ?>">
+                                    <td class="sparkwp-status-cell">
                                         <span class="sparkwp-status-indicator sparkwp-status-unqueued" title="<?php esc_attr_e('Unqueued', 'sparkwp'); ?>">
                                             <span class="dashicons dashicons-minus"></span>
                                         </span>
                                     </td>
-                                    <td data-label="<?php esc_attr_e('ID', 'sparkwp'); ?>"><?php echo esc_html($post->ID); ?></td>
-                                    <td data-label="<?php esc_attr_e('Keyword', 'sparkwp'); ?>">
+                                    <td>
+                                        <span class="sparkwp-mobile-label"><?php esc_html_e('ID:', 'sparkwp'); ?></span>
+                                        <?php echo esc_html($post->ID); ?>
+                                    </td>
+                                    <td>
+                                        <span class="sparkwp-mobile-label"><?php esc_html_e('Keyword:', 'sparkwp'); ?></span>
                                         <strong><?php echo esc_html($keyword ?: __('(no keyword)', 'sparkwp')); ?></strong>
                                     </td>
-                                    <td data-label="<?php esc_attr_e('Title', 'sparkwp'); ?>">
+                                    <td>
+                                        <span class="sparkwp-mobile-label"><?php esc_html_e('Title:', 'sparkwp'); ?></span>
                                         <a href="<?php echo esc_url(get_edit_post_link($post->ID)); ?>" target="_blank">
                                             <?php echo esc_html($post->post_title ?: __('(no title)', 'sparkwp')); ?>
                                         </a>
                                     </td>
-                                    <td data-label="<?php esc_attr_e('Last Generated', 'sparkwp'); ?>">
+                                    <td>
+                                        <span class="sparkwp-mobile-label"><?php esc_html_e('Last Generated:', 'sparkwp'); ?></span>
                                         <?php echo $last_generation ? esc_html($last_generation) : '<em>' . esc_html__('Never', 'sparkwp') . '</em>'; ?>
                                     </td>
-                                    <td data-label="<?php esc_attr_e('Actions', 'sparkwp'); ?>" class="sparkwp-actions-cell">
-                                        <button type="button" class="button button-small sparkwp-toggle-details" title="<?php esc_attr_e('Toggle details', 'sparkwp'); ?>">
-                                            <span class="dashicons dashicons-arrow-down-alt2"></span>
-                                        </button>
+                                    <td class="sparkwp-actions-cell">
+                                        <span class="sparkwp-mobile-label"><?php esc_html_e('Actions:', 'sparkwp'); ?></span>
                                         <button type="button" class="button button-small sparkwp-toggle-queue" data-post-id="<?php echo esc_attr($post->ID); ?>">
                                             <?php esc_html_e('Queue', 'sparkwp'); ?>
+                                        </button>
+                                        <button type="button" class="button button-small sparkwp-toggle-details" title="<?php esc_attr_e('Toggle details', 'sparkwp'); ?>">
+                                            <span class="dashicons dashicons-arrow-down-alt2"></span>
                                         </button>
                                     </td>
                                 </tr>

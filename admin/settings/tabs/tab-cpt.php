@@ -163,7 +163,7 @@ if (!empty($selected_post_type)) {
                         $current_quality = isset($current_field_configs[$field['key']]['quality']) ? $current_field_configs[$field['key']]['quality'] : 'auto';
                         ?>
                         <tr>
-                            <td style="text-align: center; vertical-align: middle;">
+                            <td data-label="<?php esc_attr_e('Generate', 'sparkwp'); ?>" style="text-align: center; vertical-align: middle;">
                                 <label style="display: inline-block; margin: 0;">
                                     <input 
                                         type="checkbox" 
@@ -186,22 +186,22 @@ if (!empty($selected_post_type)) {
                                     </span>
                                 </label>
                             </td>
-                            <td>
+                            <td data-label="<?php esc_attr_e('Field Name', 'sparkwp'); ?>">
                                 <strong><?php echo esc_html($field['label']); ?></strong>
                                 <br>
                                 <code style="font-size: 11px; color: #666;"><?php echo esc_html($field['key']); ?></code>
                             </td>
-                            <td>
+                            <td data-label="<?php esc_attr_e('Type', 'sparkwp'); ?>">
                                 <span class="sparkwp-field-type">
                                     <?php echo esc_html($field['type']); ?>
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="<?php esc_attr_e('Source', 'sparkwp'); ?>">
                                 <span class="sparkwp-field-source sparkwp-source-<?php echo esc_attr(strtolower($field['source'])); ?>">
                                     <?php echo esc_html($field['source']); ?>
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="<?php esc_attr_e('Description / Prompt', 'sparkwp'); ?>">
                                 <textarea 
                                     name="sparkwp_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][description]"
                                     rows="3"
@@ -209,7 +209,7 @@ if (!empty($selected_post_type)) {
                                     placeholder="<?php esc_attr_e('E.g., A brief summary of the content, maximum 150 characters', 'sparkwp'); ?>"
                                 ><?php echo isset($current_field_configs[$field['key']]['description']) ? esc_textarea($current_field_configs[$field['key']]['description']) : ''; ?></textarea>
                             </td>
-                            <td>
+                            <td data-label="<?php esc_attr_e('WordCount/Dimensions', 'sparkwp'); ?>">
                                 <?php if ($is_image_field) : ?>
                                     <!-- Image Size Dropdown -->
                                     <select 

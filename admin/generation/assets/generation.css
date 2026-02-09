@@ -153,6 +153,11 @@
     cursor: not-allowed;
 }
 
+/* Hide mobile labels on desktop */
+.sparkwp-mobile-label {
+    display: none;
+}
+
 /* Responsive */
 @media screen and (max-width: 782px) {
     .sparkwp-generation-header {
@@ -191,47 +196,78 @@
     }
     
     .sparkwp-post-row td {
-        display: block;
+        display: block !important;
         text-align: left !important;
         padding: 12px 15px !important;
-        border: none;
-        border-bottom: 1px solid #f0f0f1;
+        border: none !important;
+        border-bottom: 1px solid #f0f0f1 !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        max-width: 100% !important;
     }
     
     .sparkwp-post-row td:last-child {
-        border-bottom: none;
+        border-bottom: none !important;
     }
     
-    /* Add labels for mobile */
-    .sparkwp-post-row td:before {
-        content: attr(data-label);
-        font-weight: 600;
-        display: block;
-        margin-bottom: 5px;
-        color: #646970;
-        font-size: 12px;
-        text-transform: uppercase;
-    }
-    
-    .sparkwp-status-cell:before {
-        content: "Status";
+    /* Show mobile labels */
+    .sparkwp-mobile-label {
+        display: block !important;
+        font-weight: 600 !important;
+        margin-bottom: 5px !important;
+        color: #1e1e1e !important;
+        font-size: 11px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
     }
     
     /* Status indicator on mobile */
     .sparkwp-status-cell {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .sparkwp-status-indicator {
-        margin-left: auto;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
     
     /* Action buttons full width on mobile */
-    .sparkwp-toggle-queue {
-        width: 100%;
-        justify-content: center;
+    .sparkwp-actions-cell {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        align-items: stretch !important;
+    }
+    
+    .sparkwp-actions-cell .sparkwp-toggle-queue,
+    .sparkwp-actions-cell .sparkwp-toggle-details {
+        width: 100% !important;
+        max-width: 100% !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        display: block !important;
+    }
+    
+    /* Post details row on mobile */
+    .sparkwp-post-details-row {
+        display: block !important;
+    }
+    
+    .sparkwp-post-details-row td {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+    
+    .sparkwp-post-details {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .sparkwp-detail-field input[type="text"],
+    .sparkwp-detail-field textarea {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 }
 
