@@ -386,7 +386,9 @@ class SparkWP {
             // Localize script for AJAX
             wp_localize_script('sparkwp-generation', 'sparkwpGeneration', array(
                 'ajaxUrl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('sparkwp_nonce')
+                'nonce' => wp_create_nonce('sparkwp_nonce'),
+                'deleting' => __('Deleting...', 'sparkwp'),
+                'deleteConfirm' => __('Delete', 'sparkwp')
             ));
         }
         

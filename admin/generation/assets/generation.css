@@ -315,6 +315,101 @@
     color: #d63638;
 }
 
+/* Delete Button */
+.sparkwp-delete-post {
+    color: #b32d2e !important;
+    border-color: #b32d2e !important;
+}
+
+.sparkwp-delete-post:hover {
+    background: #b32d2e !important;
+    color: #fff !important;
+}
+
+.sparkwp-delete-post .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 1.6;
+    margin-right: 2px;
+}
+
+/* Delete Confirmation Modal */
+.sparkwp-delete-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100100;
+}
+
+.sparkwp-delete-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.sparkwp-delete-modal-dialog {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+    width: 420px;
+    max-width: 90vw;
+}
+
+.sparkwp-delete-modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.sparkwp-delete-modal-header h2 {
+    margin: 0;
+    font-size: 16px;
+    color: #1d2327;
+}
+
+.sparkwp-delete-modal-body {
+    padding: 20px;
+}
+
+.sparkwp-delete-modal-body p {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: #50575e;
+}
+
+.sparkwp-delete-modal-post-title {
+    font-weight: 600;
+}
+
+.sparkwp-delete-modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #dcdcde;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.sparkwp-delete-modal-confirm {
+    background: #d63638 !important;
+    border-color: #d63638 !important;
+    color: #fff !important;
+}
+
+.sparkwp-delete-modal-confirm:hover {
+    background: #b32d2e !important;
+    border-color: #b32d2e !important;
+}
+
 .sparkwp-actions-cell {
     white-space: nowrap;
 }

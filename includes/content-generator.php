@@ -337,9 +337,10 @@ class SparkWP_Content_Generator {
                     ));
                 }
                 
-                // Save WebP to media library
-                $filename = sanitize_file_name($field['label']) . '-' . time();
-                $attachment_id = sparkwp_save_webp_to_media_library($webp_data, $post_id, $filename, $field['label']);
+                // Save WebP to media library (use post keyword for filename & title)
+                $keyword = $post_settings['keyword'];
+                $filename = sanitize_file_name($keyword) . '-' . time();
+                $attachment_id = sparkwp_save_webp_to_media_library($webp_data, $post_id, $filename, $keyword);
                 
                 if (is_wp_error($attachment_id)) {
                     throw new Exception(sprintf(
@@ -372,15 +373,17 @@ class SparkWP_Content_Generator {
      * @param string $image_url The URL of the image to download
      * @param int $post_id The post ID to attach the image to
      * @param array $field The field configuration
+     * @param string $keyword The post keyword used for filename and title
      * @return int|false The attachment ID on success, false on failure
      */
-    private function save_image_from_url($image_url, $post_id, $field) {
+    private function save_image_from_url($image_url, $post_id, $field, $keyword = '') {
         require_once(ABSPATH . 'wp-admin/includes/media.php');
         require_once(ABSPATH . 'wp-admin/includes/file.php');
         require_once(ABSPATH . 'wp-admin/includes/image.php');
         
-        // Generate a unique filename based on the field
-        $filename = sanitize_file_name($field['label']) . '-' . time() . '.png';
+        // Generate a unique filename based on the keyword
+        $title = !empty($keyword) ? $keyword : $field['label'];
+        $filename = sanitize_file_name($title) . '-' . time() . '.png';
         
         // Download the image
         $tmp = download_url($image_url);
@@ -401,7 +404,7 @@ class SparkWP_Content_Generator {
         );
         
         // Upload the file to WordPress Media Library
-        $attachment_id = media_handle_sideload($file_array, $post_id, $field['label']);
+        $attachment_id = media_handle_sideload($file_array, $post_id, $title);
         
         // Clean up temporary file
         if (file_exists($tmp)) {
@@ -431,9 +434,10 @@ class SparkWP_Content_Generator {
      * @param string $base64_data The base64 encoded image data
      * @param int $post_id The post ID to attach the image to
      * @param array $field The field configuration
+     * @param string $keyword The post keyword used for filename and title
      * @return int|false The attachment ID on success, false on failure
      */
-    private function save_image_from_base64($base64_data, $post_id, $field) {
+    private function save_image_from_base64($base64_data, $post_id, $field, $keyword = '') {
         require_once(ABSPATH . 'wp-admin/includes/media.php');
         require_once(ABSPATH . 'wp-admin/includes/file.php');
         require_once(ABSPATH . 'wp-admin/includes/image.php'); 
@@ -449,8 +453,9 @@ class SparkWP_Content_Generator {
             return false;
         }
         
-        // Generate a unique filename
-        $filename = sanitize_file_name($field['label']) . '-' . time() . '.png';
+        // Generate a unique filename based on the keyword
+        $title = !empty($keyword) ? $keyword : $field['label'];
+        $filename = sanitize_file_name($title) . '-' . time() . '.png';
         
         // Get WordPress upload directory
         $upload_dir = wp_upload_dir();
@@ -471,7 +476,7 @@ class SparkWP_Content_Generator {
         $attachment = array(
             'guid' => $upload_dir['url'] . '/' . $filename,
             'post_mime_type' => 'image/png',
-            'post_title' => $field['label'],
+            'post_title' => $title,
             'post_content' => '',
             'post_status' => 'inherit'
         );

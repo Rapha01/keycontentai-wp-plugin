@@ -19,6 +19,7 @@ class SparkWP_Admin_Ajax_Handler {
         add_action('wp_ajax_sparkwp_save_post_meta', array($this, 'save_post_meta'));
         add_action('wp_ajax_sparkwp_save_settings', array($this, 'save_settings'));
         add_action('wp_ajax_sparkwp_reset_settings', array($this, 'reset_settings'));
+        add_action('wp_ajax_sparkwp_delete_post', array($this, 'delete_post'));
     }
     
     /**
@@ -133,6 +134,57 @@ class SparkWP_Admin_Ajax_Handler {
         ));
     }
     
+    /**
+     * AJAX handler to delete a post
+     */
+    public function delete_post() {
+        // Security check
+        check_ajax_referer('sparkwp_nonce', 'nonce');
+
+        // Check if user has permission
+        if (!current_user_can('delete_posts')) {
+            wp_send_json_error(array(
+                'message' => __('Unauthorized', 'sparkwp')
+            ));
+        }
+
+        // Get post ID from request
+        if (!isset($_POST['post_id']) || empty($_POST['post_id'])) {
+            wp_send_json_error(array(
+                'message' => __('No post ID provided', 'sparkwp')
+            ));
+        }
+
+        $post_id = intval($_POST['post_id']);
+        $post = get_post($post_id);
+
+        if (!$post) {
+            wp_send_json_error(array(
+                'message' => __('Post not found', 'sparkwp')
+            ));
+        }
+
+        // Check the user can delete this specific post
+        if (!current_user_can('delete_post', $post_id)) {
+            wp_send_json_error(array(
+                'message' => __('You do not have permission to delete this post.', 'sparkwp')
+            ));
+        }
+
+        $title = $post->post_title;
+        $result = wp_delete_post($post_id, true); // force delete (bypass trash)
+
+        if ($result) {
+            wp_send_json_success(array(
+                'message' => sprintf(__('Post "%s" (ID: %d) deleted successfully.', 'sparkwp'), $title, $post_id)
+            ));
+        } else {
+            wp_send_json_error(array(
+                'message' => __('Failed to delete post.', 'sparkwp')
+            ));
+        }
+    }
+
     /**
      * AJAX handler to save settings from any tab
      */

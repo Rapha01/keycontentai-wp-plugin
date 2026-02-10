@@ -170,6 +170,10 @@ if ($is_configured) {
                                                     <?php esc_html_e('Save', 'sparkwp'); ?>
                                                 </button>
                                                 <span class="sparkwp-save-status"></span>
+                                                <button type="button" class="button sparkwp-delete-post" data-post-id="<?php echo esc_attr($post->ID); ?>">
+                                                    <span class="dashicons dashicons-trash"></span>
+                                                    <?php esc_html_e('Delete', 'sparkwp'); ?>
+                                                </button>
                                             </div>
                                         </div>
                                     </td>
@@ -269,4 +273,23 @@ if ($is_configured) {
             </div>
         </div>
     <?php endif; ?>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="sparkwp-delete-modal" class="sparkwp-delete-modal">
+    <div class="sparkwp-delete-modal-overlay"></div>
+    <div class="sparkwp-delete-modal-dialog">
+        <div class="sparkwp-delete-modal-header">
+            <h2><?php esc_html_e('Delete Post', 'sparkwp'); ?></h2>
+        </div>
+        <div class="sparkwp-delete-modal-body">
+            <p><?php esc_html_e('Are you sure you want to permanently delete the following post?', 'sparkwp'); ?></p>
+            <p>&ldquo;<span class="sparkwp-delete-modal-post-title"></span>&rdquo;</p>
+            <p><?php esc_html_e('This action cannot be undone.', 'sparkwp'); ?></p>
+        </div>
+        <div class="sparkwp-delete-modal-footer">
+            <button type="button" class="button sparkwp-delete-modal-cancel"><?php esc_html_e('Cancel', 'sparkwp'); ?></button>
+            <button type="button" class="button sparkwp-delete-modal-confirm"><?php esc_html_e('Delete', 'sparkwp'); ?></button>
+        </div>
+    </div>
 </div>

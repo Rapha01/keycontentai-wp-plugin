@@ -32,6 +32,78 @@
             $button.toggleClass('expanded');
         });
         
+        // Delete post - show modal
+        $(document).on('click', '.sparkwp-delete-post', function(e) {
+            e.preventDefault();
+            const $button = $(this);
+            const postId = $button.data('post-id');
+            const $detailsRow = $button.closest('.sparkwp-post-details-row');
+            const $postRow = $detailsRow.prev('.sparkwp-post-row');
+            const postTitle = $postRow.find('td a').first().text().trim() || '(no title)';
+
+            // Populate and show the modal
+            const $modal = $('#sparkwp-delete-modal');
+            $modal.find('.sparkwp-delete-modal-post-title').text(postTitle);
+            $modal.data('post-id', postId);
+            $modal.data('post-row', $postRow);
+            $modal.data('details-row', $detailsRow);
+            $modal.data('trigger-button', $button);
+            $modal.fadeIn(150);
+        });
+
+        // Modal cancel
+        $(document).on('click', '.sparkwp-delete-modal-cancel, .sparkwp-delete-modal-overlay', function(e) {
+            e.preventDefault();
+            $('#sparkwp-delete-modal').fadeOut(150);
+        });
+
+        // Modal confirm delete
+        $(document).on('click', '.sparkwp-delete-modal-confirm', function(e) {
+            e.preventDefault();
+            const $modal = $('#sparkwp-delete-modal');
+            const postId = $modal.data('post-id');
+            const $postRow = $modal.data('post-row');
+            const $detailsRow = $modal.data('details-row');
+            const $triggerButton = $modal.data('trigger-button');
+            const $confirmBtn = $(this);
+
+            $confirmBtn.prop('disabled', true).text(sparkwpGeneration.deleting || 'Deleting...');
+
+            $.ajax({
+                url: sparkwpGeneration.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'sparkwp_delete_post',
+                    post_id: postId,
+                    nonce: sparkwpGeneration.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $modal.fadeOut(150);
+                        $detailsRow.fadeOut(300, function() { $(this).remove(); });
+                        $postRow.fadeOut(300, function() { $(this).remove(); updateQueueCount(); });
+                    } else {
+                        $modal.fadeOut(150);
+                        showNotice(response.data?.message || 'Delete failed', 'error');
+                    }
+                },
+                error: function() {
+                    $modal.fadeOut(150);
+                    showNotice('Network error', 'error');
+                },
+                complete: function() {
+                    $confirmBtn.prop('disabled', false).text(sparkwpGeneration.deleteConfirm || 'Delete');
+                }
+            });
+        });
+
+        // Close modal on Escape key
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape') {
+                $('#sparkwp-delete-modal').fadeOut(150);
+            }
+        });
+
         // Save post meta
         $(document).on('click', '.sparkwp-save-meta', function(e) {
             e.preventDefault();
