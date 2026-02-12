@@ -21,7 +21,7 @@ foreach ($post_types as $post_type) {
 
 // Get current settings
 // Check if post type is being changed via URL parameter
-$selected_post_type = isset($_GET['cpt']) ? sanitize_key($_GET['cpt']) : get_option('sparkwp_selected_post_type', 'post');
+$selected_post_type = isset($_GET['cpt']) ? sanitize_key(wp_unslash($_GET['cpt'])) : get_option('sparkwp_selected_post_type', 'post');
 
 // Get CPT configs from consolidated JSON structure
 global $sparkwp;

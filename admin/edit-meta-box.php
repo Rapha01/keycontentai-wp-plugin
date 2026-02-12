@@ -117,7 +117,7 @@ function sparkwp_render_meta_box($post) {
 function sparkwp_save_meta_box_data($post_id) {
     // Check nonce
     if (!isset($_POST['sparkwp_meta_box_nonce']) || 
-        !wp_verify_nonce($_POST['sparkwp_meta_box_nonce'], 'sparkwp_meta_box')) {
+        !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['sparkwp_meta_box_nonce'])), 'sparkwp_meta_box')) {
         return;
     }
     
@@ -133,12 +133,12 @@ function sparkwp_save_meta_box_data($post_id) {
     
     // Save keyword
     if (isset($_POST['sparkwp_keyword'])) {
-        update_post_meta($post_id, 'sparkwp_keyword', sanitize_text_field($_POST['sparkwp_keyword']));
+        update_post_meta($post_id, 'sparkwp_keyword', sanitize_text_field(wp_unslash($_POST['sparkwp_keyword'])));
     }
     
     // Save additional context
     if (isset($_POST['sparkwp_additional_context'])) {
-        update_post_meta($post_id, 'sparkwp_additional_context', sanitize_textarea_field($_POST['sparkwp_additional_context']));
+        update_post_meta($post_id, 'sparkwp_additional_context', sanitize_textarea_field(wp_unslash($_POST['sparkwp_additional_context'])));
     }
     
     // Note: last_generation is not editable by user, only set by the plugin during generation

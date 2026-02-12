@@ -169,8 +169,14 @@ function sparkwp_save_webp_to_media_library($webp_data, $post_id, $filename, $ti
     $safe_filename = sanitize_file_name($filename) . '.webp';
     $filepath = $upload_dir['path'] . '/' . $safe_filename;
     
-    // Save the WebP data to file
-    $file_saved = file_put_contents($filepath, $webp_data);
+    // Save the WebP data to file using WP_Filesystem
+    global $wp_filesystem;
+    if (empty($wp_filesystem)) {
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        WP_Filesystem();
+    }
+    
+    $file_saved = $wp_filesystem->put_contents($filepath, $webp_data, FS_CHMOD_FILE);
     
     if ($file_saved === false) {
         return new WP_Error('file_save_error', __('Failed to save WebP file to uploads directory.', 'sparkwp'));

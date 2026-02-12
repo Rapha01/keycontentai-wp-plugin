@@ -43,7 +43,7 @@ class SparkWP_Admin_Ajax_Handler {
             ));
         }
         
-        $post_id = intval($_POST['post_id']);
+        $post_id = absint(wp_unslash($_POST['post_id']));
         
         // Generate content using the content generator class
         $generator = new SparkWP_Content_Generator();
@@ -70,6 +70,13 @@ class SparkWP_Admin_Ajax_Handler {
         // Security check
         check_ajax_referer('sparkwp_nonce', 'nonce');
         
+        // Check if user has permission
+        if (!current_user_can('edit_posts')) {
+            wp_send_json_error(array(
+                'message' => __('Unauthorized', 'sparkwp')
+            ));
+        }
+        
         // Get keyword from request
         if (!isset($_POST['keyword']) || empty($_POST['keyword'])) {
             wp_send_json_error(array(
@@ -77,10 +84,10 @@ class SparkWP_Admin_Ajax_Handler {
             ));
         }
         
-        $keyword = sanitize_text_field($_POST['keyword']);
-        $debug_mode = isset($_POST['debug']) && $_POST['debug'] === '1';
-        $auto_publish = isset($_POST['auto_publish']) && $_POST['auto_publish'] === '1';
-        $additional_context = isset($_POST['additional_context']) ? sanitize_textarea_field($_POST['additional_context']) : '';
+        $keyword = sanitize_text_field(wp_unslash($_POST['keyword']));
+        $debug_mode = isset($_POST['debug']) && sanitize_text_field(wp_unslash($_POST['debug'])) === '1';
+        $auto_publish = isset($_POST['auto_publish']) && sanitize_text_field(wp_unslash($_POST['auto_publish'])) === '1';
+        $additional_context = isset($_POST['additional_context']) ? sanitize_textarea_field(wp_unslash($_POST['additional_context'])) : '';
         
         // Load keyword using the keyword loader class
         $loader = new SparkWP_Keyword_Loader();
@@ -114,7 +121,7 @@ class SparkWP_Admin_Ajax_Handler {
             wp_send_json_error(__('No post ID provided', 'sparkwp'));
         }
         
-        $post_id = intval($_POST['post_id']);
+        $post_id = absint(wp_unslash($_POST['post_id']));
         
         // Verify post exists
         if (!get_post($post_id)) {
@@ -122,8 +129,8 @@ class SparkWP_Admin_Ajax_Handler {
         }
         
         // Get and sanitize data
-        $keyword = isset($_POST['keyword']) ? sanitize_text_field($_POST['keyword']) : '';
-        $additional_context = isset($_POST['additional_context']) ? sanitize_textarea_field($_POST['additional_context']) : '';
+        $keyword = isset($_POST['keyword']) ? sanitize_text_field(wp_unslash($_POST['keyword'])) : '';
+        $additional_context = isset($_POST['additional_context']) ? sanitize_textarea_field(wp_unslash($_POST['additional_context'])) : '';
         
         // Update post meta
         update_post_meta($post_id, 'sparkwp_keyword', $keyword);
@@ -155,7 +162,7 @@ class SparkWP_Admin_Ajax_Handler {
             ));
         }
 
-        $post_id = intval($_POST['post_id']);
+        $post_id = absint(wp_unslash($_POST['post_id']));
         $post = get_post($post_id);
 
         if (!$post) {
@@ -200,7 +207,7 @@ class SparkWP_Admin_Ajax_Handler {
         }
         
         // Get the tab being saved
-        $tab = isset($_POST['tab']) ? sanitize_text_field($_POST['tab']) : '';
+        $tab = isset($_POST['tab']) ? sanitize_text_field(wp_unslash($_POST['tab'])) : '';
         
         if (empty($tab)) {
             wp_send_json_error(array(
@@ -214,17 +221,17 @@ class SparkWP_Admin_Ajax_Handler {
             case 'api-settings':
                 // API Key
                 if (isset($_POST['sparkwp_openai_api_key'])) {
-                    update_option('sparkwp_openai_api_key', sanitize_text_field($_POST['sparkwp_openai_api_key']));
+                    update_option('sparkwp_openai_api_key', sanitize_text_field(wp_unslash($_POST['sparkwp_openai_api_key'])));
                     $updated++;
                 }
                 // Text Model
                 if (isset($_POST['sparkwp_text_model'])) {
-                    update_option('sparkwp_text_model', sanitize_text_field($_POST['sparkwp_text_model']));
+                    update_option('sparkwp_text_model', sanitize_text_field(wp_unslash($_POST['sparkwp_text_model'])));
                     $updated++;
                 }
                 // Image Model
                 if (isset($_POST['sparkwp_image_model'])) {
-                    update_option('sparkwp_image_model', sanitize_text_field($_POST['sparkwp_image_model']));
+                    update_option('sparkwp_image_model', sanitize_text_field(wp_unslash($_POST['sparkwp_image_model'])));
                     $updated++;
                 }
                 break;
@@ -234,7 +241,7 @@ class SparkWP_Admin_Ajax_Handler {
                 $text_fields = array('sparkwp_addressing', 'sparkwp_company_name', 'sparkwp_industry', 'sparkwp_target_group');
                 foreach ($text_fields as $field) {
                     if (isset($_POST[$field])) {
-                        update_option($field, sanitize_text_field($_POST[$field]));
+                        update_option($field, sanitize_text_field(wp_unslash($_POST[$field])));
                         $updated++;
                     }
                 }
@@ -243,13 +250,14 @@ class SparkWP_Admin_Ajax_Handler {
                 $textarea_fields = array('sparkwp_usp', 'sparkwp_advantages', 'sparkwp_buying_reasons', 'sparkwp_additional_context');
                 foreach ($textarea_fields as $field) {
                     if (isset($_POST[$field])) {
-                        update_option($field, sanitize_textarea_field($_POST[$field]));
+                        update_option($field, sanitize_textarea_field(wp_unslash($_POST[$field])));
                         $updated++;
                     }
                 }
                 
                 // WYSIWYG formatting (checkbox array)
-                $wysiwyg_input = isset($_POST['sparkwp_wysiwyg_formatting']) ? $_POST['sparkwp_wysiwyg_formatting'] : array();
+                // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by SparkWP_Sanitizer::wysiwyg_formatting()
+                $wysiwyg_input = isset($_POST['sparkwp_wysiwyg_formatting']) ? wp_unslash($_POST['sparkwp_wysiwyg_formatting']) : array();
                 update_option('sparkwp_wysiwyg_formatting', SparkWP_Sanitizer::wysiwyg_formatting($wysiwyg_input));
                 $updated++;
                 break;
@@ -257,13 +265,14 @@ class SparkWP_Admin_Ajax_Handler {
             case 'cpt':
                 // Selected post type
                 if (isset($_POST['sparkwp_selected_post_type'])) {
-                    update_option('sparkwp_selected_post_type', sanitize_text_field($_POST['sparkwp_selected_post_type']));
+                    update_option('sparkwp_selected_post_type', sanitize_text_field(wp_unslash($_POST['sparkwp_selected_post_type'])));
                     $updated++;
                 }
                 
                 // CPT configs (complex nested array → JSON)
                 if (isset($_POST['sparkwp_cpt_configs'])) {
-                    $sanitized = SparkWP_Sanitizer::cpt_configs($_POST['sparkwp_cpt_configs']);
+                    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by SparkWP_Sanitizer::cpt_configs()
+                    $sanitized = SparkWP_Sanitizer::cpt_configs(wp_unslash($_POST['sparkwp_cpt_configs']));
                     update_option('sparkwp_cpt_configs', $sanitized);
                     $updated++;
                 }
@@ -297,7 +306,7 @@ class SparkWP_Admin_Ajax_Handler {
             ));
         }
         
-        $target = isset($_POST['target']) ? sanitize_text_field($_POST['target']) : '';
+        $target = isset($_POST['target']) ? sanitize_text_field(wp_unslash($_POST['target'])) : '';
         
         global $wpdb;
         
@@ -318,7 +327,7 @@ class SparkWP_Admin_Ajax_Handler {
                 break;
                 
             case 'meta':
-                $post_type = isset($_POST['post_type']) ? sanitize_key($_POST['post_type']) : '';
+                $post_type = isset($_POST['post_type']) ? sanitize_key(wp_unslash($_POST['post_type'])) : '';
                 
                 if (empty($post_type)) {
                     wp_send_json_error(array(

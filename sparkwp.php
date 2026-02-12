@@ -1,11 +1,10 @@
 <?php
 /**
  * Plugin Name: SparkWP
- * Plugin URI: https://sparkwp.io
  * Description: Creates and populates custom post types with AI-generated content based on user keywords.
  * Version: 1.0.0
- * Author: Your Name
- * Author URI: https://sparkwp.io
+ * Author: olympagency
+ * Author URI: https://olympagency.com/
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: sparkwp

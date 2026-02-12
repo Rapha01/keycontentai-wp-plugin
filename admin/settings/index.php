@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Get the active tab from the URL parameter
-$active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'cpt';
+$active_tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])) : 'cpt';
 ?>
 
 <div class="wrap sparkwp-settings-wrap">
