@@ -1,9 +1,9 @@
 /**
- * SparkWP Generation Page Styles
+ * SparkPlus Generation Page Styles
  */
 
 /* Header Section */
-.sparkwp-generation-header {
+.sparkplus-generation-header {
     background: #fff;
     border: 1px solid #c3c4c7;
     padding: 15px 20px;
@@ -13,41 +13,41 @@
     align-items: center;
 }
 
-.sparkwp-header-info p {
+.sparkplus-header-info p {
     margin: 0;
     font-size: 14px;
 }
 
-.sparkwp-header-info .sparkwp-separator {
+.sparkplus-header-info .sparkplus-separator {
     margin: 0 10px;
     color: #c3c4c7;
 }
 
-.sparkwp-header-actions {
+.sparkplus-header-actions {
     display: flex;
     gap: 10px;
 }
 
 /* Posts List Table */
-.sparkwp-posts-list {
+.sparkplus-posts-list {
     background: #fff;
     border: 1px solid #c3c4c7;
 }
 
-.sparkwp-posts-list table {
+.sparkplus-posts-list table {
     margin: 0;
 }
 
-.sparkwp-post-row {
+.sparkplus-post-row {
     transition: background-color 0.2s ease;
 }
 
 /* Status Indicators */
-.sparkwp-status-cell {
+.sparkplus-status-cell {
     text-align: center;
 }
 
-.sparkwp-status-indicator {
+.sparkplus-status-indicator {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -57,53 +57,53 @@
     transition: all 0.3s ease;
 }
 
-.sparkwp-status-indicator .dashicons {
+.sparkplus-status-indicator .dashicons {
     font-size: 20px;
     width: 20px;
     height: 20px;
 }
 
 /* Status States */
-.sparkwp-status-unqueued {
+.sparkplus-status-unqueued {
     background: #f0f0f1;
     color: #646970;
 }
 
-.sparkwp-status-queued {
+.sparkplus-status-queued {
     background: #fcf3cf;
     color: #856404;
 }
 
-.sparkwp-status-queued .dashicons:before {
+.sparkplus-status-queued .dashicons:before {
     content: "\f463"; /* clock icon */
 }
 
-.sparkwp-status-processing {
+.sparkplus-status-processing {
     background: #d1ecf1;
     color: #0c5460;
     animation: pulse 1.5s ease-in-out infinite;
 }
 
-.sparkwp-status-processing .dashicons:before {
+.sparkplus-status-processing .dashicons:before {
     content: "\f463"; /* update/spinner icon */
     animation: spin 2s linear infinite;
 }
 
-.sparkwp-status-finished {
+.sparkplus-status-finished {
     background: #d4edda;
     color: #155724;
 }
 
-.sparkwp-status-finished .dashicons:before {
+.sparkplus-status-finished .dashicons:before {
     content: "\f147"; /* checkmark icon */
 }
 
-.sparkwp-status-error {
+.sparkplus-status-error {
     background: #f8d7da;
     color: #721c24;
 }
 
-.sparkwp-status-error .dashicons:before {
+.sparkplus-status-error .dashicons:before {
     content: "\f534"; /* warning icon */
 }
 
@@ -127,67 +127,67 @@
 }
 
 /* Row Hover Effects */
-.sparkwp-post-row:hover {
+.sparkplus-post-row:hover {
     background: #f6f7f7 !important;
 }
 
 /* Toggle Queue Button States */
-.sparkwp-toggle-queue {
+.sparkplus-toggle-queue {
     min-width: 80px;
 }
 
-.sparkwp-post-row[data-status="queued"] .sparkwp-toggle-queue,
-.sparkwp-post-row[data-status="processing"] .sparkwp-toggle-queue,
-.sparkwp-post-row[data-status="finished"] .sparkwp-toggle-queue {
+.sparkplus-post-row[data-status="queued"] .sparkplus-toggle-queue,
+.sparkplus-post-row[data-status="processing"] .sparkplus-toggle-queue,
+.sparkplus-post-row[data-status="finished"] .sparkplus-toggle-queue {
     background: #f0f0f1;
 }
 
-.sparkwp-post-row[data-status="processing"] .sparkwp-toggle-queue {
+.sparkplus-post-row[data-status="processing"] .sparkplus-toggle-queue {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
 /* Start Generation Button */
-#sparkwp-start-generation:disabled {
+#sparkplus-start-generation:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
 /* Hide mobile labels on desktop */
-.sparkwp-mobile-label {
+.sparkplus-mobile-label {
     display: none;
 }
 
 /* Responsive */
 @media screen and (max-width: 782px) {
-    .sparkwp-generation-header {
+    .sparkplus-generation-header {
         flex-direction: column;
         gap: 15px;
     }
     
-    .sparkwp-header-actions {
+    .sparkplus-header-actions {
         width: 100%;
         flex-direction: column;
     }
     
-    .sparkwp-header-actions button {
+    .sparkplus-header-actions button {
         width: 100%;
     }
     
     /* Mobile Card Layout */
-    .sparkwp-posts-list table {
+    .sparkplus-posts-list table {
         border: 0;
     }
     
-    .sparkwp-posts-list thead {
+    .sparkplus-posts-list thead {
         display: none;
     }
     
-    .sparkwp-posts-list tbody {
+    .sparkplus-posts-list tbody {
         display: block;
     }
     
-    .sparkwp-post-row {
+    .sparkplus-post-row {
         display: block;
         margin-bottom: 15px;
         border: 1px solid #c3c4c7;
@@ -195,7 +195,7 @@
         background: #fff;
     }
     
-    .sparkwp-post-row td {
+    .sparkplus-post-row td {
         display: block !important;
         text-align: left !important;
         padding: 12px 15px !important;
@@ -206,12 +206,12 @@
         max-width: 100% !important;
     }
     
-    .sparkwp-post-row td:last-child {
+    .sparkplus-post-row td:last-child {
         border-bottom: none !important;
     }
     
     /* Show mobile labels */
-    .sparkwp-mobile-label {
+    .sparkplus-mobile-label {
         display: block !important;
         font-weight: 600 !important;
         margin-bottom: 5px !important;
@@ -222,22 +222,22 @@
     }
     
     /* Status indicator on mobile */
-    .sparkwp-status-cell {
+    .sparkplus-status-cell {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
     }
     
     /* Action buttons full width on mobile */
-    .sparkwp-actions-cell {
+    .sparkplus-actions-cell {
         display: flex !important;
         flex-direction: column !important;
         gap: 8px !important;
         align-items: stretch !important;
     }
     
-    .sparkwp-actions-cell .sparkwp-toggle-queue,
-    .sparkwp-actions-cell .sparkwp-toggle-details {
+    .sparkplus-actions-cell .sparkplus-toggle-queue,
+    .sparkplus-actions-cell .sparkplus-toggle-details {
         width: 100% !important;
         max-width: 100% !important;
         justify-content: center !important;
@@ -246,25 +246,25 @@
     }
     
     /* Post details row on mobile */
-    .sparkwp-post-details-row {
+    .sparkplus-post-details-row {
         display: block !important;
     }
     
-    .sparkwp-post-details-row td {
+    .sparkplus-post-details-row td {
         display: block !important;
         width: 100% !important;
         max-width: 100% !important;
         padding: 0 !important;
     }
     
-    .sparkwp-post-details {
+    .sparkplus-post-details {
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
     }
     
-    .sparkwp-detail-field input[type="text"],
-    .sparkwp-detail-field textarea {
+    .sparkplus-detail-field input[type="text"],
+    .sparkplus-detail-field textarea {
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
@@ -272,61 +272,61 @@
 }
 
 /* Post Details (Collapsible) */
-.sparkwp-post-details-row {
+.sparkplus-post-details-row {
     background: #f9f9f9;
 }
 
-.sparkwp-post-details {
+.sparkplus-post-details {
     padding: 20px;
     border-top: 1px solid #dcdcde;
 }
 
-.sparkwp-detail-field {
+.sparkplus-detail-field {
     margin-bottom: 15px;
 }
 
-.sparkwp-detail-field label {
+.sparkplus-detail-field label {
     display: block;
     margin-bottom: 5px;
 }
 
-.sparkwp-detail-field input[type="text"],
-.sparkwp-detail-field textarea {
+.sparkplus-detail-field input[type="text"],
+.sparkplus-detail-field textarea {
     width: 100%;
     max-width: 600px;
 }
 
-.sparkwp-detail-actions {
+.sparkplus-detail-actions {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-.sparkwp-save-status {
+.sparkplus-save-status {
     font-size: 13px;
     font-style: italic;
 }
 
-.sparkwp-save-status.success {
+.sparkplus-save-status.success {
     color: #00a32a;
 }
 
-.sparkwp-save-status.error {
+.sparkplus-save-status.error {
     color: #d63638;
 }
 
 /* Delete Button */
-.sparkwp-delete-post {
+.sparkplus-delete-post {
     color: #b32d2e !important;
     border-color: #b32d2e !important;
 }
 
-.sparkwp-delete-post:hover {
+.sparkplus-delete-post:hover {
     background: #b32d2e !important;
     color: #fff !important;
 }
 
-.sparkwp-delete-post .dashicons {
+.sparkplus-delete-post .dashicons {
     font-size: 16px;
     width: 16px;
     height: 16px;
@@ -335,7 +335,7 @@
 }
 
 /* Delete Confirmation Modal */
-.sparkwp-delete-modal {
+.sparkplus-delete-modal {
     display: none;
     position: fixed;
     top: 0;
@@ -345,7 +345,7 @@
     z-index: 100100;
 }
 
-.sparkwp-delete-modal-overlay {
+.sparkplus-delete-modal-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -354,7 +354,7 @@
     background: rgba(0, 0, 0, 0.5);
 }
 
-.sparkwp-delete-modal-dialog {
+.sparkplus-delete-modal-dialog {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -366,32 +366,32 @@
     max-width: 90vw;
 }
 
-.sparkwp-delete-modal-header {
+.sparkplus-delete-modal-header {
     padding: 16px 20px;
     border-bottom: 1px solid #dcdcde;
 }
 
-.sparkwp-delete-modal-header h2 {
+.sparkplus-delete-modal-header h2 {
     margin: 0;
     font-size: 16px;
     color: #1d2327;
 }
 
-.sparkwp-delete-modal-body {
+.sparkplus-delete-modal-body {
     padding: 20px;
 }
 
-.sparkwp-delete-modal-body p {
+.sparkplus-delete-modal-body p {
     margin: 0 0 8px;
     font-size: 13px;
     color: #50575e;
 }
 
-.sparkwp-delete-modal-post-title {
+.sparkplus-delete-modal-post-title {
     font-weight: 600;
 }
 
-.sparkwp-delete-modal-footer {
+.sparkplus-delete-modal-footer {
     padding: 12px 20px;
     border-top: 1px solid #dcdcde;
     display: flex;
@@ -399,29 +399,29 @@
     gap: 8px;
 }
 
-.sparkwp-delete-modal-confirm {
+.sparkplus-delete-modal-confirm {
     background: #d63638 !important;
     border-color: #d63638 !important;
     color: #fff !important;
 }
 
-.sparkwp-delete-modal-confirm:hover {
+.sparkplus-delete-modal-confirm:hover {
     background: #b32d2e !important;
     border-color: #b32d2e !important;
 }
 
-.sparkwp-actions-cell {
+.sparkplus-actions-cell {
     white-space: nowrap;
 }
 
-.sparkwp-toggle-details {
+.sparkplus-toggle-details {
     padding: 2px 6px !important;
     min-width: auto !important;
     margin-right: 5px;
     line-height: 1 !important;
 }
 
-.sparkwp-toggle-details .dashicons {
+.sparkplus-toggle-details .dashicons {
     font-size: 16px;
     width: 16px;
     height: 16px;
@@ -429,16 +429,16 @@
     transition: transform 0.2s ease;
 }
 
-.sparkwp-toggle-details.expanded .dashicons {
+.sparkplus-toggle-details.expanded .dashicons {
     transform: rotate(180deg);
 }
 
 @media screen and (max-width: 600px) {
-    .sparkwp-header-info {
+    .sparkplus-header-info {
         text-align: center;
     }
     
-    .sparkwp-header-info .sparkwp-separator {
+    .sparkplus-header-info .sparkplus-separator {
         display: block;
         margin: 5px 0;
     }

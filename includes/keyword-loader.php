@@ -4,7 +4,7 @@
  * 
  * Handles loading keywords and creating posts
  * 
- * @package SparkWP
+ * @package SparkPlus
  */
 
 if (!defined('ABSPATH')) {
@@ -12,11 +12,11 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Class SparkWP_Keyword_Loader
+ * Class SparkPlus_Keyword_Loader
  * 
- * Manages keyword loading and post creation
+ * Handles keyword loading and post creation
  */
-class SparkWP_Keyword_Loader {
+class SparkPlus_Keyword_Loader {
     
     /**
      * Load a keyword and create a post if it doesn't exist
@@ -29,7 +29,7 @@ class SparkWP_Keyword_Loader {
      */
     public function load_keyword($keyword, $debug_mode = false, $auto_publish = false, $additional_context = '') {
         // Get selected post type from settings
-        $post_type = get_option('sparkwp_selected_post_type', 'post');
+        $post_type = get_option('sparkplus_selected_post_type', 'post');
         
         // Trim keyword but preserve case
         $keyword = trim($keyword);
@@ -61,7 +61,7 @@ class SparkWP_Keyword_Loader {
         // Check if a post with this keyword already exists
         $existing_posts = get_posts(array(
             'post_type' => $post_type,
-            'meta_key' => 'sparkwp_keyword',
+            'meta_key' => 'sparkplus_keyword',
             'meta_value' => $keyword,
             'posts_per_page' => 1,
             'post_status' => 'any'
@@ -78,7 +78,7 @@ class SparkWP_Keyword_Loader {
                         'post_id' => $existing_post->ID,
                         'post_title' => $existing_post->post_title,
                         'post_status' => $existing_post->post_status,
-                        'keyword_meta' => get_post_meta($existing_post->ID, 'sparkwp_keyword', true)
+                        'keyword_meta' => get_post_meta($existing_post->ID, 'sparkplus_keyword', true)
                     )
                 );
             }
@@ -105,7 +105,7 @@ class SparkWP_Keyword_Loader {
                 if (!is_wp_error($update_result)) {
                     $result['success'] = true;
                     /* translators: 1: keyword, 2: post title, 3: post ID */
-                    $result['message'] = sprintf(__('Post with keyword "%1$s" already exists and has been published: "%2$s" (ID: %3$d)', 'sparkwp'), $keyword, $existing_post->post_title, $existing_post->ID);
+                    $result['message'] = sprintf(__('Post with keyword "%1$s" already exists and has been published: "%2$s" (ID: %3$d)', 'sparkplus'), $keyword, $existing_post->post_title, $existing_post->ID);
                     $result['post_id'] = $existing_post->ID;
                     $result['exists'] = true;
                     $result['published'] = true;
@@ -116,7 +116,7 @@ class SparkWP_Keyword_Loader {
             
             $result['success'] = true;
             /* translators: 1: keyword, 2: post title, 3: post ID */
-            $result['message'] = sprintf(__('Post with keyword "%1$s" already exists: "%2$s" (ID: %3$d)', 'sparkwp'), $keyword, $existing_post->post_title, $existing_post->ID);
+            $result['message'] = sprintf(__('Post with keyword "%1$s" already exists: "%2$s" (ID: %3$d)', 'sparkplus'), $keyword, $existing_post->post_title, $existing_post->ID);
             $result['post_id'] = $existing_post->ID;
             $result['exists'] = true;
             
@@ -163,7 +163,7 @@ class SparkWP_Keyword_Loader {
             
             $result['success'] = false;
             /* translators: %s: error message */
-            $result['message'] = sprintf(__('Failed to create post: %s', 'sparkwp'), $post_id->get_error_message());
+            $result['message'] = sprintf(__('Failed to create post: %s', 'sparkplus'), $post_id->get_error_message());
             
             return $result;
         }
@@ -181,11 +181,11 @@ class SparkWP_Keyword_Loader {
         }
         
         // Save the keyword to the custom field (preserve original case)
-        update_post_meta($post_id, 'sparkwp_keyword', $keyword);
+        update_post_meta($post_id, 'sparkplus_keyword', $keyword);
         
-        // Save the additional context if provided
+        // Store additional context if provided
         if (!empty($additional_context)) {
-            update_post_meta($post_id, 'sparkwp_additional_context', $additional_context);
+            update_post_meta($post_id, 'sparkplus_additional_context', $additional_context);
         }
         
         if ($debug_mode) {
@@ -203,9 +203,9 @@ class SparkWP_Keyword_Loader {
         $result['success'] = true;
         $result['message'] = $auto_publish 
             /* translators: %s: keyword/post title */
-            ? sprintf(__('Post created and published successfully: "%s"', 'sparkwp'), $keyword)
+            ? sprintf(__('Post created and published successfully: "%s"', 'sparkplus'), $keyword)
             /* translators: %s: keyword/post title */
-            : sprintf(__('Post created successfully: "%s"', 'sparkwp'), $keyword);
+            : sprintf(__('Post created successfully: "%s"', 'sparkplus'), $keyword);
         $result['post_id'] = $post_id;
         $result['exists'] = false;
         $result['published'] = $auto_publish;

@@ -1,17 +1,17 @@
 /**
- * SparkWP Settings Page Styles
+ * SparkPlus Settings Page Styles
  */
 
 /* Page Layout */
-.sparkwp-settings-wrap h1 {
+.sparkplus-settings-wrap h1 {
     margin-bottom: 20px;
 }
 
-.sparkwp-nav-tab-wrapper {
+.sparkplus-nav-tab-wrapper {
     margin-bottom: 0;
 }
 
-.sparkwp-tab-content {
+.sparkplus-tab-content {
     background: #fff;
     border: 1px solid #c3c4c7;
     border-top: none;
@@ -19,11 +19,11 @@
     margin-top: 0;
 }
 
-.sparkwp-tab-panel {
-    animation: sparkwp-fadeIn 0.3s ease-in;
+.sparkplus-tab-panel {
+    animation: sparkplus-fadeIn 0.3s ease-in;
 }
 
-@keyframes sparkwp-fadeIn {
+@keyframes sparkplus-fadeIn {
     from {
         opacity: 0;
         transform: translateY(-10px);
@@ -35,18 +35,18 @@
 }
 
 /* Form Table */
-.sparkwp-tab-content .form-table {
+.sparkplus-tab-content .form-table {
     margin-top: 20px;
 }
 
 /* Fields Table Styling */
-.sparkwp-fields-table {
+.sparkplus-fields-table {
     border-collapse: collapse;
     margin-top: 15px;
     background: #fff;
 }
 
-.sparkwp-fields-table thead th {
+.sparkplus-fields-table thead th {
     background: #f6f7f7;
     border-bottom: 2px solid #c3c4c7;
     padding: 10px 15px;
@@ -55,42 +55,42 @@
     text-align: left;
 }
 
-.sparkwp-fields-table tbody tr {
+.sparkplus-fields-table tbody tr {
     border-bottom: 1px solid #e0e0e0;
 }
 
-.sparkwp-fields-table tbody tr:last-child {
+.sparkplus-fields-table tbody tr:last-child {
     border-bottom: none;
 }
 
-.sparkwp-fields-table tbody tr:hover {
+.sparkplus-fields-table tbody tr:hover {
     background: #f9f9f9;
 }
 
-.sparkwp-fields-table tbody td {
+.sparkplus-fields-table tbody td {
     padding: 15px;
     vertical-align: middle;
 }
 
-.sparkwp-fields-table textarea {
+.sparkplus-fields-table textarea {
     width: 100%;
     font-size: 13px;
     resize: vertical;
     margin: 0;
 }
 
-.sparkwp-fields-table input[type="number"] {
+.sparkplus-fields-table input[type="number"] {
     margin: 0;
 }
 
-.sparkwp-fields-table code {
+.sparkplus-fields-table code {
     background: #f0f0f1;
     padding: 2px 6px;
     border-radius: 3px;
 }
 
 /* Field Type Badge */
-.sparkwp-field-type {
+.sparkplus-field-type {
     display: inline-block;
     padding: 3px 8px;
     background: #f0f0f1;
@@ -101,7 +101,7 @@
 }
 
 /* Source Badge */
-.sparkwp-field-source {
+.sparkplus-field-source {
     display: inline-block;
     padding: 3px 8px;
     border-radius: 3px;
@@ -111,43 +111,43 @@
     letter-spacing: 0.5px;
 }
 
-.sparkwp-source-acf {
+.sparkplus-source-acf {
     background: #d4edda;
     color: #155724;
 }
 
-.sparkwp-source-wp {
+.sparkplus-source-wp {
     background: #e7f3ff;
     color: #0073aa;
     border: 1px solid #0073aa;
 }
 
-.sparkwp-source-meta {
+.sparkplus-source-meta {
     background: #cce5ff;
     color: #004085;
 }
 
 /* Checkbox column styling */
-.sparkwp-field-enable-checkbox {
+.sparkplus-field-enable-checkbox {
     cursor: pointer;
     margin: 0 !important;
     transform: scale(2.5) !important;
     transform-origin: center !important;
 }
 
-.sparkwp-fields-table td p.description {
+.sparkplus-fields-table td p.description {
     margin: 5px 0 0 0;
     font-size: 12px;
 }
 /* Mobile Responsive */
 @media screen and (max-width: 782px) {
     /* Hide table header on mobile */
-    .sparkwp-fields-table thead {
+    .sparkplus-fields-table thead {
         display: none;
     }
     
     /* Stack table cells vertically */
-    .sparkwp-fields-table tbody tr {
+    .sparkplus-fields-table tbody tr {
         display: block;
         margin-bottom: 20px;
         border: 1px solid #c3c4c7;
@@ -155,7 +155,7 @@
         overflow: hidden;
     }
     
-    .sparkwp-fields-table tbody td {
+    .sparkplus-fields-table tbody td {
         display: block;
         width: 100%;
         max-width: 100%;
@@ -164,12 +164,12 @@
         box-sizing: border-box;
     }
     
-    .sparkwp-fields-table tbody td:last-child {
+    .sparkplus-fields-table tbody td:last-child {
         border-bottom: none;
     }
     
     /* Add labels for mobile using data attributes */
-    .sparkwp-fields-table tbody td:before {
+    .sparkplus-fields-table tbody td:before {
         content: attr(data-label);
         font-weight: 600;
         display: block;
@@ -178,51 +178,51 @@
     }
     
     /* Hide label for checkbox column (first column) */
-    .sparkwp-fields-table tbody td:first-child:before {
+    .sparkplus-fields-table tbody td:first-child:before {
         display: none;
     }
     
     /* Hide label for field name column (second column) - field name is already prominent */
-    .sparkwp-fields-table tbody td:nth-child(2):before {
+    .sparkplus-fields-table tbody td:nth-child(2):before {
         display: none;
     }
     
     /* Center checkbox on mobile with proper spacing */
-    .sparkwp-fields-table tbody td:first-child {
+    .sparkplus-fields-table tbody td:first-child {
         text-align: center;
         background: #f6f7f7;
         padding: 20px 15px;
     }
     
     /* Add extra padding to field name cell */
-    .sparkwp-fields-table tbody td:nth-child(2) {
+    .sparkplus-fields-table tbody td:nth-child(2) {
         padding: 15px;
     }
     
     /* Adjust textarea and inputs for mobile */
-    .sparkwp-fields-table textarea {
+    .sparkplus-fields-table textarea {
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
     }
     
-    .sparkwp-fields-table input[type="number"],
-    .sparkwp-fields-table select {
+    .sparkplus-fields-table input[type="number"],
+    .sparkplus-fields-table select {
         max-width: 100%;
         box-sizing: border-box;
     }
     
-    .sparkwp-fields-table select {
+    .sparkplus-fields-table select {
         width: 100% !important;
     }
     
     /* Scale down checkbox slightly on mobile */
-    .sparkwp-field-enable-checkbox {
+    .sparkplus-field-enable-checkbox {
         transform: scale(2) !important;
     }
 }
 /* AJAX Save Status Message */
-.sparkwp-save-status {
+.sparkplus-save-status {
     margin-left: 12px;
     font-weight: 500;
     font-style: italic;
@@ -230,11 +230,11 @@
     animation: fadeIn 0.3s ease-in;
 }
 
-.sparkwp-save-status.success {
+.sparkplus-save-status.success {
     color: #00a32a;
 }
 
-.sparkwp-save-status.error {
+.sparkplus-save-status.error {
     color: #d63638;
 }
 
@@ -250,7 +250,7 @@
 }
 
 /* Reset Modal */
-.sparkwp-modal-overlay {
+.sparkplus-modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -263,7 +263,7 @@
     justify-content: center;
 }
 
-.sparkwp-modal {
+.sparkplus-modal {
     background: #fff;
     border-radius: 8px;
     padding: 30px;
@@ -273,36 +273,36 @@
     animation: fadeIn 0.2s ease-out;
 }
 
-.sparkwp-modal h3 {
+.sparkplus-modal h3 {
     margin: 0 0 15px;
     font-size: 18px;
 }
 
-.sparkwp-modal p {
+.sparkplus-modal p {
     margin: 0 0 15px;
     color: #50575e;
     line-height: 1.6;
 }
 
-.sparkwp-modal-actions {
+.sparkplus-modal-actions {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
     margin-top: 20px;
 }
 
-.sparkwp-button-danger {
+.sparkplus-button-danger {
     background: #d63638 !important;
     border-color: #d63638 !important;
     color: #fff !important;
 }
 
-.sparkwp-button-danger:hover {
+.sparkplus-button-danger:hover {
     background: #b32d2e !important;
     border-color: #b32d2e !important;
 }
 
-.sparkwp-button-danger:disabled {
+.sparkplus-button-danger:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }

@@ -14,17 +14,17 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class SparkWP_Content_Generator {
+class SparkPlus_Content_Generator {
     private $debug_log = array();
     private $api_caller = null;
     private $prompt_builder = null;
 
     public function __construct() {
         // Initialize API caller with debug callback
-        $this->api_caller = new SparkWP_OpenAI_API_Caller(array($this, 'add_debug'));
+        $this->api_caller = new SparkPlus_OpenAI_API_Caller(array($this, 'add_debug'));
         
         // Initialize prompt builder with debug callback
-        $this->prompt_builder = new SparkWP_Prompt_Builder(array($this, 'add_debug'));
+        $this->prompt_builder = new SparkPlus_Prompt_Builder(array($this, 'add_debug'));
     }
     
     public function generate_content($post_id) {
@@ -34,7 +34,7 @@ class SparkWP_Content_Generator {
             // 1. Validate post exists
             $post = get_post($post_id);
             if (!$post) {
-                throw new Exception(__('Post not found', 'sparkwp'));
+                throw new Exception(__('Post not found', 'sparkplus'));
             }
             
             $this->add_debug('Starting content generation for existing post', array(
@@ -62,7 +62,7 @@ class SparkWP_Content_Generator {
             ));
             
             // Update last generation timestamp
-            update_post_meta($post_id, 'sparkwp_last_generation', current_time('mysql'));
+            update_post_meta($post_id, 'sparkplus_last_generation', current_time('mysql'));
             
             // Return success response
             return array(
@@ -70,7 +70,7 @@ class SparkWP_Content_Generator {
                 'post_id' => $post_id,
                 'keyword' => $post_settings['keyword'],
                 /* translators: 1: post ID, 2: keyword */
-                'message' => sprintf(__('Successfully updated post (ID: %1$d) for keyword: %2$s', 'sparkwp'), $post_id, $post_settings['keyword']),
+                'message' => sprintf(__('Successfully updated post (ID: %1$d) for keyword: %2$s', 'sparkplus'), $post_id, $post_settings['keyword']),
                 'debug_log' => $this->debug_log
             );
             
@@ -112,9 +112,9 @@ class SparkWP_Content_Generator {
     private function get_cpt_settings($post_type) {
         // Get CPT-specific additional context from consolidated configs
         $cpt_additional_context = '';
-        global $sparkwp;
-        if ($sparkwp && method_exists($sparkwp, 'get_cpt_configs')) {
-            $cpt_configs = $sparkwp->get_cpt_configs();
+        global $sparkplus;
+        if ($sparkplus && method_exists($sparkplus, 'get_cpt_configs')) {
+            $cpt_configs = $sparkplus->get_cpt_configs();
             if (isset($cpt_configs[$post_type]['additional_context'])) {
                 $cpt_additional_context = $cpt_configs[$post_type]['additional_context'];
             }
@@ -122,9 +122,9 @@ class SparkWP_Content_Generator {
         
         $settings = array(
             // API Settings
-            'api_key' => get_option('sparkwp_openai_api_key', ''),
-            'text_model' => get_option('sparkwp_text_model', 'gpt-5.2'),
-            'image_model' => get_option('sparkwp_image_model', 'gpt-image-1.5'),
+            'api_key' => get_option('sparkplus_openai_api_key', ''),
+            'text_model' => get_option('sparkplus_text_model', 'gpt-5.2'),
+            'image_model' => get_option('sparkplus_image_model', 'gpt-image-1.5'),
             
             // Post Type
             'post_type' => $post_type,
@@ -133,19 +133,19 @@ class SparkWP_Content_Generator {
             'language' => $this->get_site_language(),
             
             // General Context Information
-            'addressing' => get_option('sparkwp_addressing', 'formal'),
-            'company_name' => get_option('sparkwp_company_name', ''),
-            'industry' => get_option('sparkwp_industry', ''),
-            'target_group' => get_option('sparkwp_target_group', ''),
-            'usp' => get_option('sparkwp_usp', ''),
-            'advantages' => get_option('sparkwp_advantages', ''),
-            'buying_reasons' => get_option('sparkwp_buying_reasons', ''),
+            'addressing' => get_option('sparkplus_addressing', 'formal'),
+            'company_name' => get_option('sparkplus_company_name', ''),
+            'industry' => get_option('sparkplus_industry', ''),
+            'target_group' => get_option('sparkplus_target_group', ''),
+            'usp' => get_option('sparkplus_usp', ''),
+            'advantages' => get_option('sparkplus_advantages', ''),
+            'buying_reasons' => get_option('sparkplus_buying_reasons', ''),
             
             // Custom Fields for this post type
             'custom_fields' => $this->get_custom_fields_config($post_type),
             
             // Two levels of additional context (General Context + CPT)
-            'general_context_additional_context' => get_option('sparkwp_additional_context', ''),
+            'general_context_additional_context' => get_option('sparkplus_additional_context', ''),
             'cpt_additional_context' => $cpt_additional_context
         );
         
@@ -162,11 +162,11 @@ class SparkWP_Content_Generator {
         
         // Validate required settings
         if (empty($settings['api_key'])) {
-            throw new Exception(esc_html__('OpenAI API key is not configured. Please add it in the settings.', 'sparkwp'));
+            throw new Exception(esc_html__('OpenAI API key is not configured. Please add it in the settings.', 'sparkplus'));
         }
         
         if (empty($settings['post_type'])) {
-            throw new Exception(esc_html__('No post type selected. Please configure in the settings.', 'sparkwp'));
+            throw new Exception(esc_html__('No post type selected. Please configure in the settings.', 'sparkplus'));
         }
         
         return $settings;
@@ -174,8 +174,8 @@ class SparkWP_Content_Generator {
     
     private function get_post_settings($post_id) {
         $settings = array(
-            'keyword' => get_post_meta($post_id, 'sparkwp_keyword', true),
-            'post_additional_context' => get_post_meta($post_id, 'sparkwp_additional_context', true)
+            'keyword' => get_post_meta($post_id, 'sparkplus_keyword', true),
+            'post_additional_context' => get_post_meta($post_id, 'sparkplus_additional_context', true)
         );
         
         $this->add_debug('get_post_settings', array(
@@ -186,7 +186,7 @@ class SparkWP_Content_Generator {
         
         // Validate keyword exists
         if (empty($settings['keyword'])) {
-            throw new Exception(esc_html__('No keyword found for this post', 'sparkwp'));
+            throw new Exception(esc_html__('No keyword found for this post', 'sparkplus'));
         }
         
         return $settings;
@@ -196,8 +196,8 @@ class SparkWP_Content_Generator {
         $this->add_debug('get_custom_fields_config', "Retrieving field configuration for post type: {$post_type}");
         
         // Get user's field settings
-        global $sparkwp;
-        $cpt_configs = $sparkwp->get_cpt_configs();
+        global $sparkplus;
+        $cpt_configs = $sparkplus->get_cpt_configs();
         $user_settings = isset($cpt_configs[$post_type]['fields']) ? $cpt_configs[$post_type]['fields'] : array();
         
         $all_fields = array();
@@ -263,7 +263,7 @@ class SparkWP_Content_Generator {
             throw new Exception(
                 sprintf(
                     /* translators: %s: post type name */
-                    esc_html__('No enabled fields found for post type: %s', 'sparkwp'),
+                    esc_html__('No enabled fields found for post type: %s', 'sparkplus'),
                     esc_html($post_type)
                 )
             );
@@ -297,7 +297,7 @@ class SparkWP_Content_Generator {
         $parsed_content = json_decode($text_response['content'], true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception(esc_html__('Failed to parse GPT response: ', 'sparkwp') . esc_html(json_last_error_msg()));
+            throw new Exception(esc_html__('Failed to parse GPT response: ', 'sparkplus') . esc_html(json_last_error_msg()));
         }
         
         // Update post with generated text content and return count
@@ -334,12 +334,12 @@ class SparkWP_Content_Generator {
             // 4. Process and save the image as WebP (gpt-image returns b64_json)
             if ($image_response && isset($image_response['data'][0]['b64_json'])) {
                 // Convert to WebP format
-                $webp_data = sparkwp_convert_image_to_webp($image_response['data'][0]['b64_json'], 90);
+                $webp_data = sparkplus_convert_image_to_webp($image_response['data'][0]['b64_json'], 90);
                 
                 if (is_wp_error($webp_data)) {
                     throw new Exception(sprintf(
                         /* translators: %1$s: field label, %2$s: error message */
-                        esc_html__('Failed to convert image to WebP for field "%1$s": %2$s', 'sparkwp'),
+                        esc_html__('Failed to convert image to WebP for field "%1$s": %2$s', 'sparkplus'),
                         esc_html($field['label']),
                         esc_html($webp_data->get_error_message())
                     ));
@@ -348,12 +348,12 @@ class SparkWP_Content_Generator {
                 // Save WebP to media library (use post keyword for filename & title)
                 $keyword = $post_settings['keyword'];
                 $filename = sanitize_file_name($keyword) . '-' . time();
-                $attachment_id = sparkwp_save_webp_to_media_library($webp_data, $post_id, $filename, $keyword);
+                $attachment_id = sparkplus_save_webp_to_media_library($webp_data, $post_id, $filename, $keyword);
                 
                 if (is_wp_error($attachment_id)) {
                     throw new Exception(sprintf(
                         /* translators: %1$s: field label, %2$s: error message */
-                        esc_html__('Failed to save WebP image for field "%1$s": %2$s', 'sparkwp'),
+                        esc_html__('Failed to save WebP image for field "%1$s": %2$s', 'sparkplus'),
                         esc_html($field['label']),
                         esc_html($attachment_id->get_error_message())
                     ));
@@ -461,7 +461,7 @@ class SparkWP_Content_Generator {
             $result = wp_update_post($post_data, true);
             
             if (is_wp_error($result)) {
-                throw new Exception(esc_html__('Failed to update WordPress fields: ', 'sparkwp') . esc_html($result->get_error_message()));
+                throw new Exception(esc_html__('Failed to update WordPress fields: ', 'sparkplus') . esc_html($result->get_error_message()));
             }
             
             $this->add_debug('update_post_with_texts', array(

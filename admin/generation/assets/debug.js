@@ -1,5 +1,5 @@
 /**
- * SparkWP Generation Debug JavaScript
+ * SparkPlus Generation Debug JavaScript
  */
 
 (function($) {
@@ -16,7 +16,7 @@
     };
     
     // Export debug functions to global scope for use by generation.js
-    window.SparkWPDebug = {
+    window.SparkPlusDebug = {
         init: initDebugListeners,
         addEntry: addDebugEntry,
         clear: clearDebug,
@@ -32,16 +32,16 @@
      */
     function initDebugListeners() {
         // Toggle debug container
-        $('#sparkwp-toggle-debug-btn').on('click', function() {
+        $('#sparkplus-toggle-debug-btn').on('click', function() {
             if (debugVisible) {
                 // Hide debug
-                $('#sparkwp-debug-container').slideUp(300);
+                $('#sparkplus-debug-container').slideUp(300);
                 $(this).find('.dashicons').removeClass('dashicons-hidden').addClass('dashicons-admin-tools');
                 $(this).find('.button-text').text('Show Debug Mode');
                 debugVisible = false;
             } else {
                 // Show debug
-                $('#sparkwp-debug-container').slideDown(300);
+                $('#sparkplus-debug-container').slideDown(300);
                 $(this).find('.dashicons').removeClass('dashicons-admin-tools').addClass('dashicons-hidden');
                 $(this).find('.button-text').text('Hide Debug Mode');
                 debugVisible = true;
@@ -49,12 +49,12 @@
         });
         
         // Clear debug output
-        $('#sparkwp-clear-debug-btn').on('click', function() {
+        $('#sparkplus-clear-debug-btn').on('click', function() {
             clearDebug();
         });
         
         // Tab switching
-        $('.sparkwp-debug-tab').on('click', function() {
+        $('.sparkplus-debug-tab').on('click', function() {
             const tabName = $(this).data('tab');
             switchDebugTab(tabName);
         });
@@ -65,12 +65,12 @@
      */
     function switchDebugTab(tabName) {
         // Update tab buttons
-        $('.sparkwp-debug-tab').removeClass('active');
-        $(`.sparkwp-debug-tab[data-tab="${tabName}"]`).addClass('active');
+        $('.sparkplus-debug-tab').removeClass('active');
+        $(`.sparkplus-debug-tab[data-tab="${tabName}"]`).addClass('active');
         
         // Update tab content
-        $('.sparkwp-debug-tab-content').removeClass('active');
-        $(`#sparkwp-debug-tab-${tabName}`).addClass('active');
+        $('.sparkplus-debug-tab-content').removeClass('active');
+        $(`#sparkplus-debug-tab-${tabName}`).addClass('active');
     }
     
     /**
@@ -86,16 +86,16 @@
         };
         
         const emptyState = (message) => 
-            '<div class="sparkwp-generation-debug-empty">' +
+            '<div class="sparkplus-generation-debug-empty">' +
             '<span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span>' +
             '<p>' + message + '</p>' +
             '</div>';
         
-        $('#sparkwp-debug-tab-all').html(emptyState('Debug information will appear here when generation starts.'));
-        $('#sparkwp-debug-tab-text-prompt').html(emptyState('Last text prompt will appear here after generation.'));
-        $('#sparkwp-debug-tab-image-prompt').html(emptyState('Last image prompt will appear here after generation.'));
-        $('#sparkwp-debug-tab-text-response').html(emptyState('Last text API response will appear here after generation.'));
-        $('#sparkwp-debug-tab-image-response').html(emptyState('Last image API response will appear here after generation.'));
+        $('#sparkplus-debug-tab-all').html(emptyState('Debug information will appear here when generation starts.'));
+        $('#sparkplus-debug-tab-text-prompt').html(emptyState('Last text prompt will appear here after generation.'));
+        $('#sparkplus-debug-tab-image-prompt').html(emptyState('Last image prompt will appear here after generation.'));
+        $('#sparkplus-debug-tab-text-response').html(emptyState('Last text API response will appear here after generation.'));
+        $('#sparkplus-debug-tab-image-response').html(emptyState('Last image API response will appear here after generation.'));
     }
     
     /**
@@ -170,24 +170,24 @@
      * Update "All Debug Data" tab
      */
     function updateAllDebugTab() {
-        const $container = $('#sparkwp-debug-tab-all');
+        const $container = $('#sparkplus-debug-tab-all');
         $container.empty();
         
         debugData.all.forEach(function(entry) {
-            const $entry = $('<div class="sparkwp-debug-entry"></div>');
+            const $entry = $('<div class="sparkplus-debug-entry"></div>');
             if (entry.isError) {
                 $entry.addClass('error');
             }
             
-            const $header = $('<div class="sparkwp-debug-entry-header"></div>')
+            const $header = $('<div class="sparkplus-debug-entry-header"></div>')
                 .text(entry.step)
-                .append('<span class="sparkwp-debug-timestamp">' + entry.timestamp + '</span>');
+                .append('<span class="sparkplus-debug-timestamp">' + entry.timestamp + '</span>');
             
             const content = typeof entry.data === 'object' 
                 ? JSON.stringify(entry.data, null, 2) 
                 : entry.data;
             
-            const $content = $('<div class="sparkwp-debug-entry-content"></div>').text(content);
+            const $content = $('<div class="sparkplus-debug-entry-content"></div>').text(content);
             
             $entry.append($header).append($content);
             $container.append($entry);
@@ -201,7 +201,7 @@
      * Update specific tab with content
      */
     function updateTab(tabId, content, className) {
-        const $container = $(`#sparkwp-debug-tab-${tabId}`);
+        const $container = $(`#sparkplus-debug-tab-${tabId}`);
         $container.empty().append($('<div>').addClass(className).text(content));
     }
     
@@ -209,28 +209,28 @@
      * Update "Last Text Prompt" tab
      */
     function updateTextPromptTab() {
-        updateTab('text-prompt', debugData.lastTextPrompt, 'sparkwp-debug-prompt');
+        updateTab('text-prompt', debugData.lastTextPrompt, 'sparkplus-debug-prompt');
     }
     
     /**
      * Update "Last Image Prompt" tab
      */
     function updateImagePromptTab() {
-        updateTab('image-prompt', debugData.lastImagePrompt, 'sparkwp-debug-prompt');
+        updateTab('image-prompt', debugData.lastImagePrompt, 'sparkplus-debug-prompt');
     }
     
     /**
      * Update "Last Text API Response" tab
      */
     function updateTextResponseTab() {
-        updateTab('text-response', debugData.lastTextResponse, 'sparkwp-debug-response');
+        updateTab('text-response', debugData.lastTextResponse, 'sparkplus-debug-response');
     }
     
     /**
      * Update "Last Image API Response" tab
      */
     function updateImageResponseTab() {
-        updateTab('image-response', debugData.lastImageResponse, 'sparkwp-debug-response');
+        updateTab('image-response', debugData.lastImageResponse, 'sparkplus-debug-response');
     }
     
 })(jQuery);

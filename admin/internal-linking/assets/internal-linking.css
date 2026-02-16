@@ -1,17 +1,17 @@
 /**
- * SparkWP Internal Linking Page Styles
+ * SparkPlus Internal Linking Page Styles
  */
 
-.sparkwp-interlinking-container {
+.sparkplus-interlinking-container {
     margin-top: 20px;
 }
 
-.sparkwp-interlinking-container .card {
+.sparkplus-interlinking-container .card {
     padding: 20px;
     max-width: 100%;
 }
 
-.sparkwp-interlinking-container .card h2 {
+.sparkplus-interlinking-container .card h2 {
     margin-top: 0;
     color: #2271b1;
     font-size: 18px;
@@ -20,7 +20,7 @@
     margin-bottom: 15px;
 }
 
-.sparkwp-interlinking-placeholder {
+.sparkplus-interlinking-placeholder {
     padding: 40px 20px;
     text-align: center;
     background: #f6f7f7;
@@ -28,7 +28,7 @@
     margin-top: 20px;
 }
 
-.sparkwp-interlinking-placeholder p {
+.sparkplus-interlinking-placeholder p {
     color: #646970;
     font-size: 14px;
     margin: 0;

@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
  * 
  * @return array Language code => Language name
  */
-function sparkwp_get_language_names() {
+function sparkplus_get_language_names() {
     return array(
         // Germanic languages
         'de' => 'German',
@@ -93,8 +93,8 @@ function sparkwp_get_language_names() {
  * @param string $code Language code (ISO 639-1)
  * @return string Language name or capitalized code if not found
  */
-function sparkwp_get_language_name($code) {
-    $language_names = sparkwp_get_language_names();
+function sparkplus_get_language_name($code) {
+    $language_names = sparkplus_get_language_names();
     return isset($language_names[$code]) ? $language_names[$code] : ucfirst($code);
 }
 
@@ -108,7 +108,7 @@ function sparkwp_get_language_name($code) {
  * @param int $quality WebP quality (0-100), default 90
  * @return string|WP_Error WebP image data as binary string, or WP_Error on failure
  */
-function sparkwp_convert_image_to_webp($source_data, $quality = 90) {
+function sparkplus_convert_image_to_webp($source_data, $quality = 90) {
     // Decode base64 if needed
     $image_data = $source_data;
     if (base64_decode($source_data, true) !== false) {
@@ -122,7 +122,7 @@ function sparkwp_convert_image_to_webp($source_data, $quality = 90) {
     $image = @imagecreatefromstring($image_data);
     
     if ($image === false) {
-        return new WP_Error('invalid_image', __('Failed to create image from data. The image data may be corrupted.', 'sparkwp'));
+        return new WP_Error('invalid_image', __('Failed to create image from data. The image data may be corrupted.', 'sparkplus'));
     }
     
     // Enable alpha blending and save alpha channel for transparency
@@ -138,7 +138,7 @@ function sparkwp_convert_image_to_webp($source_data, $quality = 90) {
     imagedestroy($image);
     
     if (!$result || empty($webp_data)) {
-        return new WP_Error('conversion_failed', __('Failed to convert image to WebP format. Please check if GD library supports WebP.', 'sparkwp'));
+        return new WP_Error('conversion_failed', __('Failed to convert image to WebP format. Please check if GD library supports WebP.', 'sparkplus'));
     }
     
     return $webp_data;
@@ -153,7 +153,7 @@ function sparkwp_convert_image_to_webp($source_data, $quality = 90) {
  * @param string $title Image title/alt text
  * @return int|WP_Error Attachment ID on success, WP_Error on failure
  */
-function sparkwp_save_webp_to_media_library($webp_data, $post_id, $filename, $title = '') {
+function sparkplus_save_webp_to_media_library($webp_data, $post_id, $filename, $title = '') {
     require_once(ABSPATH . 'wp-admin/includes/media.php');
     require_once(ABSPATH . 'wp-admin/includes/file.php');
     require_once(ABSPATH . 'wp-admin/includes/image.php');
@@ -179,7 +179,7 @@ function sparkwp_save_webp_to_media_library($webp_data, $post_id, $filename, $ti
     $file_saved = $wp_filesystem->put_contents($filepath, $webp_data, FS_CHMOD_FILE);
     
     if ($file_saved === false) {
-        return new WP_Error('file_save_error', __('Failed to save WebP file to uploads directory.', 'sparkwp'));
+        return new WP_Error('file_save_error', __('Failed to save WebP file to uploads directory.', 'sparkplus'));
     }
     
     // Prepare attachment data

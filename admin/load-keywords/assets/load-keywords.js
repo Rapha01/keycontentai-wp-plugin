@@ -1,24 +1,24 @@
 /**
- * SparkWP Load Keywords Page JavaScript
+ * SparkPlus Load Keywords Page JavaScript
  */
 
 jQuery(document).ready(function($) {
-    var $keywordsInput = $('#sparkwp-keywords');
-    var $additionalContextInput = $('#sparkwp-additional-context');
-    var $keywordCount = $('#sparkwp-keyword-count');
-    var $contextCount = $('#sparkwp-context-count');
-    var $contextCountWrapper = $('#sparkwp-context-count-wrapper');
-    var $contextWrapper = $('#sparkwp-context-wrapper');
-    var $enableContext = $('#sparkwp-enable-context');
-    var $startBtn = $('#sparkwp-start-btn');
-    var $stopBtn = $('#sparkwp-stop-btn');
-    var $clearBtn = $('#sparkwp-clear-btn');
-    var $form = $('#sparkwp-load-keywords-form');
-    var $toggleDebugBtn = $('#sparkwp-toggle-debug-btn');
-    var $debugContainer = $('#sparkwp-debug-container');
-    var $debugOutput = $('#sparkwp-debug-output');
-    var $clearDebugBtn = $('#sparkwp-clear-debug-btn');
-    var $autoPublish = $('#sparkwp-auto-publish');
+    var $keywordsInput = $('#sparkplus-keywords');
+    var $additionalContextInput = $('#sparkplus-additional-context');
+    var $keywordCount = $('#sparkplus-keyword-count');
+    var $contextCount = $('#sparkplus-context-count');
+    var $contextCountWrapper = $('#sparkplus-context-count-wrapper');
+    var $contextWrapper = $('#sparkplus-context-wrapper');
+    var $enableContext = $('#sparkplus-enable-context');
+    var $startBtn = $('#sparkplus-start-btn');
+    var $stopBtn = $('#sparkplus-stop-btn');
+    var $clearBtn = $('#sparkplus-clear-btn');
+    var $form = $('#sparkplus-load-keywords-form');
+    var $toggleDebugBtn = $('#sparkplus-toggle-debug-btn');
+    var $debugContainer = $('#sparkplus-debug-container');
+    var $debugOutput = $('#sparkplus-debug-output');
+    var $clearDebugBtn = $('#sparkplus-clear-debug-btn');
+    var $autoPublish = $('#sparkplus-auto-publish');
     var isRunning = false;
     var debugVisible = false;
     
@@ -40,7 +40,7 @@ jQuery(document).ready(function($) {
             // Hide debug
             $debugContainer.slideUp(300, function() {
                 // Clear debug output when hiding
-                $debugOutput.html('<div class="sparkwp-loadkeywords-debug-empty"><span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span><p>Debug information will appear here when generation starts.</p></div>');
+                $debugOutput.html('<div class="sparkplus-loadkeywords-debug-empty"><span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span><p>Debug information will appear here when generation starts.</p></div>');
             });
             $(this).find('.dashicons').removeClass('dashicons-hidden').addClass('dashicons-admin-tools');
             $(this).find('.button-text').text('Show Debug Mode');
@@ -56,7 +56,7 @@ jQuery(document).ready(function($) {
     
     // Clear debug output
     $clearDebugBtn.on('click', function() {
-        $debugOutput.html('<div class="sparkwp-loadkeywords-debug-empty"><span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span><p>Debug information will appear here when generation starts.</p></div>');
+        $debugOutput.html('<div class="sparkplus-loadkeywords-debug-empty"><span class="dashicons dashicons-admin-tools" style="font-size: 48px; opacity: 0.3;"></span><p>Debug information will appear here when generation starts.</p></div>');
     });
     
     // Update keyword count
@@ -80,7 +80,7 @@ jQuery(document).ready(function($) {
     
     // Clear keywords
     $clearBtn.on('click', function() {
-        if (confirm(sparkwpLoadKeywords.confirmClear)) {
+        if (confirm(sparkplusLoadKeywords.confirmClear)) {
             $keywordsInput.val('');
             $additionalContextInput.val('');
             updateKeywordCount();
@@ -93,13 +93,13 @@ jQuery(document).ready(function($) {
         var timestamp = new Date().toLocaleTimeString();
         
         // Remove empty state if present
-        $debugOutput.find('.sparkwp-loadkeywords-debug-empty').remove();
+        $debugOutput.find('.sparkplus-loadkeywords-debug-empty').remove();
         
-        var entry = $('<div class="sparkwp-loadkeywords-debug-entry"></div>');
-        var $header = $('<div class="sparkwp-loadkeywords-debug-entry-header"></div>')
+        var entry = $('<div class="sparkplus-loadkeywords-debug-entry"></div>');
+        var $header = $('<div class="sparkplus-loadkeywords-debug-entry-header"></div>')
             .text(title)
-            .append($('<span class="sparkwp-loadkeywords-debug-timestamp"></span>').text(timestamp));
-        var $content = $('<div class="sparkwp-loadkeywords-debug-entry-content"></div>')
+            .append($('<span class="sparkplus-loadkeywords-debug-timestamp"></span>').text(timestamp));
+        var $content = $('<div class="sparkplus-loadkeywords-debug-entry-content"></div>')
             .text(typeof content === 'object' ? JSON.stringify(content, null, 2) : content);
         entry.append($header).append($content);
         
@@ -184,7 +184,7 @@ jQuery(document).ready(function($) {
         
         var firstKeyword = getFirstKeyword();
         if (!firstKeyword) {
-            alert(sparkwpLoadKeywords.noKeywords);
+            alert(sparkplusLoadKeywords.noKeywords);
             return;
         }
         
@@ -262,9 +262,9 @@ jQuery(document).ready(function($) {
         var debugMode = $debugContainer.is(':visible');
         
         var ajaxData = {
-            action: 'sparkwp_load_keyword',
+            action: 'sparkplus_load_keyword',
             keyword: keyword,
-            nonce: sparkwpLoadKeywords.nonce,
+            nonce: sparkplusLoadKeywords.nonce,
             debug: debugMode ? '1' : '0',
             auto_publish: autoPublish ? '1' : '0'
         };
@@ -276,7 +276,7 @@ jQuery(document).ready(function($) {
         
         return new Promise((resolve, reject) => {
             $.ajax({
-                url: sparkwpLoadKeywords.ajaxUrl,
+                url: sparkplusLoadKeywords.ajaxUrl,
                 type: 'POST',
                 data: ajaxData,
                 success: function(response) {
@@ -308,7 +308,7 @@ jQuery(document).ready(function($) {
     
     // Stop button
     $stopBtn.on('click', function() {
-        if (confirm(sparkwpLoadKeywords.confirmStop)) {
+        if (confirm(sparkplusLoadKeywords.confirmStop)) {
             isRunning = false;
         }
     });

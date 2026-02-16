@@ -1,4 +1,4 @@
-=== SparkWP ===
+=== SparkPlus ===
 Contributors: olympagency
 Tags: ai content, content generation, openai, custom post types, seo
 Requires at least: 5.8
@@ -12,7 +12,7 @@ AI-powered content generation for WordPress. Create posts and populate custom po
 
 == Description ==
 
-SparkWP lets you generate AI-powered content for any WordPress post type — including custom post types and Advanced Custom Fields (ACF). Simply provide keywords and context, and SparkWP creates professionally written, SEO-optimized content with matching images in seconds.
+SparkPlus lets you generate AI-powered content for any WordPress post type — including custom post types and Advanced Custom Fields (ACF). Simply provide keywords and context, and SparkPlus creates professionally written, SEO-optimized content with matching images in seconds.
 
 **Key Features:**
 
@@ -57,18 +57,18 @@ No data is sent to any third party other than OpenAI, and only when you explicit
 
 == Installation ==
 
-1. Upload the `sparkwp` folder to the `/wp-content/plugins/` directory, or install directly through the WordPress plugin screen.
+1. Upload the `sparkplus` folder to the `/wp-content/plugins/` directory, or install directly through the WordPress plugin screen.
 2. Activate the plugin through the **Plugins** menu in WordPress.
-3. Navigate to **SparkWP > Settings > API Settings** and enter your OpenAI API key.
-4. Configure your brand context under **SparkWP > Settings > General Context**.
-5. Select your desired post type and configure fields under **SparkWP > Settings > CPT**.
-6. Go to **SparkWP > Load Keywords** to create posts from keywords, then use **SparkWP > Generation** to generate AI content.
+3. Navigate to **SparkPlus > Settings > API Settings** and enter your OpenAI API key.
+4. Configure your brand context under **SparkPlus > Settings > General Context**.
+5. Select your desired post type and configure fields under **SparkPlus > Settings > CPT**.
+6. Go to **SparkPlus > Load Keywords** to create posts from keywords, then use **SparkPlus > Generation** to generate AI content.
 
 == Frequently Asked Questions ==
 
 = Do I need an OpenAI API key? =
 
-Yes. SparkWP requires your own OpenAI API key to generate content. You can get one at [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys). OpenAI charges for API usage based on the model and volume.
+Yes. SparkPlus requires your own OpenAI API key to generate content. You can get one at [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys). OpenAI charges for API usage based on the model and volume.
 
 = Which post types are supported? =
 
@@ -76,7 +76,7 @@ All public post types are supported, including the built-in "Post" and "Page" ty
 
 = Does it work with Advanced Custom Fields (ACF)? =
 
-Yes. SparkWP automatically detects ACF field groups assigned to your selected post type and lets you enable AI generation for individual text, textarea, WYSIWYG, and image fields.
+Yes. SparkPlus automatically detects ACF field groups assigned to your selected post type and lets you enable AI generation for individual text, textarea, WYSIWYG, and image fields.
 
 = What image format is used for generated images? =
 
@@ -96,7 +96,7 @@ Yes. Posts created via keyword loading are saved as drafts by default. You can r
 
 = How do I reset the plugin? =
 
-Go to **SparkWP > Settings > Reset**. You can reset all plugin settings (API key, context, CPT configurations) or reset post meta data (keywords, context, generation timestamps) independently.
+Go to **SparkPlus > Settings > Reset**. You can reset all plugin settings (API key, context, CPT configurations) or reset post meta data (keywords, context, generation timestamps) independently.
 
 == Screenshots ==
 

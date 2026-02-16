@@ -1,19 +1,19 @@
 /**
- * SparkWP Generation Debug Styles
+ * SparkPlus Generation Debug Styles
  */
 
 /* Debug Container */
-.sparkwp-generation-debug-container {
+.sparkplus-generation-debug-container {
     margin-top: 20px;
 }
 
-.sparkwp-generation-debug-container .card {
+.sparkplus-generation-debug-container .card {
     padding: 0;
     margin: 0;
     max-width: 100%;
 }
 
-.sparkwp-generation-debug-container h2 {
+.sparkplus-generation-debug-container h2 {
     margin: 0;
     padding: 15px 20px;
     border-bottom: 1px solid #c3c4c7;
@@ -22,7 +22,7 @@
 }
 
 /* Debug Tabs */
-.sparkwp-debug-tabs {
+.sparkplus-debug-tabs {
     display: flex;
     background: #f6f7f7;
     border-bottom: 1px solid #c3c4c7;
@@ -30,7 +30,7 @@
     padding: 0 20px;
 }
 
-.sparkwp-debug-tab {
+.sparkplus-debug-tab {
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
@@ -41,22 +41,22 @@
     transition: all 0.2s ease;
 }
 
-.sparkwp-debug-tab:hover {
+.sparkplus-debug-tab:hover {
     color: #135e96;
 }
 
-.sparkwp-debug-tab.active {
+.sparkplus-debug-tab.active {
     color: #135e96;
     border-bottom-color: #135e96;
     font-weight: 600;
 }
 
 /* Debug Content */
-.sparkwp-debug-content {
+.sparkplus-debug-content {
     position: relative;
 }
 
-.sparkwp-debug-tab-content {
+.sparkplus-debug-tab-content {
     display: none;
     padding: 20px;
     min-height: 200px;
@@ -64,23 +64,23 @@
     overflow-y: auto;
 }
 
-.sparkwp-debug-tab-content.active {
+.sparkplus-debug-tab-content.active {
     display: block;
 }
 
-.sparkwp-generation-debug-empty {
+.sparkplus-generation-debug-empty {
     text-align: center;
     padding: 60px 20px;
     color: #646970;
 }
 
-.sparkwp-generation-debug-empty p {
+.sparkplus-generation-debug-empty p {
     margin: 10px 0 0 0;
     font-size: 14px;
 }
 
 /* Debug Entry Styles */
-.sparkwp-debug-entry {
+.sparkplus-debug-entry {
     background: #f6f7f7;
     border-left: 3px solid #135e96;
     padding: 12px;
@@ -89,7 +89,7 @@
     font-size: 12px;
 }
 
-.sparkwp-debug-entry-header {
+.sparkplus-debug-entry-header {
     font-weight: 600;
     color: #135e96;
     margin-bottom: 8px;
@@ -98,13 +98,13 @@
     align-items: center;
 }
 
-.sparkwp-debug-timestamp {
+.sparkplus-debug-timestamp {
     font-size: 11px;
     color: #646970;
     font-weight: normal;
 }
 
-.sparkwp-debug-entry-content {
+.sparkplus-debug-entry-content {
     color: #1e1e1e;
     white-space: pre-wrap;
     word-wrap: break-word;
@@ -113,16 +113,16 @@
     border-radius: 3px;
 }
 
-.sparkwp-debug-entry.error {
+.sparkplus-debug-entry.error {
     border-left-color: #d63638;
 }
 
-.sparkwp-debug-entry.error .sparkwp-debug-entry-header {
+.sparkplus-debug-entry.error .sparkplus-debug-entry-header {
     color: #d63638;
 }
 
-.sparkwp-debug-prompt,
-.sparkwp-debug-response {
+.sparkplus-debug-prompt,
+.sparkplus-debug-response {
     background: #1e1e1e;
     color: #d4d4d4;
     padding: 15px;

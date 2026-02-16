@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class SparkWP_Sanitizer {
+class SparkPlus_Sanitizer {
     
     /**
      * Sanitize CPT configurations
@@ -31,8 +31,8 @@ class SparkWP_Sanitizer {
         }
         
         // Get existing configs to preserve data for other post types
-        global $sparkwp;
-        $existing_configs = $sparkwp->get_cpt_configs();
+        global $sparkplus;
+        $existing_configs = $sparkplus->get_cpt_configs();
         
         // Start with existing data
         $sanitized = is_array($existing_configs) ? $existing_configs : array();
@@ -84,10 +84,11 @@ class SparkWP_Sanitizer {
         $valid_options = array('paragraphs', 'bold', 'italic', 'headings', 'lists', 'links');
         $sanitized = array();
         
-        // If input is not an array, return default (all enabled)
+        // If input is not an array, return default (only bold, italic, lists, paragraphs enabled)
         if (!is_array($input)) {
+            $defaults = array('bold', 'italic', 'lists', 'paragraphs');
             foreach ($valid_options as $option) {
-                $sanitized[$option] = true;
+                $sanitized[$option] = in_array($option, $defaults);
             }
             return $sanitized;
         }

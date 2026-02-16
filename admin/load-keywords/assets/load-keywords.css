@@ -1,8 +1,8 @@
 /**
- * SparkWP Load Keywords Page Styles
+ * SparkPlus Load Keywords Page Styles
  */
 
-.sparkwp-loadkeywords-layout {
+.sparkplus-loadkeywords-layout {
     display: flex;
     gap: 10px;
     margin-top: 20px;
@@ -12,17 +12,17 @@
     width: 100%;
 }
 
-.sparkwp-loadkeywords-bottom-row {
+.sparkplus-loadkeywords-bottom-row {
     margin-top: 20px;
 }
 
-.sparkwp-loadkeywords-left {
+.sparkplus-loadkeywords-left {
     flex: 1;
     display: flex;
     flex-direction: column;
 }
 
-.sparkwp-loadkeywords-left .card {
+.sparkplus-loadkeywords-left .card {
     padding: 20px;
     flex: 1;
     display: flex;
@@ -33,7 +33,7 @@
     box-sizing: border-box;
 }
 
-.sparkwp-loadkeywords-left .card h2 {
+.sparkplus-loadkeywords-left .card h2 {
     margin-top: 0;
     color: #2271b1;
     font-size: 18px;
@@ -42,19 +42,19 @@
     margin-bottom: 15px;
 }
 
-.sparkwp-textarea-container {
+.sparkplus-textarea-container {
     display: flex;
     gap: 15px;
     margin-top: 10px;
 }
 
-.sparkwp-textarea-wrapper {
+.sparkplus-textarea-wrapper {
     flex: 1;
     display: flex;
     flex-direction: column;
 }
 
-.sparkwp-textarea-label {
+.sparkplus-textarea-label {
     font-weight: 600;
     font-size: 13px;
     color: #1d2327;
@@ -62,7 +62,7 @@
     display: block;
 }
 
-.sparkwp-loadkeywords-keywords-textarea {
+.sparkplus-loadkeywords-keywords-textarea {
     width: 100%;
     font-family: 'Courier New', monospace;
     font-size: 14px;
@@ -75,20 +75,20 @@
     margin-top: 10px;
 }
 
-.sparkwp-loadkeywords-keywords-textarea:focus {
+.sparkplus-loadkeywords-keywords-textarea:focus {
     border-color: #2271b1;
     outline: none;
     box-shadow: 0 0 0 1px #2271b1;
 }
 
-.sparkwp-loadkeywords-actions {
+.sparkplus-loadkeywords-actions {
     margin-top: 10px;
     display: flex;
     gap: 10px;
     align-items: center;
 }
 
-.sparkwp-loadkeywords-stats {
+.sparkplus-loadkeywords-stats {
     margin-top: 6px;
     padding: 8px 12px;
     background: #f6f7f7;
@@ -97,13 +97,13 @@
     color: #50575e;
 }
 
-.sparkwp-loadkeywords-stats span {
+.sparkplus-loadkeywords-stats span {
     font-weight: 600;
     color: #2271b1;
 }
 
-.sparkwp-context-option,
-.sparkwp-publish-option {
+.sparkplus-context-option,
+.sparkplus-publish-option {
     margin-top: 10px;
     padding: 6px 10px;
     background: #f6f7f7;
@@ -112,27 +112,27 @@
 }
 
 /* Debug Container */
-.sparkwp-loadkeywords-debug-container {
+.sparkplus-loadkeywords-debug-container {
     margin-top: 20px;
     margin-bottom: 20px;
-    animation: sparkwp-loadkeywords-slideDown 0.3s ease-out;
+    animation: sparkplus-loadkeywords-slideDown 0.3s ease-out;
 }
 
-.sparkwp-loadkeywords-debug-container .card {
+.sparkplus-loadkeywords-debug-container .card {
     width: 100%;
     max-width: none;
     margin: 0;
 }
 
 /* Debug Tabs */
-.sparkwp-loadkeywords-debug-tabs {
+.sparkplus-loadkeywords-debug-tabs {
     display: flex;
     gap: 0;
     border-bottom: 2px solid #dcdcde;
     margin-bottom: 0;
 }
 
-.sparkwp-loadkeywords-debug-tab {
+.sparkplus-loadkeywords-debug-tab {
     padding: 12px 20px;
     background: #f6f7f7;
     border: none;
@@ -147,38 +147,38 @@
     gap: 6px;
 }
 
-.sparkwp-loadkeywords-debug-tab:hover {
+.sparkplus-loadkeywords-debug-tab:hover {
     background: #fff;
     color: #2271b1;
 }
 
-.sparkwp-loadkeywords-debug-tab.sparkwp-loadkeywords-debug-tab-active {
+.sparkplus-loadkeywords-debug-tab.sparkplus-loadkeywords-debug-tab-active {
     background: #fff;
     color: #2271b1;
     border-bottom-color: #2271b1;
 }
 
-.sparkwp-loadkeywords-debug-tab .dashicons {
+.sparkplus-loadkeywords-debug-tab .dashicons {
     font-size: 16px;
     width: 16px;
     height: 16px;
 }
 
 /* Debug Tab Content */
-.sparkwp-loadkeywords-debug-tab-content {
+.sparkplus-loadkeywords-debug-tab-content {
     position: relative;
 }
 
-.sparkwp-loadkeywords-debug-pane {
+.sparkplus-loadkeywords-debug-pane {
     display: none;
-    animation: sparkwp-loadkeywords-fadeIn 0.3s ease-in;
+    animation: sparkplus-loadkeywords-fadeIn 0.3s ease-in;
 }
 
-.sparkwp-loadkeywords-debug-pane.sparkwp-loadkeywords-debug-pane-active {
+.sparkplus-loadkeywords-debug-pane.sparkplus-loadkeywords-debug-pane-active {
     display: block;
 }
 
-@keyframes sparkwp-loadkeywords-fadeIn {
+@keyframes sparkplus-loadkeywords-fadeIn {
     from {
         opacity: 0;
     }
@@ -187,7 +187,7 @@
     }
 }
 
-@keyframes sparkwp-loadkeywords-slideDown {
+@keyframes sparkplus-loadkeywords-slideDown {
     from {
         opacity: 0;
         transform: translateY(-10px);
@@ -198,9 +198,9 @@
     }
 }
 
-.sparkwp-loadkeywords-debug-output,
-.sparkwp-loadkeywords-prompt-output,
-.sparkwp-loadkeywords-api-response-output {
+.sparkplus-loadkeywords-debug-output,
+.sparkplus-loadkeywords-prompt-output,
+.sparkplus-loadkeywords-api-response-output {
     background: #f9f9f9;
     border: 1px solid #dcdcde;
     border-radius: 4px;
@@ -212,15 +212,15 @@
     line-height: 1.6;
 }
 
-.sparkwp-loadkeywords-prompt-output,
-.sparkwp-loadkeywords-api-response-output {
+.sparkplus-loadkeywords-prompt-output,
+.sparkplus-loadkeywords-api-response-output {
     background: #1e1e1e;
     color: #d4d4d4;
     white-space: pre-wrap;
     word-break: break-word;
 }
 
-.sparkwp-loadkeywords-debug-empty {
+.sparkplus-loadkeywords-debug-empty {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -230,44 +230,44 @@
     text-align: center;
 }
 
-.sparkwp-loadkeywords-debug-empty p {
+.sparkplus-loadkeywords-debug-empty p {
     margin: 10px 0 0 0;
 }
 
-.sparkwp-loadkeywords-debug-entry {
+.sparkplus-loadkeywords-debug-entry {
     margin-bottom: 15px;
     padding: 10px;
     background: #fff;
     border-left: 3px solid #2271b1;
     border-radius: 3px;
-    animation: sparkwp-loadkeywords-slideIn 0.3s ease-out;
+    animation: sparkplus-loadkeywords-slideIn 0.3s ease-out;
 }
 
-.sparkwp-loadkeywords-debug-entry-header {
+.sparkplus-loadkeywords-debug-entry-header {
     font-weight: 600;
     color: #2271b1;
     margin-bottom: 5px;
 }
 
-.sparkwp-loadkeywords-debug-entry-content {
+.sparkplus-loadkeywords-debug-entry-content {
     color: #50575e;
     white-space: pre-wrap;
     word-break: break-word;
 }
 
-.sparkwp-loadkeywords-debug-timestamp {
+.sparkplus-loadkeywords-debug-timestamp {
     color: #999;
     font-size: 11px;
     margin-left: 10px;
 }
 
 @media (max-width: 1400px) {
-    .sparkwp-loadkeywords-layout {
+    .sparkplus-loadkeywords-layout {
         flex-direction: column;
     }
     
-    .sparkwp-loadkeywords-left,
-    .sparkwp-loadkeywords-right {
+    .sparkplus-loadkeywords-left,
+    .sparkplus-loadkeywords-right {
         flex: 1 1 auto;
         max-width: 100%;
         min-width: 100%;

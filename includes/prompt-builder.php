@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class SparkWP_Prompt_Builder {
+class SparkPlus_Prompt_Builder {
     private $debug_callback = null;
     
     /**
@@ -98,7 +98,7 @@ class SparkWP_Prompt_Builder {
         $language = $settings['language'];
         
         // Get language name from utility function
-        $language_name = sparkwp_get_language_name($language);
+        $language_name = sparkplus_get_language_name($language);
         
         $instruction = "IMPORTANT: Write all content in {$language_name}.";
         // Add addressing style only for German
@@ -224,13 +224,13 @@ class SparkWP_Prompt_Builder {
         }
         
         // Get WYSIWYG formatting settings
-        $wysiwyg_formatting = get_option('sparkwp_wysiwyg_formatting', array(
+        $wysiwyg_formatting = get_option('sparkplus_wysiwyg_formatting', array(
             'paragraphs' => true,
             'bold' => true,
             'italic' => true,
-            'headings' => true,
+            'headings' => false,
             'lists' => true,
-            'links' => true
+            'links' => false
         ));
         
         $allowed_html = $this->build_allowed_html_tags($wysiwyg_formatting);

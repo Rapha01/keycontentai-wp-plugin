@@ -1,5 +1,5 @@
 /**
- * SparkWP Generation Page JavaScript
+ * SparkPlus Generation Page JavaScript
  */
 
 (function($) {
@@ -10,7 +10,7 @@
     let stopRequested = false;
     
     $(document).ready(function() {
-        console.log('SparkWP Generation Page loaded');
+        console.log('SparkPlus Generation Page loaded');
         
         // Initialize event listeners
         initEventListeners();
@@ -22,28 +22,28 @@
      */
     function initEventListeners() {
         // Toggle post details
-        $(document).on('click', '.sparkwp-toggle-details', function(e) {
+        $(document).on('click', '.sparkplus-toggle-details', function(e) {
             e.preventDefault();
             const $button = $(this);
-            const $row = $button.closest('.sparkwp-post-row');
-            const $detailsRow = $row.next('.sparkwp-post-details-row');
+            const $row = $button.closest('.sparkplus-post-row');
+            const $detailsRow = $row.next('.sparkplus-post-details-row');
             
             $detailsRow.slideToggle(200);
             $button.toggleClass('expanded');
         });
         
         // Delete post - show modal
-        $(document).on('click', '.sparkwp-delete-post', function(e) {
+        $(document).on('click', '.sparkplus-delete-post', function(e) {
             e.preventDefault();
             const $button = $(this);
             const postId = $button.data('post-id');
-            const $detailsRow = $button.closest('.sparkwp-post-details-row');
-            const $postRow = $detailsRow.prev('.sparkwp-post-row');
+            const $detailsRow = $button.closest('.sparkplus-post-details-row');
+            const $postRow = $detailsRow.prev('.sparkplus-post-row');
             const postTitle = $postRow.find('td a').first().text().trim() || '(no title)';
 
             // Populate and show the modal
-            const $modal = $('#sparkwp-delete-modal');
-            $modal.find('.sparkwp-delete-modal-post-title').text(postTitle);
+            const $modal = $('#sparkplus-delete-modal');
+            $modal.find('.sparkplus-delete-modal-post-title').text(postTitle);
             $modal.data('post-id', postId);
             $modal.data('post-row', $postRow);
             $modal.data('details-row', $detailsRow);
@@ -52,30 +52,30 @@
         });
 
         // Modal cancel
-        $(document).on('click', '.sparkwp-delete-modal-cancel, .sparkwp-delete-modal-overlay', function(e) {
+        $(document).on('click', '.sparkplus-delete-modal-cancel, .sparkplus-delete-modal-overlay', function(e) {
             e.preventDefault();
-            $('#sparkwp-delete-modal').fadeOut(150);
+            $('#sparkplus-delete-modal').fadeOut(150);
         });
 
         // Modal confirm delete
-        $(document).on('click', '.sparkwp-delete-modal-confirm', function(e) {
+        $(document).on('click', '.sparkplus-delete-modal-confirm', function(e) {
             e.preventDefault();
-            const $modal = $('#sparkwp-delete-modal');
+            const $modal = $('#sparkplus-delete-modal');
             const postId = $modal.data('post-id');
             const $postRow = $modal.data('post-row');
             const $detailsRow = $modal.data('details-row');
             const $triggerButton = $modal.data('trigger-button');
             const $confirmBtn = $(this);
 
-            $confirmBtn.prop('disabled', true).text(sparkwpGeneration.deleting || 'Deleting...');
+            $confirmBtn.prop('disabled', true).text(sparkplusGeneration.deleting || 'Deleting...');
 
             $.ajax({
-                url: sparkwpGeneration.ajaxUrl,
+                url: sparkplusGeneration.ajaxUrl,
                 type: 'POST',
                 data: {
-                    action: 'sparkwp_delete_post',
+                    action: 'sparkplus_delete_post',
                     post_id: postId,
-                    nonce: sparkwpGeneration.nonce
+                    nonce: sparkplusGeneration.nonce
                 },
                 success: function(response) {
                     if (response.success) {
@@ -92,7 +92,7 @@
                     showNotice('Network error', 'error');
                 },
                 complete: function() {
-                    $confirmBtn.prop('disabled', false).text(sparkwpGeneration.deleteConfirm || 'Delete');
+                    $confirmBtn.prop('disabled', false).text(sparkplusGeneration.deleteConfirm || 'Delete');
                 }
             });
         });
@@ -100,41 +100,41 @@
         // Close modal on Escape key
         $(document).on('keydown', function(e) {
             if (e.key === 'Escape') {
-                $('#sparkwp-delete-modal').fadeOut(150);
+                $('#sparkplus-delete-modal').fadeOut(150);
             }
         });
 
         // Save post meta
-        $(document).on('click', '.sparkwp-save-meta', function(e) {
+        $(document).on('click', '.sparkplus-save-meta', function(e) {
             e.preventDefault();
             const $button = $(this);
             const postId = $button.data('post-id');
-            const $detailsRow = $button.closest('.sparkwp-post-details-row');
-            const $status = $detailsRow.find('.sparkwp-save-status');
+            const $detailsRow = $button.closest('.sparkplus-post-details-row');
+            const $status = $detailsRow.find('.sparkplus-save-status');
             
-            const keyword = $detailsRow.find(`#sparkwp-keyword-${postId}`).val();
-            const context = $detailsRow.find(`#sparkwp-context-${postId}`).val();
+            const keyword = $detailsRow.find(`#sparkplus-keyword-${postId}`).val();
+            const context = $detailsRow.find(`#sparkplus-context-${postId}`).val();
             
             // Disable button and show loading
             $button.prop('disabled', true).text('Saving...');
             $status.removeClass('success error').text('');
             
             $.ajax({
-                url: sparkwpGeneration.ajaxUrl,
+                url: sparkplusGeneration.ajaxUrl,
                 type: 'POST',
                 data: {
-                    action: 'sparkwp_save_post_meta',
+                    action: 'sparkplus_save_post_meta',
                     post_id: postId,
                     keyword: keyword,
                     additional_context: context,
-                    nonce: sparkwpGeneration.nonce
+                    nonce: sparkplusGeneration.nonce
                 },
                 success: function(response) {
                     if (response.success) {
                         $status.addClass('success').text('Saved successfully!');
                         
                         // Update keyword display in main row
-                        const $row = $detailsRow.prev('.sparkwp-post-row');
+                        const $row = $detailsRow.prev('.sparkplus-post-row');
                         $row.find('td[data-label="Keyword"] strong').text(keyword || '(no keyword)');
                         
                         // Clear status after 2 seconds
@@ -153,9 +153,9 @@
         });
         
         // Individual queue toggle buttons
-        $(document).on('click', '.sparkwp-toggle-queue', function(e) {
+        $(document).on('click', '.sparkplus-toggle-queue', function(e) {
             e.preventDefault();
-            const $row = $(this).closest('.sparkwp-post-row');
+            const $row = $(this).closest('.sparkplus-post-row');
             const status = $row.attr('data-status');
             
             // Toggle queue state (not during processing)
@@ -165,20 +165,20 @@
         });
         
         // Queue All button
-        $('#sparkwp-queue-all').on('click', function(e) {
+        $('#sparkplus-queue-all').on('click', function(e) {
             e.preventDefault();
-            $('.sparkwp-post-row').filter((_, el) => ['unqueued', 'finished', 'error'].includes($(el).data('status')))
+            $('.sparkplus-post-row').filter((_, el) => ['unqueued', 'finished', 'error'].includes($(el).data('status')))
                 .each((_, el) => setQueueState($(el), true));
         });
         
         // Unqueue All button
-        $('#sparkwp-unqueue-all').on('click', function(e) {
+        $('#sparkplus-unqueue-all').on('click', function(e) {
             e.preventDefault();
-            $('.sparkwp-post-row[data-status="queued"]').each((_, el) => setQueueState($(el), false));
+            $('.sparkplus-post-row[data-status="queued"]').each((_, el) => setQueueState($(el), false));
         });
         
         // Start/Stop Generation button
-        $('#sparkwp-start-generation').on('click', function(e) {
+        $('#sparkplus-start-generation').on('click', function(e) {
             e.preventDefault();
             isGenerating ? stopGeneration() : startGeneration();
         });
@@ -188,7 +188,7 @@
      * Add debug entry
      */
     function addDebugEntry(step, data, isError) {
-        window.SparkWPDebug?.addEntry(step, data, isError);
+        window.SparkPlusDebug?.addEntry(step, data, isError);
     }
     
     /**
@@ -203,14 +203,14 @@
      * Get count of queued posts
      */
     function getQueuedCount() {
-        return $('.sparkwp-post-row[data-status="queued"]').length;
+        return $('.sparkplus-post-row[data-status="queued"]').length;
     }
     
     /**
      * Get next queued post
      */
     function getNextQueuedPost() {
-        return $('.sparkwp-post-row[data-status="queued"]').first();
+        return $('.sparkplus-post-row[data-status="queued"]').first();
     }
     
     // Button state configuration
@@ -227,11 +227,11 @@
      */
     function updatePostStatus($row, newStatus) {
         $row.attr('data-status', newStatus);
-        $row.find('.sparkwp-status-indicator').attr('class', 'sparkwp-status-indicator sparkwp-status-' + newStatus);
+        $row.find('.sparkplus-status-indicator').attr('class', 'sparkplus-status-indicator sparkplus-status-' + newStatus);
         
         const state = buttonStates[newStatus];
         if (state) {
-            $row.find('.sparkwp-toggle-queue').text(state.text).prop('disabled', state.disabled);
+            $row.find('.sparkplus-toggle-queue').text(state.text).prop('disabled', state.disabled);
         }
     }
     
@@ -240,7 +240,7 @@
      */
     function updateQueueCount() {
         const count = getQueuedCount();
-        const $button = $('#sparkwp-start-generation');
+        const $button = $('#sparkplus-start-generation');
         
         $button
             .prop('disabled', !isGenerating && count === 0)
@@ -260,7 +260,7 @@
         console.log('Starting generation for', getQueuedCount(), 'posts');
         
         // Disable queue management buttons
-        $('#sparkwp-queue-all, #sparkwp-unqueue-all')
+        $('#sparkplus-queue-all, #sparkplus-unqueue-all')
             .prop('disabled', true);
         
         // Update button to show "Stop"
@@ -278,7 +278,7 @@
         console.log('Stop requested - will finish current post and stop');
         
         // Update button text to show stopping
-        $('#sparkwp-start-generation')
+        $('#sparkplus-start-generation')
             .prop('disabled', true)
             .text('Stopping...');
     }
@@ -312,12 +312,12 @@
         
         // AJAX call to generate content
         $.ajax({
-            url: sparkwpGeneration.ajaxUrl,
+            url: sparkplusGeneration.ajaxUrl,
             type: 'POST',
             data: {
-                action: 'sparkwp_generate_content',
+                action: 'sparkplus_generate_content',
                 post_id: postId,
-                nonce: sparkwpGeneration.nonce
+                nonce: sparkplusGeneration.nonce
             },
             success: function(response) {
                 // Add debug data from response
@@ -355,7 +355,7 @@
         console.log(wasStopped ? 'Generation stopped' : 'Generation complete!');
         
         // Re-enable action buttons
-        $('#sparkwp-queue-all, #sparkwp-unqueue-all').prop('disabled', false);
+        $('#sparkplus-queue-all, #sparkplus-unqueue-all').prop('disabled', false);
         updateQueueCount();
         
         // Show completion message as WordPress notice
