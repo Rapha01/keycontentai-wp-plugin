@@ -183,7 +183,8 @@ class SparkWP_Admin_Ajax_Handler {
 
         if ($result) {
             wp_send_json_success(array(
-                'message' => sprintf(__('Post "%s" (ID: %d) deleted successfully.', 'sparkwp'), $title, $post_id)
+                /* translators: 1: post title, 2: post ID */
+                'message' => sprintf(__('Post "%1$s" (ID: %2$d) deleted successfully.', 'sparkwp'), $title, $post_id)
             ));
         } else {
             wp_send_json_error(array(
@@ -320,6 +321,7 @@ class SparkWP_Admin_Ajax_Handler {
                 );
                 wp_send_json_success(array(
                     'message' => sprintf(
+                        /* translators: %d: number of deleted options */
                         __('Removed %d options.', 'sparkwp'),
                         $deleted
                     )
@@ -349,7 +351,8 @@ class SparkWP_Admin_Ajax_Handler {
                 );
                 wp_send_json_success(array(
                     'message' => sprintf(
-                        __('Removed %d post meta entries from "%s".', 'sparkwp'),
+                        /* translators: 1: number of deleted meta entries, 2: post type label */
+                        __('Removed %1$d post meta entries from "%2$s".', 'sparkwp'),
                         $deleted,
                         $post_type_label
                     )

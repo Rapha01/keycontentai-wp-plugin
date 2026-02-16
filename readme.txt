@@ -2,7 +2,7 @@
 Contributors: olympagency
 Tags: ai content, content generation, openai, custom post types, seo
 Requires at least: 5.8
-Tested up to: 6.9.1
+Tested up to: 6.9
 Requires PHP: 7.4
 Stable tag: 1.0.0
 License: GPLv2 or later
@@ -53,7 +53,7 @@ This plugin connects to the **OpenAI API** to generate text and image content. W
 
 An OpenAI API key is required. You can obtain one at [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys). API usage is billed by OpenAI according to their pricing.
 
-No data is sent to any third party other than OpenAI, and only when you explicitly trigger content generation or keyword loading.
+No data is sent to any third party other than OpenAI, and only when you explicitly trigger content generation.
 
 == Installation ==
 

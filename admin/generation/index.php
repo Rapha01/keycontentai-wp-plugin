@@ -8,6 +8,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// IIFE pattern to avoid globally-scoped variables (WordPress coding standards requirement).
+(function() {
+
 // Get the selected post type from settings
 $selected_post_type = get_option('sparkwp_selected_post_type', 'post');
 $api_key = get_option('sparkwp_openai_api_key', '');
@@ -293,3 +296,5 @@ if ($is_configured) {
         </div>
     </div>
 </div>
+<?php
+})(); // End IIFE

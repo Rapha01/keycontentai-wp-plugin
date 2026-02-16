@@ -104,7 +104,8 @@ class SparkWP_Keyword_Loader {
                 
                 if (!is_wp_error($update_result)) {
                     $result['success'] = true;
-                    $result['message'] = sprintf(__('Post with keyword "%s" already exists and has been published: "%s" (ID: %d)', 'sparkwp'), $keyword, $existing_post->post_title, $existing_post->ID);
+                    /* translators: 1: keyword, 2: post title, 3: post ID */
+                    $result['message'] = sprintf(__('Post with keyword "%1$s" already exists and has been published: "%2$s" (ID: %3$d)', 'sparkwp'), $keyword, $existing_post->post_title, $existing_post->ID);
                     $result['post_id'] = $existing_post->ID;
                     $result['exists'] = true;
                     $result['published'] = true;
@@ -114,7 +115,8 @@ class SparkWP_Keyword_Loader {
             }
             
             $result['success'] = true;
-            $result['message'] = sprintf(__('Post with keyword "%s" already exists: "%s" (ID: %d)', 'sparkwp'), $keyword, $existing_post->post_title, $existing_post->ID);
+            /* translators: 1: keyword, 2: post title, 3: post ID */
+            $result['message'] = sprintf(__('Post with keyword "%1$s" already exists: "%2$s" (ID: %3$d)', 'sparkwp'), $keyword, $existing_post->post_title, $existing_post->ID);
             $result['post_id'] = $existing_post->ID;
             $result['exists'] = true;
             
@@ -160,6 +162,7 @@ class SparkWP_Keyword_Loader {
             }
             
             $result['success'] = false;
+            /* translators: %s: error message */
             $result['message'] = sprintf(__('Failed to create post: %s', 'sparkwp'), $post_id->get_error_message());
             
             return $result;
@@ -199,7 +202,9 @@ class SparkWP_Keyword_Loader {
         // Success
         $result['success'] = true;
         $result['message'] = $auto_publish 
+            /* translators: %s: keyword/post title */
             ? sprintf(__('Post created and published successfully: "%s"', 'sparkwp'), $keyword)
+            /* translators: %s: keyword/post title */
             : sprintf(__('Post created successfully: "%s"', 'sparkwp'), $keyword);
         $result['post_id'] = $post_id;
         $result['exists'] = false;

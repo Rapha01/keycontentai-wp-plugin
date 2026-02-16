@@ -8,6 +8,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// IIFE pattern to avoid globally-scoped variables (WordPress coding standards requirement).
+(function() {
+
 // Get current settings
 $addressing = get_option('sparkwp_addressing', 'formal');
 $company_name = get_option('sparkwp_company_name', '');
@@ -309,3 +312,6 @@ $wysiwyg_formatting = get_option('sparkwp_wysiwyg_formatting', array(
         </p>
     </form>
 </div>
+
+<?php
+})(); // End IIFE

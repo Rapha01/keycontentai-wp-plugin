@@ -8,6 +8,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// IIFE pattern to avoid globally-scoped variables (WordPress coding standards requirement).
+(function() {
+
 // Get the active tab from the URL parameter
 $active_tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])) : 'cpt';
 ?>
@@ -60,3 +63,6 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])
         ?>
     </div>
 </div>
+
+<?php
+})(); // End IIFE

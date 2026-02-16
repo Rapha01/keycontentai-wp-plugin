@@ -202,7 +202,7 @@
      */
     function updateTab(tabId, content, className) {
         const $container = $(`#sparkwp-debug-tab-${tabId}`);
-        $container.html(`<div class="${className}">${content}</div>`);
+        $container.empty().append($('<div>').addClass(className).text(content));
     }
     
     /**

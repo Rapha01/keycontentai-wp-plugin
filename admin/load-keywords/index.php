@@ -8,6 +8,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// IIFE pattern to avoid globally-scoped variables (WordPress coding standards requirement).
+(function() {
+
 // Get the selected post type from settings
 $selected_post_type = get_option('sparkwp_selected_post_type', 'post');
 $api_key = get_option('sparkwp_openai_api_key', '');
@@ -46,6 +49,7 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
                 <?php 
                 $post_type_object = get_post_type_object($selected_post_type);
                 printf(
+                    /* translators: %s: post type singular name */
                     esc_html__('Content will be created as: %s', 'sparkwp'),
                     '<strong>' . esc_html($post_type_object->labels->singular_name) . '</strong>'
                 );
@@ -177,3 +181,6 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
         </div>
     <?php endif; ?>
 </div>
+
+<?php
+})(); // End IIFE

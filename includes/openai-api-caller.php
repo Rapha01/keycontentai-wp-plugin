@@ -107,7 +107,7 @@ class SparkWP_OpenAI_API_Caller {
                 'error' => 'WordPress HTTP Error',
                 'message' => $error_message
             ));
-            throw new Exception('API request failed: ' . $error_message);
+            throw new Exception(esc_html__('API request failed: ', 'sparkwp') . esc_html($error_message));
         }
         
         // Get response code
@@ -133,7 +133,14 @@ class SparkWP_OpenAI_API_Caller {
                 'full_response' => $error_data
             ));
             
-            throw new Exception('OpenAI API error (' . $response_code . '): ' . $error_message);
+            throw new Exception(
+                sprintf(
+                    /* translators: %1$d: HTTP response code, %2$s: error message */
+                    esc_html__('OpenAI API error (%1$d): %2$s', 'sparkwp'),
+                    intval($response_code),
+                    esc_html($error_message)
+                )
+            );
         }
         
         // Parse the JSON response
@@ -145,7 +152,7 @@ class SparkWP_OpenAI_API_Caller {
                 'message' => json_last_error_msg(),
                 'raw_response' => substr($response_body, 0, 500)
             ));
-            throw new Exception('Failed to parse API response: ' . json_last_error_msg());
+            throw new Exception(esc_html__('Failed to parse API response: ', 'sparkwp') . esc_html(json_last_error_msg()));
         }
         
         // Extract the content
@@ -254,7 +261,7 @@ class SparkWP_OpenAI_API_Caller {
                 'error' => 'WordPress HTTP Error',
                 'message' => $error_message
             ));
-            throw new Exception('Image generation request failed: ' . $error_message);
+            throw new Exception(esc_html__('Image generation request failed: ', 'sparkwp') . esc_html($error_message));
         }
         
         // Get response code
@@ -280,7 +287,14 @@ class SparkWP_OpenAI_API_Caller {
                 'full_response' => $error_data
             ));
             
-            throw new Exception('Image API error (' . $response_code . '): ' . $error_message);
+            throw new Exception(
+                sprintf(
+                    /* translators: %1$d: HTTP response code, %2$s: error message */
+                    esc_html__('Image API error (%1$d): %2$s', 'sparkwp'),
+                    intval($response_code),
+                    esc_html($error_message)
+                )
+            );
         }
         
         // Parse the JSON response
@@ -292,7 +306,7 @@ class SparkWP_OpenAI_API_Caller {
                 'message' => json_last_error_msg(),
                 'raw_response' => substr($response_body, 0, 500)
             ));
-            throw new Exception('Failed to parse image API response: ' . json_last_error_msg());
+            throw new Exception(esc_html__('Failed to parse image API response: ', 'sparkwp') . esc_html(json_last_error_msg()));
         }
         
         // Validate response structure (gpt-image returns b64_json)

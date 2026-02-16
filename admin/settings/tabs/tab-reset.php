@@ -7,6 +7,9 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+
+// IIFE pattern to avoid globally-scoped variables (WordPress coding standards requirement).
+(function() {
 ?>
 
 <div class="sparkwp-tab-panel">
@@ -52,14 +55,21 @@ if (!defined('ABSPATH')) {
     
     <h2><?php esc_html_e('Reset Post Meta', 'sparkwp'); ?></h2>
     <p class="description" style="margin-bottom: 15px; max-width: 600px;">
-        <?php echo esc_html(sprintf(
+        <?php
+        echo esc_html(sprintf(
+            /* translators: %s: post type label */
             __('Delete all SparkWP post meta from all "%s" posts (keywords, additional context, last generation timestamps). The posts themselves will not be deleted.', 'sparkwp'),
             $post_type_label
-        )); ?>
+        ));
+        ?>
     </p>
     <p>
         <button type="button" class="button button-secondary" id="sparkwp-reset-meta-trigger">
-            <?php echo esc_html(sprintf(__('Reset Post Meta for "%s"', 'sparkwp'), $post_type_label)); ?>
+            <?php
+            echo esc_html(sprintf(
+                /* translators: %s: post type label */
+                __('Reset Post Meta for "%s"', 'sparkwp'), $post_type_label));
+            ?>
         </button>
         <span class="sparkwp-save-status" id="sparkwp-reset-meta-status"></span>
     </p>
@@ -69,10 +79,13 @@ if (!defined('ABSPATH')) {
         <div class="sparkwp-modal">
             <h3><?php esc_html_e('Are you sure?', 'sparkwp'); ?></h3>
             <p>
-                <?php echo esc_html(sprintf(
+                <?php
+                echo esc_html(sprintf(
+                    /* translators: %s: post type label */
                     __('This will permanently delete all SparkWP post meta from all "%s" posts (keywords, additional context, generation timestamps). The posts themselves will not be deleted.', 'sparkwp'),
                     $post_type_label
-                )); ?>
+                ));
+                ?>
             </p>
             <p style="color: #d63638; font-weight: 600;">
                 <?php esc_html_e('This action cannot be undone.', 'sparkwp'); ?>
@@ -82,9 +95,15 @@ if (!defined('ABSPATH')) {
                     <?php esc_html_e('Cancel', 'sparkwp'); ?>
                 </button>
                 <button type="button" class="button button-primary sparkwp-button-danger sparkwp-modal-confirm" data-target="meta" data-post-type="<?php echo esc_attr($selected_post_type); ?>">
-                    <?php echo esc_html(sprintf(__('Yes, Delete Post Meta for "%s"', 'sparkwp'), $post_type_label)); ?>
+                    <?php
+                    /* translators: %s: post type label */
+                    echo esc_html(sprintf(__('Yes, Delete Post Meta for "%s"', 'sparkwp'), $post_type_label));
+                    ?>
                 </button>
             </div>
         </div>
     </div>
 </div>
+
+<?php
+})(); // End IIFE

@@ -8,6 +8,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// IIFE pattern to avoid globally-scoped variables (WordPress coding standards requirement).
+(function() {
+global $sparkwp;
+
 // Get all post types including custom post types
 $post_types = get_post_types(array('public' => true), 'objects');
 
@@ -177,7 +181,10 @@ if (!empty($selected_post_type)) {
                                         ?>
                                     />
                                     <span class="screen-reader-text">
-                                        <?php echo esc_html(sprintf(__('Enable generation for %s', 'sparkwp'), $field['label'])); ?>
+                                        <?php
+                                        /* translators: %s: field label */
+                                        echo esc_html(sprintf(__('Enable generation for %s', 'sparkwp'), $field['label']));
+                                        ?>
                                     </span>
                                 </label>
                             </td>
@@ -289,3 +296,6 @@ if (!empty($selected_post_type)) {
         </p>
     </form>
 </div>
+
+<?php
+})(); // End IIFE

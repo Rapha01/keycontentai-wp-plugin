@@ -8,6 +8,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// IIFE pattern to avoid globally-scoped variables (WordPress coding standards requirement).
+(function() {
+
 $api_key = get_option('sparkwp_openai_api_key', '');
 $text_model = get_option('sparkwp_text_model', 'gpt-5.2');
 $image_model = get_option('sparkwp_image_model', 'gpt-image-1.5');
@@ -92,3 +95,6 @@ $image_model = get_option('sparkwp_image_model', 'gpt-image-1.5');
         </p>
     </form>
 </div>
+
+<?php
+})(); // End IIFE

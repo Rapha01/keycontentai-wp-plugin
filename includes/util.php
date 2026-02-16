@@ -195,7 +195,7 @@ function sparkwp_save_webp_to_media_library($webp_data, $post_id, $filename, $ti
     $attachment_id = wp_insert_attachment($attachment, $filepath, $post_id);
     
     if (is_wp_error($attachment_id)) {
-        @unlink($filepath);
+        $wp_filesystem->delete($filepath);
         return $attachment_id;
     }
     

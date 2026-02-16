@@ -96,8 +96,12 @@ jQuery(document).ready(function($) {
         $debugOutput.find('.sparkwp-loadkeywords-debug-empty').remove();
         
         var entry = $('<div class="sparkwp-loadkeywords-debug-entry"></div>');
-        entry.append('<div class="sparkwp-loadkeywords-debug-entry-header">' + title + '<span class="sparkwp-loadkeywords-debug-timestamp">' + timestamp + '</span></div>');
-        entry.append('<div class="sparkwp-loadkeywords-debug-entry-content">' + (typeof content === 'object' ? JSON.stringify(content, null, 2) : content) + '</div>');
+        var $header = $('<div class="sparkwp-loadkeywords-debug-entry-header"></div>')
+            .text(title)
+            .append($('<span class="sparkwp-loadkeywords-debug-timestamp"></span>').text(timestamp));
+        var $content = $('<div class="sparkwp-loadkeywords-debug-entry-content"></div>')
+            .text(typeof content === 'object' ? JSON.stringify(content, null, 2) : content);
+        entry.append($header).append($content);
         
         $debugOutput.append(entry);
         $debugOutput.scrollTop($debugOutput[0].scrollHeight);

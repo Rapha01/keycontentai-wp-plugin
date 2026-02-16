@@ -371,7 +371,8 @@
      * Show WordPress-style admin notice
      */
     function showNotice(message, type = 'info') {
-        const $notice = $(`<div class="notice notice-${type} is-dismissible"><p>${message}</p></div>`);
+        const $notice = $('<div>').addClass('notice notice-' + type + ' is-dismissible')
+            .append($('<p>').text(message));
         $('.wrap > h1').after($notice);
         
         // Add dismiss button manually
