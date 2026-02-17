@@ -25,6 +25,9 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])
         <a href="?page=sparkplus-settings&tab=general-context" class="nav-tab <?php echo $active_tab === 'general-context' ? 'nav-tab-active' : ''; ?>">
             <?php esc_html_e('General Context', 'sparkplus'); ?>
         </a>
+        <a href="?page=sparkplus-settings&tab=internal-linking" class="nav-tab <?php echo $active_tab === 'internal-linking' ? 'nav-tab-active' : ''; ?>">
+            <?php esc_html_e('Internal Linking', 'sparkplus'); ?>
+        </a>
         <a href="?page=sparkplus-settings&tab=api-settings" class="nav-tab <?php echo $active_tab === 'api-settings' ? 'nav-tab-active' : ''; ?>">
             <?php esc_html_e('API', 'sparkplus'); ?>
         </a>
@@ -43,6 +46,9 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])
                 break;
             case 'general-context':
                 $tab_file = SPARKPLUS_PLUGIN_DIR . 'admin/settings/tabs/tab-general-context.php';
+                break;
+            case 'internal-linking':
+                $tab_file = SPARKPLUS_PLUGIN_DIR . 'admin/settings/tabs/tab-internal-linking.php';
                 break;
             case 'api-settings':
                 $tab_file = SPARKPLUS_PLUGIN_DIR . 'admin/settings/tabs/tab-api-settings.php';

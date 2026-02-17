@@ -166,15 +166,6 @@ class SparkPlus {
         
         add_submenu_page(
             'sparkplus-load-keywords',                  // Parent slug
-            __('Internal Linking', 'sparkplus'),       // Page title
-            __('Internal Linking', 'sparkplus'),       // Menu title
-            'manage_options',                              // Capability
-            'sparkplus-internal-linking',               // Menu slug
-            array($this, 'render_internal_linking_page')  // Callback
-        );
-        
-        add_submenu_page(
-            'sparkplus-load-keywords',                  // Parent slug
             __('Settings', 'sparkplus'),               // Page title
             __('Settings', 'sparkplus'),               // Menu title
             'manage_options',                              // Capability
@@ -287,18 +278,6 @@ class SparkPlus {
     }
     
     /**
-     * Render Internal Linking page
-     */
-    public function render_internal_linking_page() {
-        // Check user capabilities
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-        
-        include SPARKPLUS_PLUGIN_DIR . 'admin/internal-linking/index.php';
-    }
-    
-    /**
      * Render Load Keywords page
      */
     public function render_load_keywords_page() {
@@ -317,7 +296,6 @@ class SparkPlus {
         // Only load on our plugin pages
         if ($hook !== 'toplevel_page_sparkplus-load-keywords' 
             && $hook !== 'sparkplus_page_sparkplus-generation'
-            && $hook !== 'sparkplus_page_sparkplus-internal-linking'
             && $hook !== 'sparkplus_page_sparkplus-load-keywords'
             && $hook !== 'sparkplus_page_sparkplus-settings') {
             return;
@@ -389,24 +367,6 @@ class SparkPlus {
                 'deleting' => __('Deleting...', 'sparkplus'),
                 'deleteConfirm' => __('Delete', 'sparkplus')
             ));
-        }
-        
-        // Internal Linking page assets
-        if ($hook === 'sparkplus_page_sparkplus-internal-linking') {
-            wp_enqueue_style(
-                'sparkplus-internal-linking',
-                SPARKPLUS_PLUGIN_URL . 'admin/internal-linking/assets/internal-linking.css',
-                array(),
-                SPARKPLUS_VERSION
-            );
-            
-            wp_enqueue_script(
-                'sparkplus-internal-linking',
-                SPARKPLUS_PLUGIN_URL . 'admin/internal-linking/assets/internal-linking.js',
-                array('jquery'),
-                SPARKPLUS_VERSION,
-                true
-            );
         }
         
         // Load Keywords page assets
