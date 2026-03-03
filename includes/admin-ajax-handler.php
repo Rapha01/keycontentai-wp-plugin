@@ -20,6 +20,8 @@ class SparkPlus_Admin_Ajax_Handler {
         add_action('wp_ajax_sparkplus_save_settings', array($this, 'save_settings'));
         add_action('wp_ajax_sparkplus_reset_settings', array($this, 'reset_settings'));
         add_action('wp_ajax_sparkplus_delete_post', array($this, 'delete_post'));
+        add_action('wp_ajax_sparkplus_get_post_type_items', array($this, 'get_post_type_items'));
+        add_action('wp_ajax_sparkplus_save_linking_pool', array($this, 'save_linking_pool'));
     }
     
     /**
@@ -364,5 +366,155 @@ class SparkPlus_Admin_Ajax_Handler {
                     'message' => __('Invalid reset target.', 'sparkplus')
                 ));
         }
+    }
+    
+    /**
+     * AJAX handler to get post type items for internal linking
+     */
+    public function get_post_type_items() {
+        // Security check
+        check_ajax_referer('sparkplus_settings_nonce', 'nonce');
+        
+        // Check if user has permission
+        if (!current_user_can('edit_posts')) {
+            wp_send_json_error(array(
+                'message' => __('Unauthorized', 'sparkplus')
+            ));
+        }
+        
+        // Get post type from request
+        if (!isset($_POST['post_type']) || empty($_POST['post_type'])) {
+            wp_send_json_error(array(
+                'message' => __('No post type provided', 'sparkplus')
+            ));
+        }
+        
+        $post_type = sanitize_text_field(wp_unslash($_POST['post_type']));
+        
+        // Verify post type exists
+        if (!post_type_exists($post_type)) {
+            wp_send_json_error(array(
+                'message' => __('Invalid post type', 'sparkplus')
+            ));
+        }
+        
+        // Get all published posts of this type
+        $posts = get_posts(array(
+            'post_type' => $post_type,
+            'posts_per_page' => -1,
+            'post_status' => 'publish',
+            'orderby' => 'title',
+            'order' => 'ASC'
+        ));
+        
+        // Format the response
+        $items = array();
+        foreach ($posts as $post) {
+            $items[] = array(
+                'id' => $post->ID,
+                'title' => $post->post_title,
+                'url' => get_permalink($post->ID)
+            );
+        }
+        
+        wp_send_json_success(array(
+            'items' => $items
+        ));
+    }
+    
+    /**
+     * AJAX handler to save linking pool settings
+     */
+    public function save_linking_pool() {
+        // Security check
+        check_ajax_referer('sparkplus_settings_nonce', 'nonce');
+        
+        // Check if user has permission
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array(
+                'message' => __('Unauthorized', 'sparkplus')
+            ));
+        }
+        
+        // Save enable flags as separate options
+        $linking_enable = isset($_POST['linking_enable']) && $_POST['linking_enable'] === '1';
+        $linking_wysiwyg = isset($_POST['linking_wysiwyg']) && $_POST['linking_wysiwyg'] === '1';
+        
+        update_option('sparkplus_linking_enable', $linking_enable);
+        update_option('sparkplus_linking_wysiwyg', $linking_wysiwyg);
+        
+        // Get linking pool data from request
+        if (!isset($_POST['linking_pool'])) {
+            wp_send_json_error(array(
+                'message' => __('No linking pool data provided', 'sparkplus')
+            ));
+        }
+        
+        $linking_pool_raw = wp_unslash($_POST['linking_pool']);
+        $linking_pool = json_decode($linking_pool_raw, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            wp_send_json_error(array(
+                'message' => __('Invalid JSON data', 'sparkplus')
+            ));
+        }
+        
+        // Sanitize the data
+        $sanitized = array(
+            'post_types' => array(),
+            'single_items' => array(),
+            'custom_links' => array()
+        );
+        
+        // Sanitize post types
+        if (!empty($linking_pool['post_types']) && is_array($linking_pool['post_types'])) {
+            foreach ($linking_pool['post_types'] as $post_type) {
+                $sanitized_type = sanitize_key($post_type);
+                if (post_type_exists($sanitized_type)) {
+                    $sanitized['post_types'][] = $sanitized_type;
+                }
+            }
+        }
+        
+        // Sanitize single items
+        if (!empty($linking_pool['single_items']) && is_array($linking_pool['single_items'])) {
+            foreach ($linking_pool['single_items'] as $item) {
+                if (!empty($item['id']) && !empty($item['type'])) {
+                    $sanitized['single_items'][] = array(
+                        'id' => absint($item['id']),
+                        'type' => sanitize_key($item['type']),
+                        'title' => sanitize_text_field($item['title']),
+                        'url' => esc_url_raw($item['url'])
+                    );
+                }
+            }
+        }
+        
+        // Sanitize custom links
+        if (!empty($linking_pool['custom_links']) && is_array($linking_pool['custom_links'])) {
+            foreach ($linking_pool['custom_links'] as $link) {
+                if (!empty($link['url']) && !empty($link['title'])) {
+                    $keywords = array();
+                    if (!empty($link['keywords']) && is_array($link['keywords'])) {
+                        foreach ($link['keywords'] as $keyword) {
+                            $keywords[] = sanitize_text_field($keyword);
+                        }
+                    }
+                    
+                    $sanitized['custom_links'][] = array(
+                        'url' => esc_url_raw($link['url']),
+                        'title' => sanitize_text_field($link['title']),
+                        'keywords' => $keywords
+                    );
+                }
+            }
+        }
+        
+        // Save to database
+        update_option('sparkplus_linking_pool', wp_json_encode($sanitized));
+        
+        wp_send_json_success(array(
+            'message' => __('Linking pool saved successfully', 'sparkplus')
+        ));
     }
 }

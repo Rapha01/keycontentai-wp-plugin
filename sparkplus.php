@@ -42,11 +42,23 @@ define('SPARKPLUS_PLUGIN_BASENAME', plugin_basename(__FILE__));
  *   sparkplus_advantages        text     Product advantages
  *   sparkplus_buying_reasons    text     Reasons for buying
  *   sparkplus_additional_context text    Additional brand context
- *   sparkplus_wysiwyg_formatting array   Allowed HTML elements (paragraphs, bold, italic, headings, lists, links)
+ *   sparkplus_wysiwyg_formatting array   Allowed HTML elements (paragraphs, bold, italic, headings, lists)
  *
  * CPT Settings (tab: cpt)
  *   sparkplus_selected_post_type string  Currently selected post type (default: 'post')
- *   sparkplus_cpt_configs        json    Per-post-type field configs and additional context
+ *   sparkplus_cpt_configs        json    Per-post-type field configs, additional context, and settings
+ *                                        Structure: {
+ *                                          [post_type]: {
+ *                                            fields: {...},
+ *                                            additional_context: string,
+ *                                            include_existing_content: bool (default: true)
+ *                                          }
+ *                                        }
+ *
+ * Internal Linking (tab: internal-linking)
+ *   sparkplus_linking_enable    bool     Enable linking in prompts (default: false)
+ *   sparkplus_linking_wysiwyg   bool     Enable automatic links in WYSIWYG content (default: false)
+ *   sparkplus_linking_pool      json     Pool of available links (post_types, single_items, custom_links)
  *
  * Reset (tab: reset)
  *   Deletes all options matching sparkplus_% and all post meta matching sparkplus_%
@@ -141,8 +153,8 @@ class SparkPlus {
             'manage_options',                              // Capability
             'sparkplus-load-keywords',                  // Menu slug
             array($this, 'render_load_keywords_page'),    // Callback
-            'dashicons-admin-post',                        // Icon
-            30                                             // Position
+            'dashicons-edit',                              // Icon
+            60                                             // Position
         );
         
         // Add submenu items
@@ -310,10 +322,25 @@ class SparkPlus {
                 SPARKPLUS_VERSION
             );
             
+            wp_enqueue_style(
+                'sparkplus-internal-linking',
+                SPARKPLUS_PLUGIN_URL . 'admin/settings/assets/internal-linking.css',
+                array('sparkplus-settings'),
+                SPARKPLUS_VERSION
+            );
+            
             wp_enqueue_script(
                 'sparkplus-settings',
                 SPARKPLUS_PLUGIN_URL . 'admin/settings/assets/settings.js',
                 array('jquery'),
+                SPARKPLUS_VERSION,
+                true
+            );
+            
+            wp_enqueue_script(
+                'sparkplus-internal-linking',
+                SPARKPLUS_PLUGIN_URL . 'admin/settings/assets/internal-linking.js',
+                array('jquery', 'sparkplus-settings'),
                 SPARKPLUS_VERSION,
                 true
             );
@@ -345,9 +372,17 @@ class SparkPlus {
             );
             
             wp_enqueue_script(
+                'marked',
+                SPARKPLUS_PLUGIN_URL . 'assets/js/marked.min.js',
+                array(),
+                null,
+                true
+            );
+
+            wp_enqueue_script(
                 'sparkplus-generation-debug',
                 SPARKPLUS_PLUGIN_URL . 'admin/generation/assets/debug.js',
-                array('jquery'),
+                array('jquery', 'marked'),
                 SPARKPLUS_VERSION,
                 true
             );

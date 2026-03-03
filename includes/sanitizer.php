@@ -44,8 +44,17 @@ class SparkPlus_Sanitizer {
             if (!isset($sanitized[$post_type_clean])) {
                 $sanitized[$post_type_clean] = array(
                     'additional_context' => '',
+                    'include_existing_content' => true,
                     'fields' => array()
                 );
+            }
+            
+            // Handle include_existing_content (defaults to true)
+            if (isset($data['include_existing_content'])) {
+                $sanitized[$post_type_clean]['include_existing_content'] = (bool) $data['include_existing_content'];
+            } else {
+                // If checkbox is not present in POST data, it means it's unchecked
+                $sanitized[$post_type_clean]['include_existing_content'] = false;
             }
             
             // Handle additional_context
@@ -58,13 +67,37 @@ class SparkPlus_Sanitizer {
                 $sanitized[$post_type_clean]['fields'] = array();
                 foreach ($data['fields'] as $field_key => $field_data) {
                     $field_key_clean = sanitize_key($field_key);
-                    $sanitized[$post_type_clean]['fields'][$field_key_clean] = array(
-                        'description' => isset($field_data['description']) ? sanitize_textarea_field($field_data['description']) : '',
-                        'word_count' => isset($field_data['word_count']) ? absint($field_data['word_count']) : 0,
-                        'enabled' => isset($field_data['enabled']) ? (bool) $field_data['enabled'] : false,
-                        'size' => isset($field_data['size']) ? sanitize_text_field($field_data['size']) : 'auto',
-                        'quality' => isset($field_data['quality']) ? sanitize_text_field($field_data['quality']) : 'auto'
-                    );
+                    // Group field: detected by type=group or presence of sub_fields key
+                    if ((isset($field_data['type']) && $field_data['type'] === 'group') || isset($field_data['sub_fields'])) {
+                        $sanitized_group = array(
+                            'type'       => 'group',
+                            'enabled'    => isset($field_data['enabled']) ? (bool) $field_data['enabled'] : false,
+                            'sub_fields' => array(),
+                        );
+                        if (isset($field_data['sub_fields']) && is_array($field_data['sub_fields'])) {
+                            foreach ($field_data['sub_fields'] as $sub_key => $sub_data) {
+                                $sub_key_clean = sanitize_key($sub_key);
+                                $sanitized_group['sub_fields'][$sub_key_clean] = array(
+                                    'description'  => isset($sub_data['description']) ? sanitize_textarea_field($sub_data['description']) : '',
+                                    'word_count'   => isset($sub_data['word_count']) ? absint($sub_data['word_count']) : 0,
+                                    'enabled'      => isset($sub_data['enabled']) ? (bool) $sub_data['enabled'] : false,
+                                    'size'         => isset($sub_data['size']) ? sanitize_text_field($sub_data['size']) : 'auto',
+                                    'quality'      => isset($sub_data['quality']) ? sanitize_text_field($sub_data['quality']) : 'auto',
+                                    'webp_quality' => isset($sub_data['webp_quality']) ? max(1, min(100, absint($sub_data['webp_quality']))) : 80,
+                                );
+                            }
+                        }
+                        $sanitized[$post_type_clean]['fields'][$field_key_clean] = $sanitized_group;
+                    } else {
+                        $sanitized[$post_type_clean]['fields'][$field_key_clean] = array(
+                            'description'  => isset($field_data['description']) ? sanitize_textarea_field($field_data['description']) : '',
+                            'word_count'   => isset($field_data['word_count']) ? absint($field_data['word_count']) : 0,
+                            'enabled'      => isset($field_data['enabled']) ? (bool) $field_data['enabled'] : false,
+                            'size'         => isset($field_data['size']) ? sanitize_text_field($field_data['size']) : 'auto',
+                            'quality'      => isset($field_data['quality']) ? sanitize_text_field($field_data['quality']) : 'auto',
+                            'webp_quality' => isset($field_data['webp_quality']) ? max(1, min(100, absint($field_data['webp_quality']))) : 80,
+                        );
+                    }
                 }
             }
         }
@@ -81,7 +114,7 @@ class SparkPlus_Sanitizer {
      */
     public static function wysiwyg_formatting($input) {
         // Valid formatting options
-        $valid_options = array('paragraphs', 'bold', 'italic', 'headings', 'lists', 'links');
+        $valid_options = array('paragraphs', 'bold', 'italic', 'headings', 'lists');
         $sanitized = array();
         
         // If input is not an array, return default (only bold, italic, lists, paragraphs enabled)

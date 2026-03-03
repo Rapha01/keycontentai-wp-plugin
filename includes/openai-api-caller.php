@@ -44,7 +44,8 @@ class SparkPlus_OpenAI_API_Caller {
      * @throws Exception If API call fails
      */
     public function generate_text($prompt, $api_key, $options = array()) {
-        $this->add_debug('generate_text', 'Preparing text generation request to GPT');
+        $step = isset($options['step']) ? $options['step'] : 'generate_text';
+        $this->add_debug($step, 'Preparing text generation request to GPT');
         
         // Validate API key
         if (empty($api_key)) {
@@ -54,36 +55,12 @@ class SparkPlus_OpenAI_API_Caller {
         // Prepare the API endpoint
         $api_endpoint = 'https://api.openai.com/v1/chat/completions';
         
-        // Default options
-        $defaults = array(
-            'model' => 'gpt-5.2',
-            'temperature' => 0.7,
-            'max_completion_tokens' => 4000,
-            'response_format' => array('type' => 'json_object')
-        );
+        // Prepare the request body with model-specific adjustments
+        $request_body = $this->prepare_text_request_body($prompt, $options);
         
-        $options = wp_parse_args($options, $defaults);
-        
-        // Prepare the request body
-        $request_body = array(
-            'model' => $options['model'],
-            'messages' => array(
-                array(
-                    'role' => 'user',
-                    'content' => $prompt
-                )
-            ),
-            'temperature' => $options['temperature'],
-            'max_completion_tokens' => $options['max_completion_tokens'],
-            'response_format' => $options['response_format']
-        );
-        
-        $this->add_debug('generate_text', array(
+        $this->add_debug($step, array(
             'endpoint' => $api_endpoint,
-            'model' => $request_body['model'],
-            'prompt_length' => strlen($prompt),
-            'temperature' => $request_body['temperature'],
-            'max_completion_tokens' => $request_body['max_completion_tokens']
+            'request_body' => $request_body
         ));
         
         // Prepare request headers
@@ -103,7 +80,7 @@ class SparkPlus_OpenAI_API_Caller {
         // Check for WordPress HTTP errors
         if (is_wp_error($response)) {
             $error_message = $response->get_error_message();
-            $this->add_debug('generate_text', array(
+            $this->add_debug($step, array(
                 'error' => 'WordPress HTTP Error',
                 'message' => $error_message
             ));
@@ -114,7 +91,7 @@ class SparkPlus_OpenAI_API_Caller {
         $response_code = wp_remote_retrieve_response_code($response);
         $response_body = wp_remote_retrieve_body($response);
         
-        $this->add_debug('generate_text', array(
+        $this->add_debug($step, array(
             'response_code' => $response_code,
             'response_length' => strlen($response_body)
         ));
@@ -126,7 +103,7 @@ class SparkPlus_OpenAI_API_Caller {
                 ? $error_data['error']['message'] 
                 : 'Unknown API error';
             
-            $this->add_debug('generate_text', array(
+            $this->add_debug($step, array(
                 'error' => 'OpenAI API Error',
                 'code' => $response_code,
                 'message' => $error_message,
@@ -147,7 +124,7 @@ class SparkPlus_OpenAI_API_Caller {
         $response_data = json_decode($response_body, true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->add_debug('generate_text', array(
+            $this->add_debug($step, array(
                 'error' => 'JSON Parse Error',
                 'message' => json_last_error_msg(),
                 'raw_response' => substr($response_body, 0, 500)
@@ -157,7 +134,7 @@ class SparkPlus_OpenAI_API_Caller {
         
         // Extract the content
         if (!isset($response_data['choices'][0]['message']['content'])) {
-            $this->add_debug('generate_text', array(
+            $this->add_debug($step, array(
                 'error' => 'Invalid Response Structure',
                 'full_api_response' => wp_json_encode($response_data, JSON_PRETTY_PRINT)
             ));
@@ -184,7 +161,7 @@ class SparkPlus_OpenAI_API_Caller {
             );
         }
         
-        $this->add_debug('generate_text', $debug_data);
+        $this->add_debug($step, $debug_data);
         
         return array(
             'content' => $content,
@@ -326,6 +303,45 @@ class SparkPlus_OpenAI_API_Caller {
         ));
         
         return $response_data;
+    }
+    
+    /**
+     * Prepare text generation request body with model-specific adjustments
+     * 
+     * @param string $prompt The prompt to send
+     * @param array $options Request options
+     * @return array Request body array
+     */
+    private function prepare_text_request_body($prompt, $options) {
+        // Default options
+        $defaults = array(
+            'model' => 'gpt-5.2',
+            'temperature' => 0.7,
+            'max_completion_tokens' => 16000,
+            'response_format' => array('type' => 'json_object')
+        );
+        
+        $options = wp_parse_args($options, $defaults);
+        
+        $request_body = array(
+            'model' => $options['model'],
+            'messages' => array(
+                array(
+                    'role' => 'user',
+                    'content' => $prompt
+                )
+            ),
+            'max_completion_tokens' => $options['max_completion_tokens'],
+            'response_format' => $options['response_format']
+        );
+        
+        // Check if model supports custom temperature
+        // Mini and nano models only support default temperature (1.0)
+        if ($options['model'] !== 'gpt-5-mini' && $options['model'] !== 'gpt-5-nano') {
+            $request_body['temperature'] = $options['temperature'];
+        }
+        
+        return $request_body;
     }
     
     /**

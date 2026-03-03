@@ -114,25 +114,17 @@
         
         // Extract prompt and response if available
         if (typeof data === 'object' && data !== null) {
-            // Check for text prompt (from build_text_prompt)
+            // Text prompt: only from build_text_prompt (alt text generation never fires this)
             if (step === 'build_text_prompt' && data.prompt) {
                 debugData.lastTextPrompt = data.prompt;
             }
             
-            // Check for image prompt (from build_image_prompt - singular, one at a time)
+            // Image prompt: from build_image_prompt
             if (step === 'build_image_prompt' && data.prompt) {
                 debugData.lastImagePrompt = data.prompt;
             }
             
-            // Check for API request (alternative source for prompts)
-            if (data.request_body && data.request_body.messages) {
-                const messages = data.request_body.messages;
-                if (step === 'generate_text') {
-                    debugData.lastTextPrompt = JSON.stringify(messages, null, 2);
-                }
-            }
-            
-            // Check for API response (standardized as full_api_response)
+            // Responses
             if (data.full_api_response) {
                 if (step === 'generate_image') {
                     debugData.lastImageResponse = data.full_api_response;
@@ -198,25 +190,36 @@
     }
     
     /**
-     * Update specific tab with content
+     * Update specific tab with plain text content
      */
     function updateTab(tabId, content, className) {
         const $container = $(`#sparkplus-debug-tab-${tabId}`);
         $container.empty().append($('<div>').addClass(className).text(content));
     }
-    
+
+    /**
+     * Update specific tab with Markdown-rendered content
+     */
+    function updateMarkdownTab(tabId, content, className) {
+        const $container = $(`#sparkplus-debug-tab-${tabId}`);
+        // Escape HTML entities first so literal tags like <p> render as text, not elements
+        const escaped = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const html = (typeof marked !== 'undefined') ? marked.parse(escaped) : content.replace(/\n/g, '<br>');
+        $container.empty().append($('<div>').addClass(className).html(html));
+    }
+
     /**
      * Update "Last Text Prompt" tab
      */
     function updateTextPromptTab() {
-        updateTab('text-prompt', debugData.lastTextPrompt, 'sparkplus-debug-prompt');
+        updateMarkdownTab('text-prompt', debugData.lastTextPrompt, 'sparkplus-debug-prompt');
     }
     
     /**
      * Update "Last Image Prompt" tab
      */
     function updateImagePromptTab() {
-        updateTab('image-prompt', debugData.lastImagePrompt, 'sparkplus-debug-prompt');
+        updateMarkdownTab('image-prompt', debugData.lastImagePrompt, 'sparkplus-debug-prompt');
     }
     
     /**

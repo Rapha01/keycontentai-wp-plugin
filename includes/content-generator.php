@@ -110,13 +110,17 @@ class SparkPlus_Content_Generator {
     }
     
     private function get_cpt_settings($post_type) {
-        // Get CPT-specific additional context from consolidated configs
+        // Get CPT-specific additional context and settings from consolidated configs
         $cpt_additional_context = '';
+        $include_existing_content = true; // Default to true
         global $sparkplus;
         if ($sparkplus && method_exists($sparkplus, 'get_cpt_configs')) {
             $cpt_configs = $sparkplus->get_cpt_configs();
             if (isset($cpt_configs[$post_type]['additional_context'])) {
                 $cpt_additional_context = $cpt_configs[$post_type]['additional_context'];
+            }
+            if (isset($cpt_configs[$post_type]['include_existing_content'])) {
+                $include_existing_content = (bool) $cpt_configs[$post_type]['include_existing_content'];
             }
         }
         
@@ -146,7 +150,10 @@ class SparkPlus_Content_Generator {
             
             // Two levels of additional context (General Context + CPT)
             'general_context_additional_context' => get_option('sparkplus_additional_context', ''),
-            'cpt_additional_context' => $cpt_additional_context
+            'cpt_additional_context' => $cpt_additional_context,
+            
+            // Include existing content setting
+            'include_existing_content' => $include_existing_content
         );
         
         $this->add_debug('get_cpt_settings', array(
@@ -219,7 +226,7 @@ class SparkPlus_Content_Generator {
             );
         }
         
-        // 2. Collect all ACF fields that exist
+        // 2. Collect all ACF fields that exist (with group support)
         if (function_exists('acf_get_field_groups')) {
             $field_groups = acf_get_field_groups(array('post_type' => $post_type));
             
@@ -229,12 +236,35 @@ class SparkPlus_Content_Generator {
                     
                     if ($fields) {
                         foreach ($fields as $field) {
-                            $all_fields[$field['name']] = array(
-                                'key' => $field['name'],
-                                'label' => $field['label'],
-                                'type' => $field['type'],
-                                'source' => 'acf'
-                            );
+                            if ($field['type'] === 'group') {
+                                $sub_fields = array();
+                                if (!empty($field['sub_fields'])) {
+                                    foreach ($field['sub_fields'] as $sub_field) {
+                                        $sub_fields[$sub_field['name']] = array(
+                                            'key'         => $sub_field['name'],
+                                            'label'       => $sub_field['label'],
+                                            'type'        => $sub_field['type'],
+                                            'source'      => 'acf',
+                                            'group_key'   => $field['name'],
+                                            'group_label' => $field['label'],
+                                        );
+                                    }
+                                }
+                                $all_fields[$field['name']] = array(
+                                    'key'        => $field['name'],
+                                    'label'      => $field['label'],
+                                    'type'       => 'group',
+                                    'source'     => 'acf',
+                                    'sub_fields' => $sub_fields,
+                                );
+                            } else {
+                                $all_fields[$field['name']] = array(
+                                    'key'    => $field['name'],
+                                    'label'  => $field['label'],
+                                    'type'   => $field['type'],
+                                    'source' => 'acf',
+                                );
+                            }
                         }
                     }
                 }
@@ -245,16 +275,34 @@ class SparkPlus_Content_Generator {
         $enabled_fields = array();
         
         foreach ($all_fields as $field_key => $field_data) {
-            // Check if user has enabled this field
-            if (isset($user_settings[$field_key]) && !empty($user_settings[$field_key]['enabled'])) {
-                // Merge field data with user settings
-                $enabled_fields[] = array_merge($field_data, array(
-                    'description' => isset($user_settings[$field_key]['description']) ? $user_settings[$field_key]['description'] : '',
-                    'word_count' => isset($user_settings[$field_key]['word_count']) ? intval($user_settings[$field_key]['word_count']) : 0,
-                    'size' => isset($user_settings[$field_key]['size']) ? $user_settings[$field_key]['size'] : 'auto',
-                    'quality' => isset($user_settings[$field_key]['quality']) ? $user_settings[$field_key]['quality'] : 'auto',
-                    'enabled' => true
-                ));
+            if ($field_data['type'] === 'group') {
+                // For groups, check each sub-field individually
+                $group_user = isset($user_settings[$field_key]) ? $user_settings[$field_key] : array();
+                foreach ($field_data['sub_fields'] as $sub_key => $sub_data) {
+                    $sub_user = isset($group_user['sub_fields'][$sub_key]) ? $group_user['sub_fields'][$sub_key] : array();
+                    if (!empty($sub_user['enabled'])) {
+                        $enabled_fields[] = array_merge($sub_data, array(
+                            'description'  => isset($sub_user['description']) ? $sub_user['description'] : '',
+                            'word_count'   => isset($sub_user['word_count']) ? intval($sub_user['word_count']) : 0,
+                            'size'         => isset($sub_user['size']) ? $sub_user['size'] : 'auto',
+                            'quality'      => isset($sub_user['quality']) ? $sub_user['quality'] : 'auto',
+                            'webp_quality' => isset($sub_user['webp_quality']) ? intval($sub_user['webp_quality']) : 80,
+                            'enabled'      => true,
+                        ));
+                    }
+                }
+            } else {
+                // Regular field
+                if (isset($user_settings[$field_key]) && !empty($user_settings[$field_key]['enabled'])) {
+                    $enabled_fields[] = array_merge($field_data, array(
+                        'description'  => isset($user_settings[$field_key]['description']) ? $user_settings[$field_key]['description'] : '',
+                        'word_count'   => isset($user_settings[$field_key]['word_count']) ? intval($user_settings[$field_key]['word_count']) : 0,
+                        'size'         => isset($user_settings[$field_key]['size']) ? $user_settings[$field_key]['size'] : 'auto',
+                        'quality'      => isset($user_settings[$field_key]['quality']) ? $user_settings[$field_key]['quality'] : 'auto',
+                        'webp_quality' => isset($user_settings[$field_key]['webp_quality']) ? intval($user_settings[$field_key]['webp_quality']) : 80,
+                        'enabled'      => true,
+                    ));
+                }
             }
         }
         
@@ -282,7 +330,7 @@ class SparkPlus_Content_Generator {
     
     private function generate_text_content($post_id, $cpt_settings, $post_settings) {
         // Build the text generation prompt
-        $text_prompt = $this->prompt_builder->build_text_prompt($cpt_settings, $post_settings);
+        $text_prompt = $this->prompt_builder->build_text_prompt($cpt_settings, $post_settings, $post_id);
         
         // Generate text content if we have text fields
         if (empty($text_prompt)) {
@@ -290,13 +338,23 @@ class SparkPlus_Content_Generator {
         }
         
         $text_response = $this->api_caller->generate_text($text_prompt, $cpt_settings['api_key'], array(
-            'model' => $cpt_settings['text_model']
+            'model' => $cpt_settings['text_model'],
+            'step'  => 'generate_text'
         ));
         
         // Parse JSON response
         $parsed_content = json_decode($text_response['content'], true);
         
         if (json_last_error() !== JSON_ERROR_NONE) {
+            // Log the raw response for debugging
+            $this->add_debug('JSON Parse Error', array(
+                'error' => json_last_error_msg(),
+                'raw_response' => $text_response['content'],
+                'response_length' => strlen($text_response['content']),
+                'first_100_chars' => substr($text_response['content'], 0, 100),
+                'last_100_chars' => substr($text_response['content'], -100)
+            ));
+            
             throw new Exception(esc_html__('Failed to parse GPT response: ', 'sparkplus') . esc_html(json_last_error_msg()));
         }
         
@@ -333,8 +391,11 @@ class SparkPlus_Content_Generator {
             
             // 4. Process and save the image as WebP (gpt-image returns b64_json)
             if ($image_response && isset($image_response['data'][0]['b64_json'])) {
+                // Get WebP quality from field config (default to 80 if not set)
+                $webp_quality = isset($field['webp_quality']) ? $field['webp_quality'] : 80;
+                
                 // Convert to WebP format
-                $webp_data = sparkplus_convert_image_to_webp($image_response['data'][0]['b64_json'], 90);
+                $webp_data = sparkplus_convert_image_to_webp($image_response['data'][0]['b64_json'], $webp_quality);
                 
                 if (is_wp_error($webp_data)) {
                     throw new Exception(sprintf(
@@ -359,13 +420,18 @@ class SparkPlus_Content_Generator {
                     ));
                 }
                 
-                // 5. Update the post with the generated image
+                // 5. Generate and set alt text for the image
+                $alt_text = $this->generate_and_set_alt_text($attachment_id, $image_prompt, $cpt_settings['api_key'], $cpt_settings['text_model']);
+                
+                // 6. Update the post with the generated image
                 $this->update_post_with_image($post_id, $field, $attachment_id);
                 
                 $this->add_debug('generate_image_content', array(
                     'field_key' => $field['key'],
                     'attachment_id' => $attachment_id,
                     'format' => 'webp',
+                    'webp_quality' => $webp_quality,
+                    'alt_text' => $alt_text,
                     'success' => true
                 ));
                 
@@ -398,15 +464,98 @@ class SparkPlus_Content_Generator {
         
         // Handle ACF image fields
         if ($field['source'] === 'acf' && function_exists('update_field')) {
-            $updated = update_field($field['key'], $attachment_id, $post_id);
-            
-            $this->add_debug('update_post_with_image', array(
-                'action' => 'update_acf_field',
-                'field_key' => $field['key'],
-                'post_id' => $post_id,
-                'attachment_id' => $attachment_id,
-                'success' => $updated
+            // Group sub-field: read-merge-write to avoid wiping sibling sub-fields
+            if (!empty($field['group_key'])) {
+                $group_key      = $field['group_key'];
+                $existing_value = get_field($group_key, $post_id);
+                if (!is_array($existing_value)) {
+                    $existing_value = array();
+                }
+                $existing_value[$field['key']] = $attachment_id;
+                $updated = update_field($group_key, $existing_value, $post_id);
+
+                $this->add_debug('update_post_with_image', array(
+                    'action'        => 'update_acf_group_image_field',
+                    'group_key'     => $group_key,
+                    'field_key'     => $field['key'],
+                    'post_id'       => $post_id,
+                    'attachment_id' => $attachment_id,
+                    'success'       => $updated
+                ));
+            } else {
+                $updated = update_field($field['key'], $attachment_id, $post_id);
+
+                $this->add_debug('update_post_with_image', array(
+                    'action'        => 'update_acf_field',
+                    'field_key'     => $field['key'],
+                    'post_id'       => $post_id,
+                    'attachment_id' => $attachment_id,
+                    'success'       => $updated
+                ));
+            }
+        }
+    }
+    
+    /**
+     * Generate and set alt text for an image attachment
+     * 
+     * @param int $attachment_id The attachment ID
+     * @param string $image_prompt The original image generation prompt
+     * @param string $api_key The API key
+     * @param string $model The text model to use
+     * @return string|null The generated alt text, or null if failed
+     */
+    private function generate_and_set_alt_text($attachment_id, $image_prompt, $api_key, $model) {
+        // Build a prompt to generate concise alt text with clear length requirement
+        $alt_text_prompt = "Based on this image description, generate a concise and descriptive alt text for web accessibility and SEO.\n\n";
+        $alt_text_prompt .= "Image description:\n" . $image_prompt . "\n\n";
+        $alt_text_prompt .= "IMPORTANT: The alt text must be 125 characters or less. Be specific, descriptive, and concise.\n\n";
+        $alt_text_prompt .= "Respond with a JSON object containing a single 'alt_text' key with the value.";
+        
+        try {
+            // Make API call to generate alt text (always use JSON format)
+            $response = $this->api_caller->generate_text($alt_text_prompt, $api_key, array(
+                'model' => $model,
+                'step'  => 'generate_alt_text'
             ));
+            
+            // Parse JSON response
+            $parsed = json_decode($response['content'], true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE || !isset($parsed['alt_text'])) {
+                throw new Exception('Failed to parse alt text JSON response: ' . json_last_error_msg());
+            }
+            
+            $alt_text = trim($parsed['alt_text']);
+            
+            // Remove any quotes that the AI might have added
+            $alt_text = trim($alt_text, '"\'');
+            
+            // Limit to 125 characters for best practice
+            if (strlen($alt_text) > 125) {
+                $alt_text = substr($alt_text, 0, 122) . '...';
+            }
+            
+            // Update the attachment's alt text
+            update_post_meta($attachment_id, '_wp_attachment_image_alt', sanitize_text_field($alt_text));
+            
+            $this->add_debug('generate_and_set_alt_text', array(
+                'attachment_id' => $attachment_id,
+                'alt_text' => $alt_text,
+                'success' => true
+            ));
+            
+            return $alt_text;
+            
+        } catch (Exception $e) {
+            // Log the error but don't fail the entire image generation
+            $this->add_debug('generate_and_set_alt_text', array(
+                'attachment_id' => $attachment_id,
+                'error' => $e->getMessage(),
+                'success' => false
+            ));
+            
+            return null;
         }
     }
     
@@ -419,16 +568,29 @@ class SparkPlus_Content_Generator {
         }
         
         // Separate WordPress baseline fields from ACF fields
-        $wp_fields = array();
-        $acf_fields = array();
+        $wp_fields    = array();
+        $acf_fields   = array();
+        $group_fields = array(); // [ group_key => [ sub_key => value ] ]
         
         foreach ($custom_fields as $field) {
-            // Skip image fields - only process text fields
-            if ($field['type'] === 'image') {
+            // Skip image fields
+            if (in_array($field['type'], array('image', 'file', 'gallery'))) {
                 continue;
             }
             
             $field_key = $field['key'];
+            
+            // Group sub-field: value lives at parsed_content[group_key][sub_key]
+            if (!empty($field['group_key'])) {
+                $group_key = $field['group_key'];
+                if (isset($parsed_content[$group_key][$field_key])) {
+                    if (!isset($group_fields[$group_key])) {
+                        $group_fields[$group_key] = array();
+                    }
+                    $group_fields[$group_key][$field_key] = $parsed_content[$group_key][$field_key];
+                }
+                continue;
+            }
             
             // Check if we have content for this field
             if (!isset($parsed_content[$field_key])) {
@@ -486,7 +648,19 @@ class SparkPlus_Content_Generator {
             ));
         }
         
-        $total_updated = count($wp_fields) + count($acf_fields);
+        // Update ACF group fields (read-merge-write preserves non-enabled sub-fields)
+        if (!empty($group_fields) && function_exists('update_field')) {
+            foreach ($group_fields as $group_key => $new_sub_values) {
+                $existing = get_field($group_key, $post_id);
+                $merged   = is_array($existing) ? array_merge($existing, $new_sub_values) : $new_sub_values;
+                update_field($group_key, $merged, $post_id);
+            }
+            $this->add_debug('update_post_with_texts', array(
+                'group_fields_updated' => array_keys($group_fields)
+            ));
+        }
+        
+        $total_updated = count($wp_fields) + count($acf_fields) + count($group_fields);
         
         $this->add_debug('update_post_with_texts', array(
             'status' => 'completed',

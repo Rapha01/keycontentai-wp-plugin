@@ -38,9 +38,10 @@ class SparkPlus_Prompt_Builder {
      * @param array $cpt_settings CPT-level settings (general + CPT-specific)
      * @param array $post_settings Post-specific settings (keyword, post context)
      * @param array $custom_fields Custom fields configuration
+     * @param int $post_id Current post ID (for excluding from linking pool)
      * @return string The complete prompt
      */
-    public function build_prompt($cpt_settings, $post_settings, $custom_fields) {
+    public function build_prompt($cpt_settings, $post_settings, $custom_fields, $post_id = 0) {
         $prompt_parts = array();
         
         // 1. System Role and Context
@@ -64,16 +65,22 @@ class SparkPlus_Prompt_Builder {
         // 7. Post-Specific Additional Context
         $prompt_parts[] = $this->build_post_specific_context($post_settings);
         
-        // 8. WYSIWYG Formatting Rules (if applicable)
+        // 8. Existing Content Context (if enabled and post exists)
+        $prompt_parts[] = $this->build_existing_content_section($cpt_settings, $custom_fields, $post_id);
+        
+        // 9. Internal Linking Pool
+        $prompt_parts[] = $this->build_internal_linking_section($custom_fields, $post_id);
+        
+        // 10. WYSIWYG Formatting Rules (if applicable)
         $prompt_parts[] = $this->build_wysiwyg_formatting_rules($custom_fields);
         
-        // 9. Custom Fields Instructions
+        // 11. Custom Fields Instructions
         $prompt_parts[] = $this->build_custom_fields_instructions($custom_fields);
         
-        // 10. Output Format Instructions
+        // 12. Output Format Instructions
         $prompt_parts[] = $this->build_output_format_instructions($custom_fields);
         
-        // 11. Final Instructions
+        // 13. Final Instructions
         $prompt_parts[] = $this->build_final_instructions($cpt_settings);
         
         // Combine all parts with double line breaks
@@ -100,7 +107,7 @@ class SparkPlus_Prompt_Builder {
         // Get language name from utility function
         $language_name = sparkplus_get_language_name($language);
         
-        $instruction = "IMPORTANT: Write all content in {$language_name}.";
+        $instruction = "**IMPORTANT:** Write all content in {$language_name}.";
         // Add addressing style only for German
         if ($language === 'de' && !empty($settings['addressing'])) {
             if ($settings['addressing'] === 'formal') {
@@ -121,7 +128,7 @@ class SparkPlus_Prompt_Builder {
             return '';
         }
         
-        return "TOPIC/KEYWORD: {$post_settings['keyword']}\nCreate comprehensive content about this topic.";
+        return "# Topic\n**Keyword:** {$post_settings['keyword']}\nCreate comprehensive content about this topic.";
     }
     
     /**
@@ -130,7 +137,7 @@ class SparkPlus_Prompt_Builder {
     private function build_general_context($settings) {
         $context_parts = array();
         
-        $context_parts[] = "GENERAL CONTEXT:";
+        $context_parts[] = "# General Context";
         
         if (!empty($settings['company_name'])) {
             $context_parts[] = "- Company: {$settings['company_name']}";
@@ -167,7 +174,7 @@ class SparkPlus_Prompt_Builder {
             return '';
         }
         
-        return "TARGET AUDIENCE: {$settings['target_group']}\nTailor the content to resonate with this specific audience. Use language, examples, and references that appeal to them.";
+        return "# Target Audience\n{$settings['target_group']}\nTailor the content to resonate with this specific audience. Use language, examples, and references that appeal to them.";
     }
     
     /**
@@ -177,11 +184,11 @@ class SparkPlus_Prompt_Builder {
         $context_parts = array();
         
         $post_type = $settings['post_type'];
-        $context_parts[] = "POST TYPE: {$post_type}";
+        $context_parts[] = "# Post Type: {$post_type}";
         
         // Check if there's post-type-specific additional context
         if (!empty($settings['cpt_additional_context'])) {
-            $context_parts[] = "SPECIFIC INSTRUCTIONS FOR THIS POST TYPE:";
+            $context_parts[] = "## Specific Instructions for This Post Type";
             $context_parts[] = $settings['cpt_additional_context'];
         }
         
@@ -198,11 +205,308 @@ class SparkPlus_Prompt_Builder {
         
         $context_parts = array();
         
-        $context_parts[] = "POST-SPECIFIC INSTRUCTIONS:";
+        $context_parts[] = "# Post-Specific Instructions";
         $context_parts[] = $post_settings['post_additional_context'];
-        $context_parts[] = "\nThese instructions are specific to this individual post and should take priority over general instructions.";
+        $context_parts[] = "\n**These instructions are specific to this individual post and should take priority over general instructions.**";
         
         return implode("\n", $context_parts);
+    }
+    
+    /**
+     * Build existing content section
+     */
+    private function build_existing_content_section($cpt_settings, $custom_fields, $post_id) {
+        // Check if feature is enabled
+        if (empty($cpt_settings['include_existing_content'])) {
+            return '';
+        }
+        
+        // Only show existing content if we have a valid post ID
+        if (empty($post_id) || $post_id <= 0) {
+            return '';
+        }
+        
+        $post = get_post($post_id);
+        if (!$post) {
+            return '';
+        }
+        
+        // Build list of all available fields with their types
+        $all_fields = array();
+        
+        // 1. Add WordPress baseline fields
+        $baseline_fields = array(
+            'post_title' => array('label' => 'Title', 'type' => 'text'),
+            'post_content' => array('label' => 'Content', 'type' => 'wysiwyg'),
+            'post_excerpt' => array('label' => 'Excerpt', 'type' => 'textarea')
+        );
+        
+        foreach ($baseline_fields as $field_key => $field_info) {
+            $all_fields[$field_key] = array(
+                'key' => $field_key,
+                'label' => $field_info['label'],
+                'type' => $field_info['type'],
+                'source' => 'wordpress'
+            );
+        }
+        
+        // 2. Add ACF fields (expand groups into dotted sub-field entries)
+        if (function_exists('acf_get_field_groups')) {
+            $field_groups = acf_get_field_groups(array('post_type' => $post->post_type));
+            
+            if (!empty($field_groups)) {
+                foreach ($field_groups as $group) {
+                    $fields = acf_get_fields($group['key']);
+                    
+                    if ($fields) {
+                        foreach ($fields as $field) {
+                            if ($field['type'] === 'group' && !empty($field['sub_fields'])) {
+                                foreach ($field['sub_fields'] as $sub_field) {
+                                    $all_fields[$field['name'] . '.' . $sub_field['name']] = array(
+                                        'key'       => $sub_field['name'],
+                                        'label'     => $field['label'] . ' › ' . $sub_field['label'],
+                                        'type'      => $sub_field['type'],
+                                        'source'    => 'acf',
+                                        'group_key' => $field['name'],
+                                    );
+                                }
+                            } else {
+                                $all_fields[$field['name']] = array(
+                                    'key'    => $field['name'],
+                                    'label'  => $field['label'],
+                                    'type'   => $field['type'],
+                                    'source' => 'acf',
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        $existing_content = array();
+        $text_field_types = array('text', 'textarea', 'wysiwyg', 'url', 'email');
+        
+        // Check each field that has existing content
+        foreach ($all_fields as $field_name => $field_data) {
+            // Skip if not a text field type
+            if (!in_array($field_data['type'], $text_field_types)) {
+                continue;
+            }
+            
+            // Get the content
+            $content = '';
+            $field_label = $field_data['label'];
+            
+            // Check WordPress fields
+            if ($field_name === 'post_title') {
+                $content = $post->post_title;
+            } elseif ($field_name === 'post_content') {
+                $content = $post->post_content;
+            } elseif ($field_name === 'post_excerpt') {
+                $content = $post->post_excerpt;
+            } else {
+                // Check ACF fields
+                if (function_exists('get_field')) {
+                    if (!empty($field_data['group_key'])) {
+                        // Sub-field: read from parent group array
+                        $group_value = get_field($field_data['group_key'], $post_id);
+                        $content = (is_array($group_value) && isset($group_value[$field_data['key']]))
+                            ? $group_value[$field_data['key']] : '';
+                    } else {
+                        $content = get_field($field_name, $post_id);
+                    }
+                }
+            }
+            
+            // If content exists, add it to context (keep HTML tags and full content)
+            if (!empty($content)) {
+                $existing_content[] = "- {$field_label}: {$content}";
+            }
+        }
+        
+        // Build context section
+        if (empty($existing_content)) {
+            return '';
+        }
+        
+        $section_parts = array();
+        $section_parts[] = "# Existing Content";
+        $section_parts[] = "This post already has content in the following fields:";
+        $section_parts[] = "";
+        $section_parts = array_merge($section_parts, $existing_content);
+        $section_parts[] = "";
+        $section_parts[] = "## Purpose";
+        $section_parts[] = "Use this existing content to:";
+        $section_parts[] = "1. **Avoid duplication:** Don't repeat information already covered in other fields";
+        $section_parts[] = "2. **Reference between fields:** You can reference information from other fields when relevant (e.g., 'As mentioned in the description...')";
+        $section_parts[] = "3. **Reference from field context:** If the additional context/description of a field being generated instructs you to reference other fields, you may use the content above";
+        
+        // Add link management instruction only if linking is enabled
+        $linking_enabled = get_option('sparkplus_linking_enable', false);
+        if ($linking_enabled) {
+            $section_parts[] = "4. **Link management:** Check what links already exist in other fields to avoid overusing links to the same page, but do add new relevant links from the linking pool that haven't been used yet";
+        }
+        
+        return implode("\n", $section_parts);
+    }
+    
+    /**
+     * Build internal linking section
+     */
+    private function build_internal_linking_section($custom_fields, $post_id) {
+        // Check if linking is enabled
+        $linking_enabled = get_option('sparkplus_linking_enable', false);
+        
+        if (!$linking_enabled) {
+            return '';
+        }
+        
+        // Get linking pool
+        $linking_pool_json = get_option('sparkplus_linking_pool', '');
+        
+        if (empty($linking_pool_json)) {
+            return '';
+        }
+        
+        $linking_pool = json_decode($linking_pool_json, true);
+        
+        if (!is_array($linking_pool)) {
+            return '';
+        }
+        
+        // Build list of available links
+        $available_links = array();
+        
+        // Add posts from selected post types
+        if (!empty($linking_pool['post_types']) && is_array($linking_pool['post_types'])) {
+            foreach ($linking_pool['post_types'] as $post_type) {
+                $posts = get_posts(array(
+                    'post_type' => $post_type,
+                    'posts_per_page' => -1,
+                    'post_status' => 'publish',
+                    'exclude' => $post_id // Exclude current post
+                ));
+                
+                foreach ($posts as $post) {
+                    $keyword = get_post_meta($post->ID, 'sparkplus_keyword', true);
+                    
+                    $available_links[] = array(
+                        'id' => $post->ID,
+                        'keyword' => !empty($keyword) ? $keyword : '',
+                        'title' => $post->post_title,
+                        'url' => get_permalink($post->ID)
+                    );
+                }
+            }
+        }
+        
+        // Add individual selected posts
+        if (!empty($linking_pool['single_items']) && is_array($linking_pool['single_items'])) {
+            foreach ($linking_pool['single_items'] as $item) {
+                // Skip if this is the current post
+                if ($item['id'] == $post_id) {
+                    continue;
+                }
+                
+                $post = get_post($item['id']);
+                
+                if ($post && $post->post_status === 'publish') {
+                    $keyword = get_post_meta($post->ID, 'sparkplus_keyword', true);
+                    
+                    $available_links[] = array(
+                        'id' => $post->ID,
+                        'keyword' => !empty($keyword) ? $keyword : '',
+                        'title' => $post->post_title,
+                        'url' => get_permalink($post->ID)
+                    );
+                }
+            }
+        }
+        
+        // Add custom links
+        if (!empty($linking_pool['custom_links']) && is_array($linking_pool['custom_links'])) {
+            foreach ($linking_pool['custom_links'] as $link) {
+                $keywords = '';
+                if (!empty($link['keywords']) && is_array($link['keywords'])) {
+                    $keywords = implode(', ', $link['keywords']);
+                }
+                
+                $available_links[] = array(
+                    'id' => 0,
+                    'keyword' => $keywords,
+                    'title' => $link['title'],
+                    'url' => $link['url']
+                );
+            }
+        }
+        
+        // If no links available, return empty
+        if (empty($available_links)) {
+            return '';
+        }
+        
+        // Build the section
+        $section_parts = array();
+        $section_parts[] = "# Internal Linking";
+        $section_parts[] = "You have access to the following links that you should use when appropriate. **ONLY use links from this list** - do not create or use any other links:";
+        $section_parts[] = "";
+        
+        foreach ($available_links as $index => $link) {
+            $link_entry = ($index + 1) . ". ";
+            
+            if (!empty($link['keyword'])) {
+                $link_entry .= "Keyword: " . $link['keyword'] . " | ";
+            }
+            
+            $link_entry .= "Title: " . $link['title'] . " | URL: " . $link['url'];
+            
+            if (!empty($link['id'])) {
+                $link_entry .= " | ID: " . $link['id'];
+            }
+            
+            $section_parts[] = $link_entry;
+        }
+        
+        $section_parts[] = "";
+        
+        // Add usage instructions
+        $linking_wysiwyg = get_option('sparkplus_linking_wysiwyg', false);
+        $has_wysiwyg_fields = false;
+        $has_url_fields = false;
+        
+        foreach ($custom_fields as $field) {
+            if ($field['type'] === 'wysiwyg') {
+                $has_wysiwyg_fields = true;
+            }
+            if ($field['type'] === 'url') {
+                $has_url_fields = true;
+            }
+        }
+        
+        $section_parts[] = "## How to Use These Links";
+        $section_parts[] = "**IMPORTANT:** You must **ONLY** use URLs from the list above. Never use or create links that are not explicitly provided in this list.";
+        $section_parts[] = "Actively look for opportunities to include relevant links from this list. Link to related topics, broader concepts, or complementary information that would benefit the reader.";
+        $section_parts[] = "";
+        
+        if ($linking_wysiwyg && $has_wysiwyg_fields) {
+            $section_parts[] = "- For WYSIWYG fields: Insert relevant HTML links (<a href=\"URL\">anchor text</a>) throughout the content. Link to related pages when:";
+            $section_parts[] = "  • Mentioning a topic that has a dedicated page in the list";
+            $section_parts[] = "  • Discussing a specific aspect of a broader topic (e.g., link from 'Vogelmilben bekämpfen' to general 'Vogelmilben' page)";
+            $section_parts[] = "  • Referencing related products, services, or information covered by other pages";
+            $section_parts[] = "  • Providing context or background that another page explains in detail";
+            $section_parts[] = "  Use contextually appropriate anchor text and aim to include multiple relevant links where it makes sense. Use ONLY the exact URLs provided in the list.";
+        }
+        
+        if ($has_url_fields) {
+            $section_parts[] = "- For URL fields: Select the most relevant link from the list above based on the field's purpose and the content you're generating. Look for strong topical relationships and choose links that provide valuable additional context or information. Use ONLY URLs from the provided list.";
+        }
+        
+        if (!$linking_wysiwyg && !$has_url_fields) {
+            $section_parts[] = "- Use these links as reference material to understand the available content, but do not insert them into the generated content.";
+        }
+        
+        return implode("\n", $section_parts);
     }
     
     /**
@@ -229,8 +533,7 @@ class SparkPlus_Prompt_Builder {
             'bold' => true,
             'italic' => true,
             'headings' => false,
-            'lists' => true,
-            'links' => false
+            'lists' => true
         ));
         
         $allowed_html = $this->build_allowed_html_tags($wysiwyg_formatting);
@@ -241,7 +544,7 @@ class SparkPlus_Prompt_Builder {
         }
         
         $instructions = array();
-        $instructions[] = "WYSIWYG FIELD FORMATTING:";
+        $instructions[] = "# WYSIWYG Field Formatting";
         $instructions[] = "For fields marked as type 'wysiwyg', you may use HTML formatting when it enhances readability and structure.";
         $instructions[] = "Available HTML tags: {$allowed_html}";
         $instructions[] = "";
@@ -267,10 +570,6 @@ class SparkPlus_Prompt_Builder {
             $instructions[] = "- <ul>/<ol> with <li> for lists when presenting multiple items or steps";
         }
         
-        if (!empty($wysiwyg_formatting['links'])) {
-            $instructions[] = "- <a href=\"URL\"> for hyperlinks when relevant (use placeholder URLs like https://example.com)";
-        }
-        
         $instructions[] = "";
         $instructions[] = "Plain text is perfectly acceptable if HTML formatting doesn't add value. Use your judgment to create well-structured, readable content.";
         
@@ -282,47 +581,101 @@ class SparkPlus_Prompt_Builder {
      */
     private function build_custom_fields_instructions($custom_fields) {
         $instructions = array();
-        $instructions[] = "CONTENT FIELDS TO GENERATE:";
-        $instructions[] = "You must generate content for the following custom fields:";
+        $instructions[] = "# Content Fields to Generate";
+        $instructions[] = "You must generate content for the following custom fields:";    
         $instructions[] = "";
         
-        foreach ($custom_fields as $index => $field) {
-            $field_num = $index + 1;
-            $instructions[] = "{$field_num}. Field: {$field['label']} ({$field['key']})";
-            $instructions[] = "   Field Type: {$field['type']}";
-            
-            if (!empty($field['description'])) {
-                $instructions[] = "   Description: {$field['description']}";
-            }
-            
-            if (!empty($field['word_count']) && $field['word_count'] > 0) {
-                $instructions[] = "   Target Word Count: approximately {$field['word_count']} words";
-            }
-            
-            $instructions[] = "";
-        }
+        $field_num     = 1;
+        $current_group = null;
+        $sub_num       = 1;
         
+        foreach ($custom_fields as $field) {
+            $this_group = isset($field['group_key']) ? $field['group_key'] : null;
+            
+            // Emit group header when entering a new group
+            if ($this_group !== null && $this_group !== $current_group) {
+                $group_label = isset($field['group_label']) ? $field['group_label'] : $this_group;
+                $instructions[] = "{$field_num}. **Group: {$group_label} ({$this_group})**";
+                $field_num++;
+                $sub_num       = 1;
+                $current_group = $this_group;
+            } elseif ($this_group === null) {
+                $current_group = null;
+            }
+            
+            if ($this_group !== null) {
+                $instructions[] = "   {$sub_num}. Field: {$field['label']} ({$field['key']})";
+                $instructions[] = "      Field Type: {$field['type']}";
+                if (!empty($field['description'])) {
+                    $instructions[] = "      Description: {$field['description']}";
+                }
+                if (!empty($field['word_count']) && $field['word_count'] > 0) {
+                    $instructions[] = "      Target Word Count: approximately {$field['word_count']} words";
+                }
+                $instructions[] = "";
+                $sub_num++;
+            } else {
+                $instructions[] = "{$field_num}. Field: {$field['label']} ({$field['key']})";
+                $instructions[] = "   Field Type: {$field['type']}";
+                if (!empty($field['description'])) {
+                    $instructions[] = "   Description: {$field['description']}";
+                }
+                if (!empty($field['word_count']) && $field['word_count'] > 0) {
+                    $instructions[] = "   Target Word Count: approximately {$field['word_count']} words";
+                }
+                $instructions[] = "";
+                $field_num++;
+            }
+        }
+
         return implode("\n", $instructions);
     }
-    
+
     /**
      * Build output format instructions
      */
     private function build_output_format_instructions($custom_fields) {
         $instructions = array();
-        $instructions[] = "OUTPUT FORMAT REQUIREMENTS:";
-        $instructions[] = "You MUST return the content as a valid JSON object with the following structure:";
+        $instructions[] = "# Output Format Requirements";
+        $instructions[] = "You **MUST** return the content as a valid JSON object with the following structure:";    
         $instructions[] = "";
         $instructions[] = "{";
         
-        foreach ($custom_fields as $index => $field) {
-            $comma = ($index < count($custom_fields) - 1) ? ',' : '';
-            $instructions[] = "  \"{$field['key']}\": \"content for this field\"{$comma}";
+        // Build ordered output structure, nesting group sub-fields as objects
+        $output_items = array();
+        $seen_groups  = array();
+        foreach ($custom_fields as $field) {
+            if (!empty($field['group_key'])) {
+                $gk = $field['group_key'];
+                if (!isset($seen_groups[$gk])) {
+                    $seen_groups[$gk]  = count($output_items);
+                    $output_items[]    = array('type' => 'group', 'key' => $gk, 'sub_keys' => array());
+                }
+                $output_items[$seen_groups[$gk]]['sub_keys'][] = $field['key'];
+            } else {
+                $output_items[] = array('type' => 'field', 'key' => $field['key']);
+            }
+        }
+        
+        $total = count($output_items);
+        foreach ($output_items as $i => $item) {
+            $comma = ($i < $total - 1) ? ',' : '';
+            if ($item['type'] === 'group') {
+                $instructions[] = "  \"{$item['key']}\": {";
+                $sub_total = count($item['sub_keys']);
+                foreach ($item['sub_keys'] as $j => $sub_key) {
+                    $sub_comma      = ($j < $sub_total - 1) ? ',' : '';
+                    $instructions[] = "    \"{$sub_key}\": \"content for this field\"{$sub_comma}";
+                }
+                $instructions[] = "  }{$comma}";
+            } else {
+                $instructions[] = "  \"{$item['key']}\": \"content for this field\"{$comma}";
+            }
         }
         
         $instructions[] = "}";
         $instructions[] = "";
-        $instructions[] = "CRITICAL JSON FORMATTING RULES:";
+        $instructions[] = "## Critical JSON Formatting Rules";
         $instructions[] = "- Return ONLY valid JSON, no additional text before or after";
         $instructions[] = "- Use double quotes for all keys and string values";
         $instructions[] = "- Properly escape special characters (quotes, newlines, etc.)";
@@ -366,10 +719,6 @@ class SparkPlus_Prompt_Builder {
             $allowed_tags[] = '<li>';
         }
         
-        if (!empty($wysiwyg_formatting['links'])) {
-            $allowed_tags[] = '<a>';
-        }
-        
         return implode(', ', $allowed_tags);
     }
     
@@ -378,7 +727,7 @@ class SparkPlus_Prompt_Builder {
      */
     private function build_final_instructions($settings) {
         $instructions = array();
-        $instructions[] = "QUALITY REQUIREMENTS:";
+        $instructions[] = "# Quality Requirements";
         $instructions[] = "- Write in a professional, engaging tone";
         $instructions[] = "- Ensure content is SEO-optimized with natural keyword usage";
         $instructions[] = "- Use clear, concise language appropriate for the target audience";
@@ -418,7 +767,7 @@ class SparkPlus_Prompt_Builder {
      * @param array $post_settings Post-specific settings
      * @return string The complete text prompt (empty string if no text fields)
      */
-    public function build_text_prompt($cpt_settings, $post_settings) {
+    public function build_text_prompt($cpt_settings, $post_settings, $post_id = 0) {
         $this->add_debug('build_text_prompt', 'Building text prompt');
         
         // Filter only text fields (exclude image fields)
@@ -432,7 +781,7 @@ class SparkPlus_Prompt_Builder {
         }
         
         // Build the complete prompt
-        $prompt = $this->build_prompt($cpt_settings, $post_settings, $text_fields);
+        $prompt = $this->build_prompt($cpt_settings, $post_settings, $text_fields, $post_id);
         
         // Log prompt details (including full prompt for debug tab)
         $this->add_debug('build_text_prompt', array(
@@ -468,33 +817,33 @@ class SparkPlus_Prompt_Builder {
         $keyword = isset($post_settings['keyword']) ? $post_settings['keyword'] : '';
         
         // 1. Image field purpose (most important)
-        $prompt_parts[] = "IMAGE FIELD: {$field['label']}";
-        $prompt_parts[] = "FIELD KEY: {$field['key']}";
+        $prompt_parts[] = "# Image Field: {$field['label']}";
+        $prompt_parts[] = "**Field key:** `{$field['key']}`";
         
         // 2. Primary topic/keyword
         if (!empty($keyword)) {
-            $prompt_parts[] = "PRIMARY TOPIC: {$keyword}";
+            $prompt_parts[] = "# Primary Topic\n{$keyword}";
         }
         
         // 3. Field-specific description or default instruction
         if (!empty($field['description'])) {
-            $prompt_parts[] = "SPECIFIC INSTRUCTIONS:\n{$field['description']}";
+            $prompt_parts[] = "# Specific Instructions\n{$field['description']}";
         } else {
-            $prompt_parts[] = "INSTRUCTIONS:\nCreate a professional, high-quality image that represents the field '{$field['label']}' in the context of: {$keyword}";
+            $prompt_parts[] = "# Instructions\nCreate a professional, high-quality image that represents the field '{$field['label']}' in the context of: {$keyword}";
         }
         
         // 4. Add context from company/industry if available
         if (!empty($cpt_settings['industry'])) {
-            $prompt_parts[] = "INDUSTRY CONTEXT: {$cpt_settings['industry']}";
+            $prompt_parts[] = "# Industry Context\n{$cpt_settings['industry']}";
         }
         
         // 5. Style requirements
-        $prompt_parts[] = "STYLE REQUIREMENTS:\n- Professional and modern\n- High-quality composition\n- Clear and well-lit\n- Suitable for commercial use\n- Match the tone and context of the post content";
+        $prompt_parts[] = "# Style Requirements\n- Professional and modern\n- High-quality composition\n- Clear and well-lit\n- Suitable for commercial use\n- Match the tone and context of the post content";
         
         // 6. Retrieve existing post content for context (at the end for reference)
         $post_content = $this->get_post_content($post_id);
         if (!empty($post_content)) {
-            $prompt_parts[] = "EXISTING POST CONTENT (REFERENCE ONLY):\nThe following content is provided as additional context and may help you better understand the topic and tone of the image to generate. You may reference this content if the instructions above mention specific fields or require context from the post. However, this is optional reference material - focus primarily on the instructions and requirements specified above.\n\n" . $post_content;
+            $prompt_parts[] = "# Existing Post Content (Reference Only)\nThe following content is provided as additional context and may help you better understand the topic and tone of the image to generate. You may reference this content if the instructions above mention specific fields or require context from the post. However, this is optional reference material - focus primarily on the instructions and requirements specified above.\n\n" . $post_content;
         }
         
         $full_prompt = implode("\n\n", $prompt_parts);
@@ -549,20 +898,30 @@ class SparkPlus_Prompt_Builder {
                     
                     if ($fields) {
                         foreach ($fields as $field) {
-                            // Only include text-based field types
                             $text_based_types = array('text', 'textarea', 'wysiwyg');
-                            if (!in_array($field['type'], $text_based_types)) {
-                                continue;
-                            }
                             
-                            // Get field value
-                            $field_value = get_field($field['name'], $post_id);
-                            
-                            // Add to content if not empty
-                            if (!empty($field_value)) {
-                                // Clean HTML tags (no length limit)
-                                $clean_value = is_string($field_value) ? wp_strip_all_tags($field_value) : $field_value;
-                                $acf_fields[] = "[{$field['label']}]\n{$clean_value}";
+                            if ($field['type'] === 'group' && !empty($field['sub_fields'])) {
+                                // Read group value (associative array)
+                                $group_value = get_field($field['name'], $post_id);
+                                if (is_array($group_value)) {
+                                    foreach ($field['sub_fields'] as $sub_field) {
+                                        if (!in_array($sub_field['type'], $text_based_types)) continue;
+                                        if (empty($group_value[$sub_field['name']])) continue;
+                                        $clean_value = is_string($group_value[$sub_field['name']])
+                                            ? wp_strip_all_tags($group_value[$sub_field['name']]) : '';
+                                        if (!empty($clean_value)) {
+                                            $acf_fields[] = "[{$field['label']} › {$sub_field['label']}]\n{$clean_value}";
+                                        }
+                                    }
+                                }
+                            } elseif (in_array($field['type'], $text_based_types)) {
+                                $field_value = get_field($field['name'], $post_id);
+                                if (!empty($field_value)) {
+                                    $clean_value = is_string($field_value) ? wp_strip_all_tags($field_value) : '';
+                                    if (!empty($clean_value)) {
+                                        $acf_fields[] = "[{$field['label']}]\n{$clean_value}";
+                                    }
+                                }
                             }
                         }
                     }
@@ -572,12 +931,12 @@ class SparkPlus_Prompt_Builder {
         
         // Build structured output
         if (!empty($wp_fields)) {
-            $content_parts[] = "--- WordPress Fields ---";
+            $content_parts[] = "## WordPress Fields";
             $content_parts[] = implode("\n\n", $wp_fields);
         }
         
         if (!empty($acf_fields)) {
-            $content_parts[] = "--- Custom Fields ---";
+            $content_parts[] = "## Custom Fields";
             $content_parts[] = implode("\n\n", $acf_fields);
         }
         

@@ -27,7 +27,6 @@ $wysiwyg_formatting = get_option('sparkplus_wysiwyg_formatting', array(
     'italic' => true,
     'headings' => false,
     'lists' => true,
-    'links' => false,
     'paragraphs' => true
 ));
 ?>
@@ -284,17 +283,6 @@ $wysiwyg_formatting = get_option('sparkplus_wysiwyg_formatting', array(
                                 />
                                 <?php esc_html_e('Lists', 'sparkplus'); ?>
                                 <code>&lt;ul&gt; &lt;ol&gt; &lt;li&gt;</code>
-                            </label>
-                            
-                            <label style="display: inline-block; margin-right: 20px; margin-bottom: 10px;">
-                                <input 
-                                    type="checkbox" 
-                                    name="sparkplus_wysiwyg_formatting[links]" 
-                                    value="1"
-                                    <?php checked(isset($wysiwyg_formatting['links']) ? $wysiwyg_formatting['links'] : true, true); ?>
-                                />
-                                <?php esc_html_e('Links', 'sparkplus'); ?>
-                                <code>&lt;a&gt;</code>
                             </label>
                             
                             <p class="description" style="margin-top: 10px;">

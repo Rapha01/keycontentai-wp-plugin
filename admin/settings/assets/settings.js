@@ -166,5 +166,44 @@ jQuery(document).ready(function($) {
             }
         });
     });
-    
+
+    // ─── Group master checkbox (CPT tab) ───
+    $(document).on('change', '.sparkplus-group-master-checkbox', function() {
+        var groupKey = $(this).data('group');
+        var checked  = $(this).prop('checked');
+        $('tr.sparkplus-sub-field-row[data-group="' + groupKey + '"]')
+            .find('.sparkplus-sub-field-checkbox')
+            .prop('checked', checked)
+            .prop('indeterminate', false);
+    });
+
+    $(document).on('change', '.sparkplus-sub-field-checkbox', function() {
+        var groupKey  = $(this).data('group');
+        var $subBoxes = $('tr.sparkplus-sub-field-row[data-group="' + groupKey + '"] .sparkplus-sub-field-checkbox');
+        var total     = $subBoxes.length;
+        var checked   = $subBoxes.filter(':checked').length;
+        var $master   = $('input.sparkplus-group-master-checkbox[data-group="' + groupKey + '"]');
+        if (checked === 0) {
+            $master.prop('checked', false).prop('indeterminate', false);
+        } else if (checked === total) {
+            $master.prop('checked', true).prop('indeterminate', false);
+        } else {
+            $master.prop('checked', false).prop('indeterminate', true);
+        }
+    });
+
+    // Initialise group checkbox states on page load
+    $('tr.sparkplus-group-header-row').each(function() {
+        var groupKey  = $(this).data('group');
+        var $subBoxes = $('tr.sparkplus-sub-field-row[data-group="' + groupKey + '"] .sparkplus-sub-field-checkbox');
+        var total     = $subBoxes.length;
+        var checked   = $subBoxes.filter(':checked').length;
+        var $master   = $(this).find('.sparkplus-group-master-checkbox');
+        if (total > 0) {
+            if (checked === total)   { $master.prop('checked', true).prop('indeterminate', false); }
+            else if (checked === 0) { $master.prop('checked', false).prop('indeterminate', false); }
+            else                    { $master.prop('checked', false).prop('indeterminate', true); }
+        }
+    });
+
 });

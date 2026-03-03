@@ -37,6 +37,9 @@ $current_field_configs = isset($cpt_configs[$selected_post_type]['fields']) ? $c
 // Get additional context for the selected post type
 $current_additional_context = isset($cpt_configs[$selected_post_type]['additional_context']) ? $cpt_configs[$selected_post_type]['additional_context'] : '';
 
+// Get include existing content setting (defaults to true)
+$include_existing_content = isset($cpt_configs[$selected_post_type]['include_existing_content']) ? $cpt_configs[$selected_post_type]['include_existing_content'] : true;
+
 // Get custom fields for the selected post type
 $custom_fields = array();
 if (!empty($selected_post_type)) {
@@ -69,19 +72,41 @@ if (!empty($selected_post_type)) {
         'source' => 'WP'
     );
     
-    // Get ACF fields
+    // Get ACF fields (with group support)
     if (function_exists('acf_get_field_groups')) {
         $field_groups = acf_get_field_groups(array('post_type' => $selected_post_type));
         foreach ($field_groups as $field_group) {
             $fields = acf_get_fields($field_group['key']);
             if ($fields) {
                 foreach ($fields as $field) {
-                    $custom_fields[] = array(
-                        'key' => $field['name'],
-                        'label' => $field['label'],
-                        'type' => $field['type'],
-                        'source' => 'ACF'
-                    );
+                    if ($field['type'] === 'group') {
+                        $sub_fields = array();
+                        if (!empty($field['sub_fields'])) {
+                            foreach ($field['sub_fields'] as $sub_field) {
+                                $sub_fields[] = array(
+                                    'key'       => $sub_field['name'],
+                                    'label'     => $sub_field['label'],
+                                    'type'      => $sub_field['type'],
+                                    'source'    => 'ACF',
+                                    'group_key' => $field['name'],
+                                );
+                            }
+                        }
+                        $custom_fields[] = array(
+                            'key'        => $field['name'],
+                            'label'      => $field['label'],
+                            'type'       => 'group',
+                            'source'     => 'ACF',
+                            'sub_fields' => $sub_fields,
+                        );
+                    } else {
+                        $custom_fields[] = array(
+                            'key'    => $field['name'],
+                            'label'  => $field['label'],
+                            'type'   => $field['type'],
+                            'source' => 'ACF',
+                        );
+                    }
                 }
             }
         }
@@ -149,17 +174,122 @@ if (!empty($selected_post_type)) {
                         <th style="width: 20%;"><?php esc_html_e('Field Name', 'sparkplus'); ?></th>
                         <th style="width: 10%;"><?php esc_html_e('Type', 'sparkplus'); ?></th>
                         <th style="width: 8%;"><?php esc_html_e('Source', 'sparkplus'); ?></th>
-                        <th style="width: 45%;"><?php esc_html_e('Description / Prompt', 'sparkplus'); ?></th>
-                        <th style="width: 9%;"><?php esc_html_e('WordCount/Dimensions', 'sparkplus'); ?></th>
+                        <th style="width: 39%;"><?php esc_html_e('Description / Prompt', 'sparkplus'); ?></th>
+                        <th style="width: 15%;"><?php esc_html_e('Text/Image Options', 'sparkplus'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($custom_fields as $field) : ?>
-                        <?php 
+                        <?php if ($field['type'] === 'group') : ?>
+                            <?php
+                            $group_cfg         = isset($current_field_configs[$field['key']]) ? $current_field_configs[$field['key']] : array();
+                            $sub_count_total   = count($field['sub_fields']);
+                            $sub_count_enabled = 0;
+                            foreach ($field['sub_fields'] as $sf) {
+                                $sf_on = isset($group_cfg['sub_fields'][$sf['key']]['enabled']) ? $group_cfg['sub_fields'][$sf['key']]['enabled'] : true;
+                                if ($sf_on) { $sub_count_enabled++; }
+                            }
+                            ?>
+                            <input type="hidden" name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][type]" value="group" />
+                            <tr class="sparkplus-group-header-row" data-group="<?php echo esc_attr($field['key']); ?>">
+                                <td data-label="<?php esc_attr_e('Generate', 'sparkplus'); ?>" style="text-align: center; vertical-align: middle;">
+                                    <input
+                                        type="checkbox"
+                                        class="sparkplus-group-master-checkbox"
+                                        data-group="<?php echo esc_attr($field['key']); ?>"
+                                        title="<?php esc_attr_e('Toggle all fields in this group', 'sparkplus'); ?>"
+                                        <?php if ($sub_count_total > 0 && $sub_count_enabled === $sub_count_total) { echo 'checked'; } ?>
+                                    />
+                                </td>
+                                <td colspan="5" style="background: #f6f7f7; padding: 8px 12px; border-left: 3px solid #2271b1;">
+                                    <strong><?php echo esc_html($field['label']); ?></strong>
+                                    <code style="margin-left: 6px; font-size: 11px; color: #666;"><?php echo esc_html($field['key']); ?></code>
+                                    <span style="margin-left: 8px; font-size: 11px; color: #777; background: #e0e0e0; padding: 1px 5px; border-radius: 3px;">Group &bull; ACF</span>
+                                </td>
+                            </tr>
+                            <?php foreach ($field['sub_fields'] as $sub_field) : ?>
+                                <?php
+                                $sub_is_image = in_array($sub_field['type'], array('image', 'file', 'gallery'));
+                                $sub_cfg      = isset($group_cfg['sub_fields'][$sub_field['key']]) ? $group_cfg['sub_fields'][$sub_field['key']] : array();
+                                $sub_size     = isset($sub_cfg['size']) ? $sub_cfg['size'] : 'auto';
+                                $sub_quality  = isset($sub_cfg['quality']) ? $sub_cfg['quality'] : 'auto';
+                                $sub_webp     = isset($sub_cfg['webp_quality']) ? $sub_cfg['webp_quality'] : 80;
+                                ?>
+                                <tr class="sparkplus-sub-field-row" data-group="<?php echo esc_attr($field['key']); ?>">
+                                    <td data-label="<?php esc_attr_e('Generate', 'sparkplus'); ?>" style="text-align: center; vertical-align: middle;">
+                                        <input
+                                            type="checkbox"
+                                            name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][enabled]"
+                                            value="1"
+                                            class="sparkplus-field-enable-checkbox sparkplus-sub-field-checkbox"
+                                            data-group="<?php echo esc_attr($field['key']); ?>"
+                                            <?php
+                                            if (isset($sub_cfg['enabled'])) {
+                                                checked($sub_cfg['enabled'], true);
+                                            } else {
+                                                checked(true, true);
+                                            }
+                                            ?>
+                                        />
+                                    </td>
+                                    <td data-label="<?php esc_attr_e('Field Name', 'sparkplus'); ?>" style="padding-left: 24px;">
+                                        <span style="color: #666; margin-right: 5px; font-family: monospace; font-size: 14px; vertical-align: middle;">&#x2514;&#x2500;</span>
+                                        <strong><?php echo esc_html($sub_field['label']); ?></strong>
+                                        <br>
+                                        <code style="font-size: 11px; color: #666; margin-left: 22px;"><?php echo esc_html($sub_field['key']); ?></code>
+                                    </td>
+                                    <td data-label="<?php esc_attr_e('Type', 'sparkplus'); ?>">
+                                        <span class="sparkplus-field-type"><?php echo esc_html($sub_field['type']); ?></span>
+                                    </td>
+                                    <td data-label="<?php esc_attr_e('Source', 'sparkplus'); ?>">
+                                        <span class="sparkplus-field-source sparkplus-source-acf"><?php echo esc_html($sub_field['source']); ?></span>
+                                    </td>
+                                    <td data-label="<?php esc_attr_e('Description / Prompt', 'sparkplus'); ?>">
+                                        <textarea
+                                            name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][description]"
+                                            rows="3"
+                                            class="large-text"
+                                            placeholder="<?php esc_attr_e('E.g., A brief summary of the content, maximum 150 characters', 'sparkplus'); ?>"
+                                        ><?php echo isset($sub_cfg['description']) ? esc_textarea($sub_cfg['description']) : ''; ?></textarea>
+                                    </td>
+                                    <td data-label="<?php esc_attr_e('Text/Image Options', 'sparkplus'); ?>">
+                                        <?php if ($sub_is_image) : ?>
+                                            <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('Dimensions', 'sparkplus'); ?></label>
+                                            <select name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][size]" style="width: 100%;">
+                                                <option value="auto" <?php selected($sub_size, 'auto'); ?>><?php esc_html_e('Auto (Recommended)', 'sparkplus'); ?></option>
+                                                <option value="1024x1024" <?php selected($sub_size, '1024x1024'); ?>>1024 x 1024 (Square)</option>
+                                                <option value="1024x1536" <?php selected($sub_size, '1024x1536'); ?>>1024 x 1536 (Portrait)</option>
+                                                <option value="1536x1024" <?php selected($sub_size, '1536x1024'); ?>>1536 x 1024 (Landscape)</option>
+                                            </select>
+                                            <div style="margin-top: 8px; display: flex; gap: 8px;">
+                                                <div style="flex: 1;">
+                                                    <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('AI Quality', 'sparkplus'); ?></label>
+                                                    <select name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][quality]" style="width: 100%;">
+                                                        <option value="auto" <?php selected($sub_quality, 'auto'); ?>><?php esc_html_e('Auto', 'sparkplus'); ?></option>
+                                                        <option value="low" <?php selected($sub_quality, 'low'); ?>><?php esc_html_e('Low', 'sparkplus'); ?></option>
+                                                        <option value="medium" <?php selected($sub_quality, 'medium'); ?>><?php esc_html_e('Medium', 'sparkplus'); ?></option>
+                                                        <option value="high" <?php selected($sub_quality, 'high'); ?>><?php esc_html_e('High', 'sparkplus'); ?></option>
+                                                    </select>
+                                                </div>
+                                                <div style="flex: 1;">
+                                                    <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('WebP %', 'sparkplus'); ?></label>
+                                                    <input type="number" name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][webp_quality]" value="<?php echo esc_attr($sub_webp); ?>" class="small-text" min="1" max="100" step="1" style="width: 100%;" placeholder="80" />
+                                                </div>
+                                            </div>
+                                        <?php else : ?>
+                                            <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('Word Count', 'sparkplus'); ?></label>
+                                            <input type="number" name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][word_count]" value="<?php echo isset($sub_cfg['word_count']) ? esc_attr($sub_cfg['word_count']) : ''; ?>" class="small-text" min="0" step="1" placeholder="<?php esc_attr_e('Words', 'sparkplus'); ?>" />
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else : ?>
+                        <?php
                         // Determine if this is an image field
                         $is_image_field = in_array($field['type'], array('image', 'file', 'gallery'));
                         $current_size = isset($current_field_configs[$field['key']]['size']) ? $current_field_configs[$field['key']]['size'] : 'auto';
                         $current_quality = isset($current_field_configs[$field['key']]['quality']) ? $current_field_configs[$field['key']]['quality'] : 'auto';
+                        $current_webp_quality = isset($current_field_configs[$field['key']]['webp_quality']) ? $current_field_configs[$field['key']]['webp_quality'] : 80;
                         ?>
                         <tr>
                             <td data-label="<?php esc_attr_e('Generate', 'sparkplus'); ?>" style="text-align: center; vertical-align: middle;">
@@ -214,6 +344,7 @@ if (!empty($selected_post_type)) {
                             <td data-label="<?php esc_attr_e('WordCount/Dimensions', 'sparkplus'); ?>">
                                 <?php if ($is_image_field) : ?>
                                     <!-- Image Size Dropdown -->
+                                    <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('Dimensions', 'sparkplus'); ?></label>
                                     <select 
                                         name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][size]"
                                         style="width: 100%;"
@@ -224,22 +355,43 @@ if (!empty($selected_post_type)) {
                                         <option value="1536x1024" <?php selected($current_size, '1536x1024'); ?>>1536 x 1024 (Landscape)</option>
                                     </select>
                                     
-                                    <!-- Image Quality Dropdown -->
-                                    <div style="margin-top: 8px;">
-                                        <select 
-                                            name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][quality]"
-                                            class="sparkplus-quality-select"
-                                            data-field-key="<?php echo esc_attr($field['key']); ?>"
-                                            style="width: 100%;"
-                                        >
-                                            <option value="auto" <?php selected($current_quality, 'auto'); ?>><?php esc_html_e('Auto (Recommended)', 'sparkplus'); ?></option>
-                                            <option value="low" <?php selected($current_quality, 'low'); ?>><?php esc_html_e('Low', 'sparkplus'); ?></option>
-                                            <option value="medium" <?php selected($current_quality, 'medium'); ?>><?php esc_html_e('Medium', 'sparkplus'); ?></option>
-                                            <option value="high" <?php selected($current_quality, 'high'); ?>><?php esc_html_e('High', 'sparkplus'); ?></option>
-                                        </select>
+                                    <!-- AI Quality and WebP Quality Row -->
+                                    <div style="margin-top: 8px; display: flex; gap: 8px;">
+                                        <!-- AI Quality Dropdown -->
+                                        <div style="flex: 1;">
+                                            <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('AI Quality', 'sparkplus'); ?></label>
+                                            <select 
+                                                name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][quality]"
+                                                class="sparkplus-quality-select"
+                                                data-field-key="<?php echo esc_attr($field['key']); ?>"
+                                                style="width: 100%;"
+                                            >
+                                                <option value="auto" <?php selected($current_quality, 'auto'); ?>><?php esc_html_e('Auto', 'sparkplus'); ?></option>
+                                                <option value="low" <?php selected($current_quality, 'low'); ?>><?php esc_html_e('Low', 'sparkplus'); ?></option>
+                                                <option value="medium" <?php selected($current_quality, 'medium'); ?>><?php esc_html_e('Medium', 'sparkplus'); ?></option>
+                                                <option value="high" <?php selected($current_quality, 'high'); ?>><?php esc_html_e('High', 'sparkplus'); ?></option>
+                                            </select>
+                                        </div>
+                                        
+                                        <!-- WebP Quality Input -->
+                                        <div style="flex: 1;">
+                                            <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('WebP %', 'sparkplus'); ?></label>
+                                            <input 
+                                                type="number" 
+                                                name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][webp_quality]"
+                                                value="<?php echo esc_attr($current_webp_quality); ?>"
+                                                class="small-text"
+                                                min="1"
+                                                max="100"
+                                                step="1"
+                                                style="width: 100%;"
+                                                placeholder="80"
+                                            />
+                                        </div>
                                     </div>
                                 <?php else : ?>
                                     <!-- Word Count Input for Text Fields -->
+                                    <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('Word Count', 'sparkplus'); ?></label>
                                     <input 
                                         type="number" 
                                         name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][word_count]"
@@ -252,6 +404,7 @@ if (!empty($selected_post_type)) {
                                 <?php endif; ?>
                             </td>
                         </tr>
+                        <?php endif; ?>
                     <?php endforeach; ?>
                 </tbody>
             </table>
@@ -268,6 +421,28 @@ if (!empty($selected_post_type)) {
         
         <table class="form-table" role="presentation">
             <tbody>
+                <tr>
+                    <th scope="row">
+                        <label for="sparkplus_cpt_include_existing_content_<?php echo esc_attr($selected_post_type); ?>">
+                            <?php esc_html_e('Include Existing Content', 'sparkplus'); ?>
+                        </label>
+                    </th>
+                    <td>
+                        <label>
+                            <input 
+                                type="checkbox" 
+                                id="sparkplus_cpt_include_existing_content_<?php echo esc_attr($selected_post_type); ?>"
+                                name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][include_existing_content]"
+                                value="1"
+                                <?php checked($include_existing_content, true); ?>
+                            />
+                            <?php esc_html_e('Add existing post content to the AI prompt when regenerating fields', 'sparkplus'); ?>
+                        </label>
+                        <p class="description">
+                            <?php esc_html_e('When enabled, existing content from the post will be included in the prompt. This helps the AI avoid duplicate content and links, maintain consistency, and reference information from other fields.', 'sparkplus'); ?>
+                        </p>
+                    </td>
+                </tr>
                 <tr>
                     <th scope="row">
                         <label for="sparkplus_cpt_additional_context_<?php echo esc_attr($selected_post_type); ?>">
