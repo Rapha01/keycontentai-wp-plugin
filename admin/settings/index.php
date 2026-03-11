@@ -19,19 +19,19 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])
     <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
     
     <h2 class="nav-tab-wrapper sparkplus-nav-tab-wrapper">
-        <a href="?page=sparkplus-settings&tab=cpt" class="nav-tab <?php echo $active_tab === 'cpt' ? 'nav-tab-active' : ''; ?>">
+        <a href="?page=sparkplus-settings&tab=cpt" class="nav-tab <?php echo esc_attr( $active_tab === 'cpt' ? 'nav-tab-active' : '' ); ?>">
             <?php esc_html_e('CPT', 'sparkplus'); ?>
         </a>
-        <a href="?page=sparkplus-settings&tab=general-context" class="nav-tab <?php echo $active_tab === 'general-context' ? 'nav-tab-active' : ''; ?>">
+        <a href="?page=sparkplus-settings&tab=general-context" class="nav-tab <?php echo esc_attr( $active_tab === 'general-context' ? 'nav-tab-active' : '' ); ?>">
             <?php esc_html_e('General Context', 'sparkplus'); ?>
         </a>
-        <a href="?page=sparkplus-settings&tab=internal-linking" class="nav-tab <?php echo $active_tab === 'internal-linking' ? 'nav-tab-active' : ''; ?>">
+        <a href="?page=sparkplus-settings&tab=internal-linking" class="nav-tab <?php echo esc_attr( $active_tab === 'internal-linking' ? 'nav-tab-active' : '' ); ?>">
             <?php esc_html_e('Internal Linking', 'sparkplus'); ?>
         </a>
-        <a href="?page=sparkplus-settings&tab=api-settings" class="nav-tab <?php echo $active_tab === 'api-settings' ? 'nav-tab-active' : ''; ?>">
+        <a href="?page=sparkplus-settings&tab=api-settings" class="nav-tab <?php echo esc_attr( $active_tab === 'api-settings' ? 'nav-tab-active' : '' ); ?>">
             <?php esc_html_e('API', 'sparkplus'); ?>
         </a>
-        <a href="?page=sparkplus-settings&tab=reset" class="nav-tab <?php echo $active_tab === 'reset' ? 'nav-tab-active' : ''; ?>">
+        <a href="?page=sparkplus-settings&tab=reset" class="nav-tab <?php echo esc_attr( $active_tab === 'reset' ? 'nav-tab-active' : '' ); ?>">
             <?php esc_html_e('Reset', 'sparkplus'); ?>
         </a>
     </h2>

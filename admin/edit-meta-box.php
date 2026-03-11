@@ -93,21 +93,6 @@ function sparkplus_render_meta_box($post) {
             </p>
         <?php endif; ?>
     </div>
-    <style>
-        .sparkplus-meta-box p {
-            margin-bottom: 15px;
-        }
-        .sparkplus-meta-box label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        .sparkplus-meta-box .description {
-            display: block;
-            margin-top: 5px;
-            font-size: 12px;
-            color: #666;
-        }
-    </style>
     <?php
 }
 

@@ -45,6 +45,7 @@ class SparkPlus_Sanitizer {
                 $sanitized[$post_type_clean] = array(
                     'additional_context' => '',
                     'include_existing_content' => true,
+                    'include_acf_instructions' => false,
                     'fields' => array()
                 );
             }
@@ -55,6 +56,13 @@ class SparkPlus_Sanitizer {
             } else {
                 // If checkbox is not present in POST data, it means it's unchecked
                 $sanitized[$post_type_clean]['include_existing_content'] = false;
+            }
+
+            // Handle include_acf_instructions (defaults to false)
+            if (isset($data['include_acf_instructions'])) {
+                $sanitized[$post_type_clean]['include_acf_instructions'] = (bool) $data['include_acf_instructions'];
+            } else {
+                $sanitized[$post_type_clean]['include_acf_instructions'] = false;
             }
             
             // Handle additional_context

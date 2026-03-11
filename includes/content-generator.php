@@ -113,6 +113,7 @@ class SparkPlus_Content_Generator {
         // Get CPT-specific additional context and settings from consolidated configs
         $cpt_additional_context = '';
         $include_existing_content = true; // Default to true
+        $include_acf_instructions = false; // Default to false
         global $sparkplus;
         if ($sparkplus && method_exists($sparkplus, 'get_cpt_configs')) {
             $cpt_configs = $sparkplus->get_cpt_configs();
@@ -121,6 +122,9 @@ class SparkPlus_Content_Generator {
             }
             if (isset($cpt_configs[$post_type]['include_existing_content'])) {
                 $include_existing_content = (bool) $cpt_configs[$post_type]['include_existing_content'];
+            }
+            if (isset($cpt_configs[$post_type]['include_acf_instructions'])) {
+                $include_acf_instructions = (bool) $cpt_configs[$post_type]['include_acf_instructions'];
             }
         }
         
@@ -153,7 +157,10 @@ class SparkPlus_Content_Generator {
             'cpt_additional_context' => $cpt_additional_context,
             
             // Include existing content setting
-            'include_existing_content' => $include_existing_content
+            'include_existing_content' => $include_existing_content,
+
+            // Include ACF instruction fields in prompt
+            'include_acf_instructions' => $include_acf_instructions
         );
         
         $this->add_debug('get_cpt_settings', array(
@@ -241,12 +248,13 @@ class SparkPlus_Content_Generator {
                                 if (!empty($field['sub_fields'])) {
                                     foreach ($field['sub_fields'] as $sub_field) {
                                         $sub_fields[$sub_field['name']] = array(
-                                            'key'         => $sub_field['name'],
-                                            'label'       => $sub_field['label'],
-                                            'type'        => $sub_field['type'],
-                                            'source'      => 'acf',
-                                            'group_key'   => $field['name'],
-                                            'group_label' => $field['label'],
+                                            'key'             => $sub_field['name'],
+                                            'label'           => $sub_field['label'],
+                                            'type'            => $sub_field['type'],
+                                            'source'          => 'acf',
+                                            'group_key'       => $field['name'],
+                                            'group_label'     => $field['label'],
+                                            'acf_instructions' => isset($sub_field['instructions']) ? $sub_field['instructions'] : '',
                                         );
                                     }
                                 }
@@ -259,10 +267,11 @@ class SparkPlus_Content_Generator {
                                 );
                             } else {
                                 $all_fields[$field['name']] = array(
-                                    'key'    => $field['name'],
-                                    'label'  => $field['label'],
-                                    'type'   => $field['type'],
-                                    'source' => 'acf',
+                                    'key'             => $field['name'],
+                                    'label'           => $field['label'],
+                                    'type'            => $field['type'],
+                                    'source'          => 'acf',
+                                    'acf_instructions' => isset($field['instructions']) ? $field['instructions'] : '',
                                 );
                             }
                         }

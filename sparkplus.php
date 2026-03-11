@@ -305,12 +305,24 @@ class SparkPlus {
      * Enqueue admin assets
      */
     public function enqueue_admin_assets($hook) {
-        // Only load on our plugin pages
-        if ($hook !== 'toplevel_page_sparkplus-load-keywords' 
+        // Only load on our plugin pages or post edit screens
+        if ($hook !== 'toplevel_page_sparkplus-load-keywords'
             && $hook !== 'sparkplus_page_sparkplus-generation'
             && $hook !== 'sparkplus_page_sparkplus-load-keywords'
-            && $hook !== 'sparkplus_page_sparkplus-settings') {
+            && $hook !== 'sparkplus_page_sparkplus-settings'
+            && $hook !== 'post.php'
+            && $hook !== 'post-new.php') {
             return;
+        }
+
+        // Meta box assets (post edit screens)
+        if ($hook === 'post.php' || $hook === 'post-new.php') {
+            wp_enqueue_style(
+                'sparkplus-meta-box',
+                SPARKPLUS_PLUGIN_URL . 'admin/assets/edit-meta-box.css',
+                array(),
+                SPARKPLUS_VERSION
+            );
         }
         
         // Settings page assets
@@ -353,6 +365,22 @@ class SparkPlus {
                 'saved'   => __('Saved!', 'sparkplus'),
                 'error'   => __('Error saving settings', 'sparkplus'),
             ));
+
+            // Pass linking pool data to internal-linking.js via inline script
+            $sp_linking_enable  = (bool) get_option('sparkplus_linking_enable', false);
+            $sp_linking_wysiwyg = (bool) get_option('sparkplus_linking_wysiwyg', false);
+            $sp_linking_pool    = array('post_types' => array(), 'single_items' => array(), 'custom_links' => array());
+            $sp_linking_json    = get_option('sparkplus_linking_pool', '');
+            if (!empty($sp_linking_json)) {
+                $sp_saved = json_decode($sp_linking_json, true);
+                if (is_array($sp_saved)) {
+                    $sp_linking_pool = array_merge($sp_linking_pool, $sp_saved);
+                }
+            }
+            $sp_inline  = 'var sparkplusInitialLinkingPool = ' . wp_json_encode($sp_linking_pool) . ';';
+            $sp_inline .= 'var sparkplusLinkingEnable = ' . ($sp_linking_enable ? 'true' : 'false') . ';';
+            $sp_inline .= 'var sparkplusLinkingWysiwyg = ' . ($sp_linking_wysiwyg ? 'true' : 'false') . ';';
+            wp_add_inline_script('sparkplus-internal-linking', $sp_inline, 'before');
         }
         
         // Generation page assets
@@ -375,7 +403,7 @@ class SparkPlus {
                 'marked',
                 SPARKPLUS_PLUGIN_URL . 'assets/js/marked.min.js',
                 array(),
-                null,
+                '15.0.12',
                 true
             );
 

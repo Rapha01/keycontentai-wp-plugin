@@ -40,6 +40,9 @@ $current_additional_context = isset($cpt_configs[$selected_post_type]['additiona
 // Get include existing content setting (defaults to true)
 $include_existing_content = isset($cpt_configs[$selected_post_type]['include_existing_content']) ? $cpt_configs[$selected_post_type]['include_existing_content'] : true;
 
+// Get include ACF instruction fields setting (defaults to false)
+$include_acf_instructions = isset($cpt_configs[$selected_post_type]['include_acf_instructions']) ? $cpt_configs[$selected_post_type]['include_acf_instructions'] : false;
+
 // Get custom fields for the selected post type
 $custom_fields = array();
 if (!empty($selected_post_type)) {
@@ -84,27 +87,30 @@ if (!empty($selected_post_type)) {
                         if (!empty($field['sub_fields'])) {
                             foreach ($field['sub_fields'] as $sub_field) {
                                 $sub_fields[] = array(
-                                    'key'       => $sub_field['name'],
-                                    'label'     => $sub_field['label'],
-                                    'type'      => $sub_field['type'],
-                                    'source'    => 'ACF',
-                                    'group_key' => $field['name'],
+                                    'key'          => $sub_field['name'],
+                                    'label'        => $sub_field['label'],
+                                    'type'         => $sub_field['type'],
+                                    'source'       => 'ACF',
+                                    'group_key'    => $field['name'],
+                                    'instructions' => isset($sub_field['instructions']) ? $sub_field['instructions'] : '',
                                 );
                             }
                         }
                         $custom_fields[] = array(
-                            'key'        => $field['name'],
-                            'label'      => $field['label'],
-                            'type'       => 'group',
-                            'source'     => 'ACF',
-                            'sub_fields' => $sub_fields,
+                            'key'          => $field['name'],
+                            'label'        => $field['label'],
+                            'type'         => 'group',
+                            'source'       => 'ACF',
+                            'sub_fields'   => $sub_fields,
+                            'instructions' => isset($field['instructions']) ? $field['instructions'] : '',
                         );
                     } else {
                         $custom_fields[] = array(
-                            'key'    => $field['name'],
-                            'label'  => $field['label'],
-                            'type'   => $field['type'],
-                            'source' => 'ACF',
+                            'key'          => $field['name'],
+                            'label'        => $field['label'],
+                            'type'         => $field['type'],
+                            'source'       => 'ACF',
+                            'instructions' => isset($field['instructions']) ? $field['instructions'] : '',
                         );
                     }
                 }
@@ -172,8 +178,7 @@ if (!empty($selected_post_type)) {
                     <tr>
                         <th style="width: 8%; text-align: center;"><?php esc_html_e('Generate', 'sparkplus'); ?></th>
                         <th style="width: 20%;"><?php esc_html_e('Field Name', 'sparkplus'); ?></th>
-                        <th style="width: 10%;"><?php esc_html_e('Type', 'sparkplus'); ?></th>
-                        <th style="width: 8%;"><?php esc_html_e('Source', 'sparkplus'); ?></th>
+                        <th style="width: 13%;"><?php esc_html_e('Type / Source', 'sparkplus'); ?></th>
                         <th style="width: 39%;"><?php esc_html_e('Description / Prompt', 'sparkplus'); ?></th>
                         <th style="width: 15%;"><?php esc_html_e('Text/Image Options', 'sparkplus'); ?></th>
                     </tr>
@@ -201,7 +206,7 @@ if (!empty($selected_post_type)) {
                                         <?php if ($sub_count_total > 0 && $sub_count_enabled === $sub_count_total) { echo 'checked'; } ?>
                                     />
                                 </td>
-                                <td colspan="5" style="background: #f6f7f7; padding: 8px 12px; border-left: 3px solid #2271b1;">
+                                <td colspan="4" style="background: #f6f7f7; padding: 8px 12px; border-left: 3px solid #2271b1;">
                                     <strong><?php echo esc_html($field['label']); ?></strong>
                                     <code style="margin-left: 6px; font-size: 11px; color: #666;"><?php echo esc_html($field['key']); ?></code>
                                     <span style="margin-left: 8px; font-size: 11px; color: #777; background: #e0e0e0; padding: 1px 5px; border-radius: 3px;">Group &bull; ACF</span>
@@ -238,16 +243,20 @@ if (!empty($selected_post_type)) {
                                         <br>
                                         <code style="font-size: 11px; color: #666; margin-left: 22px;"><?php echo esc_html($sub_field['key']); ?></code>
                                     </td>
-                                    <td data-label="<?php esc_attr_e('Type', 'sparkplus'); ?>">
-                                        <span class="sparkplus-field-type"><?php echo esc_html($sub_field['type']); ?></span>
-                                    </td>
-                                    <td data-label="<?php esc_attr_e('Source', 'sparkplus'); ?>">
+                                    <td data-label="<?php esc_attr_e('Type / Source', 'sparkplus'); ?>">
                                         <span class="sparkplus-field-source sparkplus-source-acf"><?php echo esc_html($sub_field['source']); ?></span>
+                                        <span class="sparkplus-field-type" style="margin-left: 4px;"><?php echo esc_html($sub_field['type']); ?></span>
                                     </td>
                                     <td data-label="<?php esc_attr_e('Description / Prompt', 'sparkplus'); ?>">
+                                        <?php if ($include_acf_instructions && !empty($sub_field['instructions'])) : ?>
+                                            <p class="description" style="margin: 0 0 6px; padding: 5px 8px; background: #f0f4ff; border-left: 3px solid #7b9cde; border-radius: 2px; font-size: 12px; color: #444;">
+                                                <strong style="color: #3a5ea8;"><?php esc_html_e('ACF Instructions:', 'sparkplus'); ?></strong>
+                                                <?php echo esc_html($sub_field['instructions']); ?>
+                                            </p>
+                                        <?php endif; ?>
                                         <textarea
                                             name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][description]"
-                                            rows="3"
+                                            rows="2"
                                             class="large-text"
                                             placeholder="<?php esc_attr_e('E.g., A brief summary of the content, maximum 150 characters', 'sparkplus'); ?>"
                                         ><?php echo isset($sub_cfg['description']) ? esc_textarea($sub_cfg['description']) : ''; ?></textarea>
@@ -323,20 +332,20 @@ if (!empty($selected_post_type)) {
                                 <br>
                                 <code style="font-size: 11px; color: #666;"><?php echo esc_html($field['key']); ?></code>
                             </td>
-                            <td data-label="<?php esc_attr_e('Type', 'sparkplus'); ?>">
-                                <span class="sparkplus-field-type">
-                                    <?php echo esc_html($field['type']); ?>
-                                </span>
-                            </td>
-                            <td data-label="<?php esc_attr_e('Source', 'sparkplus'); ?>">
-                                <span class="sparkplus-field-source sparkplus-source-<?php echo esc_attr(strtolower($field['source'])); ?>">
-                                    <?php echo esc_html($field['source']); ?>
-                                </span>
+                            <td data-label="<?php esc_attr_e('Type / Source', 'sparkplus'); ?>">
+                                <span class="sparkplus-field-source sparkplus-source-<?php echo esc_attr(strtolower($field['source'])); ?>"><?php echo esc_html($field['source']); ?></span>
+                                <span class="sparkplus-field-type" style="margin-left: 4px;"><?php echo esc_html($field['type']); ?></span>
                             </td>
                             <td data-label="<?php esc_attr_e('Description / Prompt', 'sparkplus'); ?>">
+                                <?php if ($include_acf_instructions && !empty($field['instructions'])) : ?>
+                                    <p class="description" style="margin: 0 0 6px; padding: 5px 8px; background: #f0f4ff; border-left: 3px solid #7b9cde; border-radius: 2px; font-size: 12px; color: #444;">
+                                        <strong style="color: #3a5ea8;"><?php esc_html_e('ACF Instructions:', 'sparkplus'); ?></strong>
+                                        <?php echo esc_html($field['instructions']); ?>
+                                    </p>
+                                <?php endif; ?>
                                 <textarea 
                                     name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][description]"
-                                    rows="3"
+                                    rows="2"
                                     class="large-text"
                                     placeholder="<?php esc_attr_e('E.g., A brief summary of the content, maximum 150 characters', 'sparkplus'); ?>"
                                 ><?php echo isset($current_field_configs[$field['key']]['description']) ? esc_textarea($current_field_configs[$field['key']]['description']) : ''; ?></textarea>
@@ -440,6 +449,28 @@ if (!empty($selected_post_type)) {
                         </label>
                         <p class="description">
                             <?php esc_html_e('When enabled, existing content from the post will be included in the prompt. This helps the AI avoid duplicate content and links, maintain consistency, and reference information from other fields.', 'sparkplus'); ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="sparkplus_cpt_include_acf_instructions_<?php echo esc_attr($selected_post_type); ?>">
+                            <?php esc_html_e('Include ACF Instruction Fields', 'sparkplus'); ?>
+                        </label>
+                    </th>
+                    <td>
+                        <label>
+                            <input 
+                                type="checkbox" 
+                                id="sparkplus_cpt_include_acf_instructions_<?php echo esc_attr($selected_post_type); ?>"
+                                name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][include_acf_instructions]"
+                                value="1"
+                                <?php checked($include_acf_instructions, true); ?>
+                            />
+                            <?php esc_html_e('Add ACF field instruction text to the AI prompt', 'sparkplus'); ?>
+                        </label>
+                        <p class="description">
+                            <?php esc_html_e('When enabled, the "Instructions" text you enter on each ACF field will be included in the AI prompt, giving the AI additional context about what to write for that field.', 'sparkplus'); ?>
                         </p>
                     </td>
                 </tr>

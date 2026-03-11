@@ -10,6 +10,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// IIFE pattern to avoid globally-scoped variables (WordPress coding standards requirement).
+(function() {
+
 // Get all public post types
 $post_types = get_post_types(array('public' => true), 'objects');
 $available_post_types = array();
@@ -225,8 +228,5 @@ if (!empty($linking_pool_json)) {
 
 </div>
 
-<script type="text/javascript">
-    var sparkplusInitialLinkingPool = <?php echo wp_json_encode($linking_pool); ?>;
-    var sparkplusLinkingEnable = <?php echo $linking_enable ? 'true' : 'false'; ?>;
-    var sparkplusLinkingWysiwyg = <?php echo $linking_wysiwyg ? 'true' : 'false'; ?>;
-</script>
+<?php
+})(); // End IIFE

@@ -75,7 +75,7 @@ class SparkPlus_Prompt_Builder {
         $prompt_parts[] = $this->build_wysiwyg_formatting_rules($custom_fields);
         
         // 11. Custom Fields Instructions
-        $prompt_parts[] = $this->build_custom_fields_instructions($custom_fields);
+        $prompt_parts[] = $this->build_custom_fields_instructions($custom_fields, !empty($cpt_settings['include_acf_instructions']));
         
         // 12. Output Format Instructions
         $prompt_parts[] = $this->build_output_format_instructions($custom_fields);
@@ -319,9 +319,14 @@ class SparkPlus_Prompt_Builder {
                 }
             }
             
-            // If content exists, add it to context (keep HTML tags and full content)
+            // If content exists, add it to context
             if (!empty($content)) {
-                $existing_content[] = "- {$field_label}: {$content}";
+                // Strip HTML tags and collapse newlines so the value stays on a single
+                // line within the Markdown list item (a blank line would break the list).
+                $content_clean = wp_strip_all_tags($content);
+                $content_clean = preg_replace('/\s*\n\s*/u', ' ', $content_clean);
+                $content_clean = preg_replace('/ {2,}/u', ' ', trim($content_clean));
+                $existing_content[] = "- {$field_label}: {$content_clean}";
             }
         }
         
@@ -579,12 +584,40 @@ class SparkPlus_Prompt_Builder {
     /**
      * Build custom fields instructions
      */
-    private function build_custom_fields_instructions($custom_fields) {
+    private function build_custom_fields_instructions($custom_fields, $include_acf_instructions = false) {
         $instructions = array();
         $instructions[] = "# Content Fields to Generate";
-        $instructions[] = "You must generate content for the following custom fields:";    
+        $instructions[] = "You must generate content for the following custom fields:";
         $instructions[] = "";
-        
+
+        // Build field type guide showing only types that are actually present.
+        $present_types = array();
+        foreach ( $custom_fields as $field ) {
+            $present_types[ $field['type'] ] = true;
+        }
+
+        $type_guide = array(
+            'text'       => '**text** — Short plain text. Output a plain text string; no HTML or markdown.',
+            'textarea'   => '**textarea** — Multi-line plain text. Use \\n for line breaks; no HTML.',
+            'wysiwyg'    => '**wysiwyg** — Rich text editor. HTML formatting is allowed (see WYSIWYG Field Formatting rules above).',
+            'true_false' => '**true_false** — Boolean. You MUST output the integer `1` (true/yes) or `0` (false/no). No other value is accepted.',
+        );
+
+        $guide_lines = array();
+        foreach ( $type_guide as $type => $desc ) {
+            if ( isset( $present_types[ $type ] ) ) {
+                $guide_lines[] = "- {$desc}";
+            }
+        }
+
+        if ( ! empty( $guide_lines ) ) {
+            $instructions[] = "## Field Type Guide";
+            foreach ( $guide_lines as $line ) {
+                $instructions[] = $line;
+            }
+            $instructions[] = "";
+        }
+
         $field_num     = 1;
         $current_group = null;
         $sub_num       = 1;
@@ -606,6 +639,9 @@ class SparkPlus_Prompt_Builder {
             if ($this_group !== null) {
                 $instructions[] = "   {$sub_num}. Field: {$field['label']} ({$field['key']})";
                 $instructions[] = "      Field Type: {$field['type']}";
+                if ($include_acf_instructions && !empty($field['acf_instructions'])) {
+                    $instructions[] = "      ACF Instructions: {$field['acf_instructions']}";
+                }
                 if (!empty($field['description'])) {
                     $instructions[] = "      Description: {$field['description']}";
                 }
@@ -617,6 +653,9 @@ class SparkPlus_Prompt_Builder {
             } else {
                 $instructions[] = "{$field_num}. Field: {$field['label']} ({$field['key']})";
                 $instructions[] = "   Field Type: {$field['type']}";
+                if ($include_acf_instructions && !empty($field['acf_instructions'])) {
+                    $instructions[] = "   ACF Instructions: {$field['acf_instructions']}";
+                }
                 if (!empty($field['description'])) {
                     $instructions[] = "   Description: {$field['description']}";
                 }
@@ -651,9 +690,9 @@ class SparkPlus_Prompt_Builder {
                     $seen_groups[$gk]  = count($output_items);
                     $output_items[]    = array('type' => 'group', 'key' => $gk, 'sub_keys' => array());
                 }
-                $output_items[$seen_groups[$gk]]['sub_keys'][] = $field['key'];
+                $output_items[$seen_groups[$gk]]['sub_keys'][] = array( 'key' => $field['key'], 'field_type' => $field['type'] );
             } else {
-                $output_items[] = array('type' => 'field', 'key' => $field['key']);
+                $output_items[] = array( 'type' => 'field', 'key' => $field['key'], 'field_type' => $field['type'] );
             }
         }
         
@@ -663,13 +702,15 @@ class SparkPlus_Prompt_Builder {
             if ($item['type'] === 'group') {
                 $instructions[] = "  \"{$item['key']}\": {";
                 $sub_total = count($item['sub_keys']);
-                foreach ($item['sub_keys'] as $j => $sub_key) {
+                foreach ($item['sub_keys'] as $j => $sub_field) {
                     $sub_comma      = ($j < $sub_total - 1) ? ',' : '';
-                    $instructions[] = "    \"{$sub_key}\": \"content for this field\"{$sub_comma}";
+                    $placeholder    = ( $sub_field['field_type'] === 'true_false' ) ? '1' : '"content for this field"';
+                    $instructions[] = "    \"{$sub_field['key']}\": {$placeholder}{$sub_comma}";
                 }
                 $instructions[] = "  }{$comma}";
             } else {
-                $instructions[] = "  \"{$item['key']}\": \"content for this field\"{$comma}";
+                $placeholder    = ( $item['field_type'] === 'true_false' ) ? '1' : '"content for this field"';
+                $instructions[] = "  \"{$item['key']}\": {$placeholder}{$comma}";
             }
         }
         
@@ -680,8 +721,9 @@ class SparkPlus_Prompt_Builder {
         $instructions[] = "- Use double quotes for all keys and string values";
         $instructions[] = "- Properly escape special characters (quotes, newlines, etc.)";
         $instructions[] = "- For WYSIWYG fields: include HTML tags as specified in the field instructions";
-        $instructions[] = "- For non-WYSIWYG fields: use plain text with \\n for line breaks, no HTML";
-        $instructions[] = "- Each field value should be a string containing the generated content";
+        $instructions[] = "- For non-WYSIWYG text fields: use plain text with \\n for line breaks, no HTML";
+        $instructions[] = "- For true_false fields: output the integer 1 (true/yes) or 0 (false/no) — no quotes, no other values";
+        $instructions[] = "- All field values must be strings, except true_false fields which must be integers (1 or 0)";
         
         return implode("\n", $instructions);
     }
@@ -826,8 +868,17 @@ class SparkPlus_Prompt_Builder {
         }
         
         // 3. Field-specific description or default instruction
-        if (!empty($field['description'])) {
-            $prompt_parts[] = "# Specific Instructions\n{$field['description']}";
+        $use_acf_instructions = !empty($cpt_settings['include_acf_instructions']) && !empty($field['acf_instructions']);
+        $has_custom_instructions = !empty($field['description']) || $use_acf_instructions;
+        if ($has_custom_instructions) {
+            $instruction_lines = array();
+            if ($use_acf_instructions) {
+                $instruction_lines[] = $field['acf_instructions'];
+            }
+            if (!empty($field['description'])) {
+                $instruction_lines[] = $field['description'];
+            }
+            $prompt_parts[] = "# Specific Instructions\n" . implode("\n", $instruction_lines);
         } else {
             $prompt_parts[] = "# Instructions\nCreate a professional, high-quality image that represents the field '{$field['label']}' in the context of: {$keyword}";
         }
