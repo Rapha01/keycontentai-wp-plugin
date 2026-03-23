@@ -27,70 +27,6 @@ class SparkPlus_Content_Generator {
         $this->prompt_builder = new SparkPlus_Prompt_Builder(array($this, 'add_debug'));
     }
     
-    public function generate_content($post_id) {
-        $this->debug_log = array();
-        
-        try {
-            // 1. Validate post exists
-            $post = get_post($post_id);
-            if (!$post) {
-                throw new Exception(__('Post not found', 'sparkplus'));
-            }
-            
-            $this->add_debug('Starting content generation for existing post', array(
-                'post_id' => $post_id,
-                'post_type' => $post->post_type
-            ));
-            
-            // 2. Gather CPT-level settings (includes validation and custom fields)
-            $cpt_settings = $this->get_cpt_settings($post->post_type);
-            
-            // 3. Get post-specific settings
-            $post_settings = $this->get_post_settings($post_id);
-            
-            // 4. Generate text content
-            $texts_generated = $this->generate_text_content($post_id, $cpt_settings, $post_settings);
-            
-            // 5. Generate image content
-            $images_generated = $this->generate_image_content($post_id, $cpt_settings, $post_settings);
-       
-            $this->add_debug('Generation complete', array(
-                'status' => 'success',
-                'post_id' => $post_id,
-                'texts_generated' => $texts_generated,
-                'images_generated' => $images_generated
-            ));
-            
-            // Update last generation timestamp
-            update_post_meta($post_id, 'sparkplus_last_generation', current_time('mysql'));
-            
-            // Return success response
-            return array(
-                'success' => true,
-                'post_id' => $post_id,
-                'keyword' => $post_settings['keyword'],
-                /* translators: 1: post ID, 2: keyword */
-                'message' => sprintf(__('Successfully updated post (ID: %1$d) for keyword: %2$s', 'sparkplus'), $post_id, $post_settings['keyword']),
-                'debug_log' => $this->debug_log
-            );
-            
-        } catch (Exception $e) {
-            // Log the error
-            $this->add_debug('Error occurred', array(
-                'error_message' => $e->getMessage(),
-                'error_code' => $e->getCode(),
-                'error_line' => $e->getLine()
-            ));
-            
-            // Return error response
-            return array(
-                'success' => false,
-                'message' => $e->getMessage(),
-                'debug_log' => $this->debug_log
-            );
-        }
-    }
-    
     public function add_debug($step, $data) {
         $this->debug_log[] = array(
             'step' => $step,
@@ -98,17 +34,454 @@ class SparkPlus_Content_Generator {
             'timestamp' => current_time('mysql')
         );
     }
-    
-    private function get_site_language() {
-        // Get WordPress locale (e.g., 'en_US', 'de_DE', 'fr_FR')
-        $locale = get_locale();
-        
-        // Extract language code (first 2 characters)
-        $language = substr($locale, 0, 2);
-        
-        return $language;
+
+    /**
+     * Generate only text fields for a post.
+     *
+     * @param int $post_id Post ID.
+     * @return array Result with success, debug_log.
+     */
+    public function generate_text_only( $post_id ) {
+        $this->debug_log = array();
+
+        try {
+            $post = get_post( $post_id );
+            if ( ! $post ) {
+                throw new Exception( __( 'Post not found', 'sparkplus' ) );
+            }
+
+            $cpt_settings  = $this->get_cpt_settings( $post->post_type );
+            $post_settings = $this->get_post_settings( $post_id );
+
+            $texts_generated = $this->generate_text_content( $post_id, $cpt_settings, $post_settings );
+
+            return array(
+                'success'         => true,
+                'post_id'         => $post_id,
+                'texts_generated' => $texts_generated,
+                'debug_log'       => $this->debug_log,
+            );
+
+        } catch ( Exception $e ) {
+            $this->add_debug( 'Error in generate_text_only', array(
+                'error_message' => $e->getMessage(),
+            ) );
+            return array(
+                'success'   => false,
+                'message'   => $e->getMessage(),
+                'debug_log' => $this->debug_log,
+            );
+        }
     }
-    
+
+    /**
+     * Generate a single image field for a post, identified by zero-based index.
+     *
+     * @param int  $post_id     Post ID.
+     * @param int  $field_index Zero-based index into the image-field list.
+     * @return array Result with success, debug_log.
+     */
+    public function generate_single_image( $post_id, $field_index ) {
+        $this->debug_log = array();
+
+        try {
+            $post = get_post( $post_id );
+            if ( ! $post ) {
+                throw new Exception( __( 'Post not found', 'sparkplus' ) );
+            }
+
+            $cpt_settings  = $this->get_cpt_settings( $post->post_type );
+            $post_settings = $this->get_post_settings( $post_id );
+
+            // Build a stable, ordered list of image fields.
+            $image_fields = array_values( array_filter( $cpt_settings['custom_fields'], function ( $f ) {
+                return $f['type'] === 'image';
+            } ) );
+
+            if ( ! isset( $image_fields[ $field_index ] ) ) {
+                throw new Exception( sprintf( 'Image field index %d not found', $field_index ) );
+            }
+
+            $field = $image_fields[ $field_index ];
+
+            // 1. Build prompt for this specific image.
+            $image_prompt = $this->prompt_builder->build_image_prompt( $cpt_settings, $post_settings, $field, $post_id );
+
+            // 2. Prepare image options from field config.
+            $image_options = array(
+                'model'   => $cpt_settings['image_model'],
+                'size'    => isset( $field['size'] )    ? $field['size']    : 'auto',
+                'quality' => isset( $field['quality'] ) ? $field['quality'] : 'auto',
+            );
+
+            // 3. Make API call to generate the image.
+            $image_response = $this->api_caller->generate_image( $image_prompt, $cpt_settings['api_key'], $image_options );
+
+            if ( $image_response && isset( $image_response['data'][0]['b64_json'] ) ) {
+                $webp_quality = isset( $field['webp_quality'] ) ? $field['webp_quality'] : 80;
+                $webp_data    = sparkplus_convert_image_to_webp( $image_response['data'][0]['b64_json'], $webp_quality );
+
+                if ( is_wp_error( $webp_data ) ) {
+                    throw new Exception( sprintf(
+                        esc_html__( 'Failed to convert image to WebP for field "%1$s": %2$s', 'sparkplus' ),
+                        esc_html( $field['label'] ),
+                        esc_html( $webp_data->get_error_message() )
+                    ) );
+                }
+
+                $keyword       = $post_settings['keyword'];
+                $filename      = sanitize_file_name( $keyword ) . '-' . time();
+                $attachment_id = sparkplus_save_webp_to_media_library( $webp_data, $post_id, $filename, $keyword );
+
+                if ( is_wp_error( $attachment_id ) ) {
+                    throw new Exception( sprintf(
+                        esc_html__( 'Failed to save WebP image for field "%1$s": %2$s', 'sparkplus' ),
+                        esc_html( $field['label'] ),
+                        esc_html( $attachment_id->get_error_message() )
+                    ) );
+                }
+
+                $alt_text = $this->generate_and_set_alt_text( $attachment_id, $image_prompt, $cpt_settings['api_key'], $cpt_settings['text_model'] );
+                $this->update_post_with_image( $post_id, $field, $attachment_id );
+
+                $this->add_debug( 'generate_single_image', array(
+                    'field_index'   => $field_index,
+                    'field_key'     => $field['key'],
+                    'attachment_id' => $attachment_id,
+                    'format'        => 'webp',
+                    'webp_quality'  => $webp_quality,
+                    'alt_text'      => $alt_text,
+                    'success'       => true,
+                ) );
+            }
+
+            return array(
+                'success'   => true,
+                'post_id'   => $post_id,
+                'debug_log' => $this->debug_log,
+            );
+
+        } catch ( Exception $e ) {
+            $this->add_debug( 'Error in generate_single_image', array(
+                'error_message' => $e->getMessage(),
+            ) );
+            return array(
+                'success'   => false,
+                'message'   => $e->getMessage(),
+                'debug_log' => $this->debug_log,
+            );
+        }
+    }
+
+    /**
+     * Return metadata describing the generation work needed for a post.
+     *
+     * The client uses this to orchestrate the individual generation calls
+     * (one text call + N image calls) without the server dictating workflow.
+     *
+     * @param int $post_id Post ID.
+     * @return array { success, text_fields[], image_fields[], debug_log }
+     */
+    public function get_generation_meta( $post_id ) {
+        $this->debug_log = array();
+
+        try {
+            $post = get_post( $post_id );
+            if ( ! $post ) {
+                throw new Exception( __( 'Post not found', 'sparkplus' ) );
+            }
+
+            // Build field lists directly — no validation, just data.
+            global $sparkplus;
+            $cpt_configs   = $sparkplus->get_cpt_configs();
+            $user_settings = isset( $cpt_configs[ $post->post_type ]['fields'] ) ? $cpt_configs[ $post->post_type ]['fields'] : array();
+            $all_fields    = $this->build_all_fields_map( $post->post_type );
+
+            $text_fields  = array();
+            $image_fields = array();
+            $image_index  = 0;
+
+            foreach ( $all_fields as $field_key => $field_data ) {
+                if ( $field_data['type'] === 'group' ) {
+                    $group_user = isset( $user_settings[ $field_key ] ) ? $user_settings[ $field_key ] : array();
+                    foreach ( $field_data['sub_fields'] as $sub_key => $sub_data ) {
+                        $sub_user = isset( $group_user['sub_fields'][ $sub_key ] ) ? $group_user['sub_fields'][ $sub_key ] : array();
+                        if ( ! empty( $sub_user['enabled'] ) ) {
+                            if ( $sub_data['type'] === 'image' ) {
+                                $image_fields[] = array( 'index' => $image_index++, 'key' => $sub_key, 'label' => $sub_data['label'] );
+                            } else {
+                                $text_fields[] = array( 'key' => $sub_key, 'label' => $sub_data['label'] );
+                            }
+                        }
+                    }
+                } else {
+                    $field_user = isset( $user_settings[ $field_key ] ) ? $user_settings[ $field_key ] : array();
+                    if ( ! empty( $field_user['enabled'] ) ) {
+                        if ( $field_data['type'] === 'image' ) {
+                            $image_fields[] = array( 'index' => $image_index++, 'key' => $field_key, 'label' => $field_data['label'] );
+                        } else {
+                            $text_fields[] = array( 'key' => $field_key, 'label' => $field_data['label'] );
+                        }
+                    }
+                }
+            }
+
+            $clear_fields = $this->get_clear_fields_config( $post->post_type );
+
+            return array(
+                'success'          => true,
+                'text_fields'      => $text_fields,
+                'image_fields'     => $image_fields,
+                'has_clear_fields' => ! empty( $clear_fields ),
+                'debug_log'        => $this->debug_log,
+            );
+
+        } catch ( Exception $e ) {
+            $this->add_debug( 'Error in get_generation_meta', array(
+                'error_message' => $e->getMessage(),
+            ) );
+            return array(
+                'success'   => false,
+                'message'   => $e->getMessage(),
+                'debug_log' => $this->debug_log,
+            );
+        }
+    }
+
+    /**
+     * Clear all fields marked with clear=true for a given post.
+     *
+     * @param int $post_id Post ID.
+     * @return array Result with success, cleared_count, debug_log.
+     */
+    public function clear_fields( $post_id ) {
+        $this->debug_log = array();
+
+        try {
+            $post = get_post( $post_id );
+            if ( ! $post ) {
+                throw new Exception( __( 'Post not found', 'sparkplus' ) );
+            }
+
+            $clear_fields = $this->get_clear_fields_config( $post->post_type );
+
+            if ( empty( $clear_fields ) ) {
+                $this->add_debug( 'clear_fields', 'No fields marked for clearing' );
+                return array(
+                    'success'       => true,
+                    'cleared_count' => 0,
+                    'debug_log'     => $this->debug_log,
+                );
+            }
+
+            $wp_update  = array( 'ID' => $post_id );
+            $cleared    = 0;
+            $group_clears = array(); // group_key => [ sub_key, … ]
+
+            foreach ( $clear_fields as $field ) {
+                // Group sub-field
+                if ( ! empty( $field['group_key'] ) ) {
+                    if ( ! isset( $group_clears[ $field['group_key'] ] ) ) {
+                        $group_clears[ $field['group_key'] ] = array();
+                    }
+                    $group_clears[ $field['group_key'] ][] = $field['key'];
+                    $cleared++;
+                    continue;
+                }
+
+                // WordPress core fields
+                if ( $field['source'] === 'wordpress' ) {
+                    switch ( $field['key'] ) {
+                        case 'post_title':
+                            $wp_update['post_title'] = '';
+                            break;
+                        case 'post_content':
+                            $wp_update['post_content'] = '';
+                            break;
+                        case 'post_excerpt':
+                            $wp_update['post_excerpt'] = '';
+                            break;
+                        case '_thumbnail_id':
+                            delete_post_thumbnail( $post_id );
+                            break;
+                    }
+                    $cleared++;
+                    continue;
+                }
+
+                // ACF image field — set to empty
+                if ( in_array( $field['type'], array( 'image', 'file', 'gallery' ), true ) ) {
+                    if ( function_exists( 'update_field' ) ) {
+                        update_field( $field['key'], '', $post_id );
+                    }
+                    $cleared++;
+                    continue;
+                }
+
+                // ACF text field — set to empty string
+                if ( function_exists( 'update_field' ) ) {
+                    update_field( $field['key'], '', $post_id );
+                }
+                $cleared++;
+            }
+
+            // Batch-update WordPress core fields
+            if ( count( $wp_update ) > 1 ) {
+                $result = wp_update_post( $wp_update, true );
+                if ( is_wp_error( $result ) ) {
+                    throw new Exception( __( 'Failed to clear WordPress fields: ', 'sparkplus' ) . $result->get_error_message() );
+                }
+            }
+
+            // Clear group sub-fields via read-merge-write
+            if ( ! empty( $group_clears ) && function_exists( 'update_field' ) ) {
+                foreach ( $group_clears as $group_key => $sub_keys ) {
+                    $existing = get_field( $group_key, $post_id );
+                    if ( ! is_array( $existing ) ) {
+                        $existing = array();
+                    }
+                    foreach ( $sub_keys as $sub_key ) {
+                        $existing[ $sub_key ] = '';
+                    }
+                    update_field( $group_key, $existing, $post_id );
+                }
+            }
+
+            $this->add_debug( 'clear_fields', array(
+                'post_id'       => $post_id,
+                'cleared_count' => $cleared,
+                'fields'        => array_map( function( $f ) { return $f['key']; }, $clear_fields ),
+            ) );
+
+            return array(
+                'success'       => true,
+                'cleared_count' => $cleared,
+                'debug_log'     => $this->debug_log,
+            );
+
+        } catch ( Exception $e ) {
+            $this->add_debug( 'Error in clear_fields', array(
+                'error_message' => $e->getMessage(),
+            ) );
+            return array(
+                'success'   => false,
+                'message'   => $e->getMessage(),
+                'debug_log' => $this->debug_log,
+            );
+        }
+    }
+
+    /**
+     * Build the list of fields marked clear=true for a post type.
+     * Backend safety: if both enabled and clear are true, ignore clear.
+     */
+    private function get_clear_fields_config( $post_type ) {
+        global $sparkplus;
+        $cpt_configs   = $sparkplus->get_cpt_configs();
+        $user_settings = isset( $cpt_configs[ $post_type ]['fields'] ) ? $cpt_configs[ $post_type ]['fields'] : array();
+
+        $all_fields = $this->build_all_fields_map( $post_type );
+        $clear_list = array();
+
+        foreach ( $all_fields as $field_key => $field_data ) {
+            if ( $field_data['type'] === 'group' ) {
+                $group_user = isset( $user_settings[ $field_key ] ) ? $user_settings[ $field_key ] : array();
+                foreach ( $field_data['sub_fields'] as $sub_key => $sub_data ) {
+                    $sub_user  = isset( $group_user['sub_fields'][ $sub_key ] ) ? $group_user['sub_fields'][ $sub_key ] : array();
+                    $enabled   = ! empty( $sub_user['enabled'] );
+                    $clear     = ! empty( $sub_user['clear'] );
+                    // Generate takes precedence
+                    if ( $clear && ! $enabled ) {
+                        $clear_list[] = array_merge( $sub_data, array(
+                            'group_key' => $field_key,
+                        ) );
+                    }
+                }
+            } else {
+                $field_user = isset( $user_settings[ $field_key ] ) ? $user_settings[ $field_key ] : array();
+                $enabled    = ! empty( $field_user['enabled'] );
+                $clear      = ! empty( $field_user['clear'] );
+                if ( $clear && ! $enabled ) {
+                    $clear_list[] = $field_data;
+                }
+            }
+        }
+
+        return $clear_list;
+    }
+
+    /**
+     * Build the full map of all available fields (WP + ACF) for a post type.
+     * Shared by get_custom_fields_config and get_clear_fields_config.
+     */
+    private function build_all_fields_map( $post_type ) {
+        $all_fields = array();
+
+        // WordPress baseline fields
+        $baseline_fields = array(
+            'post_title'   => array( 'label' => 'Title',          'type' => 'text' ),
+            'post_content' => array( 'label' => 'Content',        'type' => 'wysiwyg' ),
+            'post_excerpt' => array( 'label' => 'Excerpt',        'type' => 'text' ),
+            '_thumbnail_id' => array( 'label' => 'Featured Image', 'type' => 'image' ),
+        );
+
+        foreach ( $baseline_fields as $field_key => $field_info ) {
+            $all_fields[ $field_key ] = array(
+                'key'    => $field_key,
+                'label'  => $field_info['label'],
+                'type'   => $field_info['type'],
+                'source' => 'wordpress',
+            );
+        }
+
+        // ACF fields
+        if ( function_exists( 'acf_get_field_groups' ) ) {
+            $field_groups = acf_get_field_groups( array( 'post_type' => $post_type ) );
+            if ( ! empty( $field_groups ) ) {
+                foreach ( $field_groups as $group ) {
+                    $fields = acf_get_fields( $group['key'] );
+                    if ( $fields ) {
+                        foreach ( $fields as $field ) {
+                            if ( $field['type'] === 'group' ) {
+                                $sub_fields = array();
+                                if ( ! empty( $field['sub_fields'] ) ) {
+                                    foreach ( $field['sub_fields'] as $sub_field ) {
+                                        $sub_fields[ $sub_field['name'] ] = array(
+                                            'key'              => $sub_field['name'],
+                                            'label'            => $sub_field['label'],
+                                            'type'             => $sub_field['type'],
+                                            'source'           => 'acf',
+                                            'group_key'        => $field['name'],
+                                            'group_label'      => $field['label'],
+                                            'acf_instructions' => isset( $sub_field['instructions'] ) ? $sub_field['instructions'] : '',
+                                        );
+                                    }
+                                }
+                                $all_fields[ $field['name'] ] = array(
+                                    'key'        => $field['name'],
+                                    'label'      => $field['label'],
+                                    'type'       => 'group',
+                                    'source'     => 'acf',
+                                    'sub_fields' => $sub_fields,
+                                );
+                            } else {
+                                $all_fields[ $field['name'] ] = array(
+                                    'key'              => $field['name'],
+                                    'label'            => $field['label'],
+                                    'type'             => $field['type'],
+                                    'source'           => 'acf',
+                                    'acf_instructions' => isset( $field['instructions'] ) ? $field['instructions'] : '',
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $all_fields;
+    }
+
     private function get_cpt_settings($post_type) {
         // Get CPT-specific additional context and settings from consolidated configs
         $cpt_additional_context = '';
@@ -138,7 +511,7 @@ class SparkPlus_Content_Generator {
             'post_type' => $post_type,
             
             // WordPress Site Language
-            'language' => $this->get_site_language(),
+            'language' => substr(get_locale(), 0, 2),
             
             // General Context Information
             'addressing' => get_option('sparkplus_addressing', 'formal'),
@@ -209,78 +582,13 @@ class SparkPlus_Content_Generator {
     private function get_custom_fields_config($post_type) {
         $this->add_debug('get_custom_fields_config', "Retrieving field configuration for post type: {$post_type}");
         
-        // Get user's field settings
         global $sparkplus;
         $cpt_configs = $sparkplus->get_cpt_configs();
         $user_settings = isset($cpt_configs[$post_type]['fields']) ? $cpt_configs[$post_type]['fields'] : array();
         
-        $all_fields = array();
+        $all_fields = $this->build_all_fields_map( $post_type );
         
-        // 1. Collect all WordPress baseline fields that exist
-        $baseline_fields = array(
-            'post_title' => array('label' => 'Title', 'type' => 'text'),
-            'post_content' => array('label' => 'Content', 'type' => 'wysiwyg'),
-            'post_excerpt' => array('label' => 'Excerpt', 'type' => 'text'),
-            '_thumbnail_id' => array('label' => 'Featured Image', 'type' => 'image')
-        );
-        
-        foreach ($baseline_fields as $field_key => $field_info) {
-            $all_fields[$field_key] = array(
-                'key' => $field_key,
-                'label' => $field_info['label'],
-                'type' => $field_info['type'],
-                'source' => 'wordpress'
-            );
-        }
-        
-        // 2. Collect all ACF fields that exist (with group support)
-        if (function_exists('acf_get_field_groups')) {
-            $field_groups = acf_get_field_groups(array('post_type' => $post_type));
-            
-            if (!empty($field_groups)) {
-                foreach ($field_groups as $group) {
-                    $fields = acf_get_fields($group['key']);
-                    
-                    if ($fields) {
-                        foreach ($fields as $field) {
-                            if ($field['type'] === 'group') {
-                                $sub_fields = array();
-                                if (!empty($field['sub_fields'])) {
-                                    foreach ($field['sub_fields'] as $sub_field) {
-                                        $sub_fields[$sub_field['name']] = array(
-                                            'key'             => $sub_field['name'],
-                                            'label'           => $sub_field['label'],
-                                            'type'            => $sub_field['type'],
-                                            'source'          => 'acf',
-                                            'group_key'       => $field['name'],
-                                            'group_label'     => $field['label'],
-                                            'acf_instructions' => isset($sub_field['instructions']) ? $sub_field['instructions'] : '',
-                                        );
-                                    }
-                                }
-                                $all_fields[$field['name']] = array(
-                                    'key'        => $field['name'],
-                                    'label'      => $field['label'],
-                                    'type'       => 'group',
-                                    'source'     => 'acf',
-                                    'sub_fields' => $sub_fields,
-                                );
-                            } else {
-                                $all_fields[$field['name']] = array(
-                                    'key'             => $field['name'],
-                                    'label'           => $field['label'],
-                                    'type'            => $field['type'],
-                                    'source'          => 'acf',
-                                    'acf_instructions' => isset($field['instructions']) ? $field['instructions'] : '',
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        // 3. Overlay user settings onto existing fields (left join)
+        // Overlay user settings onto existing fields (left join)
         $enabled_fields = array();
         
         foreach ($all_fields as $field_key => $field_data) {
@@ -369,86 +677,6 @@ class SparkPlus_Content_Generator {
         
         // Update post with generated text content and return count
         return $this->update_post_with_texts($post_id, $parsed_content, $cpt_settings['custom_fields']);
-    }
-    
-    private function generate_image_content($post_id, $cpt_settings, $post_settings) {
-        // Filter only image fields
-        $image_fields = array_filter($cpt_settings['custom_fields'], function($field) {
-            return $field['type'] === 'image';
-        });
-        
-        if (empty($image_fields)) {
-            return 0;
-        }
-        
-        $images_generated_count = 0;
-        
-        // Process each image field individually
-        foreach ($image_fields as $field) {
-            // 1. Build prompt for this specific image (passing post_id to retrieve existing content)
-            $image_prompt = $this->prompt_builder->build_image_prompt($cpt_settings, $post_settings, $field, $post_id);
-            
-            // 2. Prepare image options from field config
-            $image_options = array(
-                'model' => $cpt_settings['image_model'],
-                'size' => isset($field['size']) ? $field['size'] : 'auto',
-                'quality' => isset($field['quality']) ? $field['quality'] : 'auto'
-            );
-            
-            // 3. Make API call to generate the image
-            $image_response = $this->api_caller->generate_image($image_prompt, $cpt_settings['api_key'], $image_options);
-            
-            // 4. Process and save the image as WebP (gpt-image returns b64_json)
-            if ($image_response && isset($image_response['data'][0]['b64_json'])) {
-                // Get WebP quality from field config (default to 80 if not set)
-                $webp_quality = isset($field['webp_quality']) ? $field['webp_quality'] : 80;
-                
-                // Convert to WebP format
-                $webp_data = sparkplus_convert_image_to_webp($image_response['data'][0]['b64_json'], $webp_quality);
-                
-                if (is_wp_error($webp_data)) {
-                    throw new Exception(sprintf(
-                        /* translators: %1$s: field label, %2$s: error message */
-                        esc_html__('Failed to convert image to WebP for field "%1$s": %2$s', 'sparkplus'),
-                        esc_html($field['label']),
-                        esc_html($webp_data->get_error_message())
-                    ));
-                }
-                
-                // Save WebP to media library (use post keyword for filename & title)
-                $keyword = $post_settings['keyword'];
-                $filename = sanitize_file_name($keyword) . '-' . time();
-                $attachment_id = sparkplus_save_webp_to_media_library($webp_data, $post_id, $filename, $keyword);
-                
-                if (is_wp_error($attachment_id)) {
-                    throw new Exception(sprintf(
-                        /* translators: %1$s: field label, %2$s: error message */
-                        esc_html__('Failed to save WebP image for field "%1$s": %2$s', 'sparkplus'),
-                        esc_html($field['label']),
-                        esc_html($attachment_id->get_error_message())
-                    ));
-                }
-                
-                // 5. Generate and set alt text for the image
-                $alt_text = $this->generate_and_set_alt_text($attachment_id, $image_prompt, $cpt_settings['api_key'], $cpt_settings['text_model']);
-                
-                // 6. Update the post with the generated image
-                $this->update_post_with_image($post_id, $field, $attachment_id);
-                
-                $this->add_debug('generate_image_content', array(
-                    'field_key' => $field['key'],
-                    'attachment_id' => $attachment_id,
-                    'format' => 'webp',
-                    'webp_quality' => $webp_quality,
-                    'alt_text' => $alt_text,
-                    'success' => true
-                ));
-                
-                $images_generated_count++;
-            }
-        }
-        
-        return $images_generated_count;
     }
     
     /**

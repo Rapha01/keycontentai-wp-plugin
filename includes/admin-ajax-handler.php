@@ -14,7 +14,11 @@ class SparkPlus_Admin_Ajax_Handler {
     
     public function __construct() {
         // Register AJAX handlers
-        add_action('wp_ajax_sparkplus_generate_content', array($this, 'generate_content'));
+        add_action('wp_ajax_sparkplus_get_generation_meta',     array($this, 'get_generation_meta'));
+        add_action('wp_ajax_sparkplus_generate_text',           array($this, 'generate_text'));
+        add_action('wp_ajax_sparkplus_generate_image',          array($this, 'generate_image'));
+        add_action('wp_ajax_sparkplus_stamp_generation',        array($this, 'stamp_generation'));
+        add_action('wp_ajax_sparkplus_clear_fields',            array($this, 'clear_fields'));
         add_action('wp_ajax_sparkplus_load_keyword', array($this, 'load_keyword'));
         add_action('wp_ajax_sparkplus_save_post_meta', array($this, 'save_post_meta'));
         add_action('wp_ajax_sparkplus_save_settings', array($this, 'save_settings'));
@@ -25,46 +29,153 @@ class SparkPlus_Admin_Ajax_Handler {
     }
     
     /**
-     * AJAX handler to generate content for a post
+     * AJAX handler: return field metadata for a post so the client
+     * can plan its generation calls without the server dictating workflow.
      */
-    public function generate_content() {
-        // Security check
-        check_ajax_referer('sparkplus_nonce', 'nonce');
-        
-        // Check if user has permission
-        if (!current_user_can('edit_posts')) {
-            wp_send_json_error(array(
-                'message' => __('Unauthorized', 'sparkplus')
-            ));
+    public function get_generation_meta() {
+        check_ajax_referer( 'sparkplus_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Unauthorized', 'sparkplus' ) ) );
         }
-        
-        // Get post ID from request
-        if (!isset($_POST['post_id']) || empty($_POST['post_id'])) {
-            wp_send_json_error(array(
-                'message' => __('No post ID provided', 'sparkplus')
-            ));
+        if ( empty( $_POST['post_id'] ) ) {
+            wp_send_json_error( array( 'message' => __( 'No post ID provided', 'sparkplus' ) ) );
         }
-        
-        $post_id = absint(wp_unslash($_POST['post_id']));
-        
-        // Generate content using the content generator class
+
+        $post_id   = absint( wp_unslash( $_POST['post_id'] ) );
         $generator = new SparkPlus_Content_Generator();
-        $result = $generator->generate_content($post_id);
-        
-        // Return response
-        if ($result['success']) {
-            wp_send_json_success(array(
-                'message' => __('Content generated successfully', 'sparkplus'),
-                'debug_log' => $result['debug_log']
-            ));
+        $result    = $generator->get_generation_meta( $post_id );
+
+        if ( $result['success'] ) {
+            wp_send_json_success( array(
+                'text_fields'      => $result['text_fields'],
+                'image_fields'     => $result['image_fields'],
+                'has_clear_fields' => $result['has_clear_fields'],
+                'debug_log'        => $result['debug_log'],
+            ) );
         } else {
-            wp_send_json_error(array(
-                'message' => $result['message'],
-                'debug_log' => $result['debug_log']
-            ));
+            wp_send_json_error( array(
+                'message'   => $result['message'],
+                'debug_log' => $result['debug_log'],
+            ) );
         }
     }
-    
+
+    /**
+     * AJAX handler: generate only text fields for a post.
+     */
+    public function generate_text() {
+        check_ajax_referer( 'sparkplus_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Unauthorized', 'sparkplus' ) ) );
+        }
+        if ( empty( $_POST['post_id'] ) ) {
+            wp_send_json_error( array( 'message' => __( 'No post ID provided', 'sparkplus' ) ) );
+        }
+
+        @set_time_limit( 300 );
+        ignore_user_abort( true );
+
+        $post_id   = absint( wp_unslash( $_POST['post_id'] ) );
+        $generator = new SparkPlus_Content_Generator();
+        $result    = $generator->generate_text_only( $post_id );
+
+        if ( $result['success'] ) {
+            wp_send_json_success( array(
+                'debug_log' => $result['debug_log'],
+            ) );
+        } else {
+            wp_send_json_error( array(
+                'message'   => $result['message'],
+                'debug_log' => $result['debug_log'],
+            ) );
+        }
+    }
+
+    /**
+     * AJAX handler: generate one image field for a post.
+     * Expects post_id, field_index (0-based).
+     */
+    public function generate_image() {
+        check_ajax_referer( 'sparkplus_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Unauthorized', 'sparkplus' ) ) );
+        }
+        if ( empty( $_POST['post_id'] ) ) {
+            wp_send_json_error( array( 'message' => __( 'No post ID provided', 'sparkplus' ) ) );
+        }
+
+        @set_time_limit( 300 );
+        ignore_user_abort( true );
+
+        $post_id      = absint( wp_unslash( $_POST['post_id'] ) );
+        $field_index  = isset( $_POST['field_index'] ) ? absint( wp_unslash( $_POST['field_index'] ) ) : 0;
+
+        $generator = new SparkPlus_Content_Generator();
+        $result    = $generator->generate_single_image( $post_id, $field_index );
+
+        if ( $result['success'] ) {
+            wp_send_json_success( array(
+                'debug_log' => $result['debug_log'],
+            ) );
+        } else {
+            wp_send_json_error( array(
+                'message'   => $result['message'],
+                'debug_log' => $result['debug_log'],
+            ) );
+        }
+    }
+
+    /**
+     * AJAX handler: stamp the last-generation timestamp on a post.
+     */
+    public function stamp_generation() {
+        check_ajax_referer( 'sparkplus_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Unauthorized', 'sparkplus' ) ) );
+        }
+        if ( empty( $_POST['post_id'] ) ) {
+            wp_send_json_error( array( 'message' => __( 'No post ID provided', 'sparkplus' ) ) );
+        }
+
+        $post_id = absint( wp_unslash( $_POST['post_id'] ) );
+        update_post_meta( $post_id, 'sparkplus_last_generation', current_time( 'mysql' ) );
+        wp_send_json_success();
+    }
+
+    /**
+     * AJAX handler: clear fields marked with clear=true for a post.
+     */
+    public function clear_fields() {
+        check_ajax_referer( 'sparkplus_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Unauthorized', 'sparkplus' ) ) );
+        }
+        if ( empty( $_POST['post_id'] ) ) {
+            wp_send_json_error( array( 'message' => __( 'No post ID provided', 'sparkplus' ) ) );
+        }
+
+        $post_id   = absint( wp_unslash( $_POST['post_id'] ) );
+        $generator = new SparkPlus_Content_Generator();
+        $result    = $generator->clear_fields( $post_id );
+
+        if ( $result['success'] ) {
+            wp_send_json_success( array(
+                'cleared_count' => $result['cleared_count'],
+                'debug_log'     => $result['debug_log'],
+            ) );
+        } else {
+            wp_send_json_error( array(
+                'message'   => $result['message'],
+                'debug_log' => $result['debug_log'],
+            ) );
+        }
+    }
+
     /**
      * AJAX handler to load a keyword and create a post
      */

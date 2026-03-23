@@ -133,10 +133,6 @@
                     if (response.success) {
                         $status.addClass('success').text('Saved successfully!');
                         
-                        // Update keyword display in main row
-                        const $row = $detailsRow.prev('.sparkplus-post-row');
-                        $row.find('td[data-label="Keyword"] strong').text(keyword || '(no keyword)');
-                        
                         // Clear status after 2 seconds
                         setTimeout(() => $status.fadeOut(300, function() { $(this).text('').show(); }), 2000);
                     } else {
@@ -309,26 +305,100 @@
         updatePostStatus($row, 'processing');
         
         console.log('Processing post ID:', postId);
-        
-        // AJAX call to generate content
-        $.ajax({
-            url: sparkplusGeneration.ajaxUrl,
-            type: 'POST',
-            data: {
-                action: 'sparkplus_generate_content',
-                post_id: postId,
-                nonce: sparkplusGeneration.nonce
-            },
-            success: function(response) {
-                // Add debug data from response
-                response.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false));
-                onPostComplete($row, response.success, response.data);
-            },
-            error: function(xhr, status, error) {
-                addDebugEntry('Network error', { status, error }, true);
-                onPostComplete($row, false, 'Network error');
-            }
+
+        // Top-down approach: fetch metadata, then loop through the work.
+        generatePost(postId, $row);
+    }
+
+    /**
+     * Wrap jQuery.ajax in a Promise for async/await usage.
+     */
+    function ajaxPromise(data) {
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: sparkplusGeneration.ajaxUrl,
+                type: 'POST',
+                timeout: 300000, // 5 minutes
+                data: { ...data, nonce: sparkplusGeneration.nonce },
+                success: resolve,
+                error: (xhr, status, error) => reject({ xhr, status, error }),
+            });
         });
+    }
+
+    /**
+     * Orchestrate the full generation for a single post:
+     *  1. Fetch metadata (lightweight — returns field lists only)
+     *  2. Generate all text fields in one call (if any)
+     *  3. Generate each image field one-by-one
+     *  4. Stamp generation timestamp
+     */
+    async function generatePost(postId, $row) {
+        try {
+            // 1. Fetch field metadata
+            const metaResp = await ajaxPromise({ action: 'sparkplus_get_generation_meta', post_id: postId });
+            metaResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false));
+
+            if (!metaResp.success) {
+                onPostComplete($row, false, metaResp.data?.message || 'Failed to fetch generation metadata');
+                return;
+            }
+
+            const { text_fields = [], image_fields = [], has_clear_fields = false } = metaResp.data;
+
+            // Nothing to do — no generate fields and no clear fields
+            if (text_fields.length === 0 && image_fields.length === 0 && !has_clear_fields) {
+                onPostComplete($row, false, 'No fields selected for generation or clearing');
+                return;
+            }
+
+            // 2. Generate text fields
+            if (text_fields.length > 0) {
+                const textResp = await ajaxPromise({ action: 'sparkplus_generate_text', post_id: postId });
+                textResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false));
+
+                if (!textResp.success) {
+                    onPostComplete($row, false, textResp.data?.message || 'Text generation failed');
+                    return;
+                }
+            }
+
+            // 3. Generate image fields one at a time
+            for (const img of image_fields) {
+                const imgResp = await ajaxPromise({
+                    action:      'sparkplus_generate_image',
+                    post_id:     postId,
+                    field_index: img.index,
+                });
+                imgResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false));
+
+                if (!imgResp.success) {
+                    onPostComplete($row, false, imgResp.data?.message || 'Image generation failed (' + img.label + ')');
+                    return;
+                }
+            }
+
+            // 4. Clear fields marked for clearing
+            if (has_clear_fields) {
+                const clearResp = await ajaxPromise({ action: 'sparkplus_clear_fields', post_id: postId });
+                clearResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false));
+
+                if (!clearResp.success) {
+                    onPostComplete($row, false, clearResp.data?.message || 'Field clearing failed');
+                    return;
+                }
+            }
+
+            // 5. Stamp generation timestamp
+            await ajaxPromise({ action: 'sparkplus_stamp_generation', post_id: postId });
+
+            onPostComplete($row, true, null);
+
+        } catch (err) {
+            const detail = err.error || err.message || 'Unknown network error';
+            addDebugEntry('Network error', { status: err.status, error: detail }, true);
+            onPostComplete($row, false, 'Network error: ' + detail);
+        }
     }
     
     /**
@@ -338,7 +408,7 @@
         updatePostStatus($row, success ? 'finished' : 'error');
         
         if (success) {
-            $row.find('.last-generated-cell').text(new Date().toLocaleString());
+            // Generation completed
         } else {
             console.error('Generation failed for post', $row.data('post-id'), ':', errorMessage);
         }

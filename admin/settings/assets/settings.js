@@ -15,34 +15,6 @@ jQuery(document).ready(function($) {
         window.location.href = baseUrl + '?' + params.toString();
     });
     
-    // ─── Dimension dropdown (CPT tab) ───
-    $(document).on('change', '.sparkplus-dimension-select', function() {
-        var fieldKey = $(this).data('field-key');
-        var selectedValue = $(this).val();
-        var customDimensionsDiv = $('.sparkplus-custom-dimensions[data-field-key="' + fieldKey + '"]');
-        var widthInput = $('.sparkplus-dimension-width[data-field-key="' + fieldKey + '"]');
-        var heightInput = $('.sparkplus-dimension-height[data-field-key="' + fieldKey + '"]');
-        
-        if (selectedValue === 'custom') {
-            customDimensionsDiv.slideDown();
-        } else {
-            customDimensionsDiv.slideUp();
-            var dimensions = selectedValue.split('x');
-            if (dimensions.length === 2) {
-                widthInput.val(dimensions[0]);
-                heightInput.val(dimensions[1]);
-            }
-        }
-    });
-    
-    $(document).on('input', '.sparkplus-custom-width, .sparkplus-custom-height', function() {
-        var fieldKey = $(this).data('field-key');
-        var customWidth = $('.sparkplus-custom-width[data-field-key="' + fieldKey + '"]').val();
-        var customHeight = $('.sparkplus-custom-height[data-field-key="' + fieldKey + '"]').val();
-        $('.sparkplus-dimension-width[data-field-key="' + fieldKey + '"]').val(customWidth);
-        $('.sparkplus-dimension-height[data-field-key="' + fieldKey + '"]').val(customHeight);
-    });
-    
     // ─── AJAX Settings Save ───
     $('.sparkplus-settings-form').on('submit', function(e) {
         e.preventDefault();
@@ -167,22 +139,28 @@ jQuery(document).ready(function($) {
         });
     });
 
-    // ─── Group master checkbox (CPT tab) ───
-    $(document).on('change', '.sparkplus-group-master-checkbox', function() {
-        var groupKey = $(this).data('group');
-        var checked  = $(this).prop('checked');
-        $('tr.sparkplus-sub-field-row[data-group="' + groupKey + '"]')
-            .find('.sparkplus-sub-field-checkbox')
-            .prop('checked', checked)
-            .prop('indeterminate', false);
+    // ─── Mutual exclusivity: generate ↔ clear (CPT tab) ───
+    $(document).on('change', '.sparkplus-generate-checkbox', function() {
+        if ($(this).prop('checked')) {
+            // Find the sibling clear checkbox in the same row / same scope
+            var $row = $(this).closest('tr');
+            $row.find('.sparkplus-clear-checkbox').prop('checked', false);
+        }
     });
 
-    $(document).on('change', '.sparkplus-sub-field-checkbox', function() {
-        var groupKey  = $(this).data('group');
-        var $subBoxes = $('tr.sparkplus-sub-field-row[data-group="' + groupKey + '"] .sparkplus-sub-field-checkbox');
+    $(document).on('change', '.sparkplus-clear-checkbox', function() {
+        if ($(this).prop('checked')) {
+            var $row = $(this).closest('tr');
+            $row.find('.sparkplus-generate-checkbox').prop('checked', false);
+        }
+    });
+
+    // ─── Helper: sync a group master checkbox with its sub-field checkboxes ───
+    function syncGroupMaster(groupKey, masterSelector, subSelector) {
+        var $subBoxes = $('tr.sparkplus-sub-field-row[data-group="' + groupKey + '"] ' + subSelector);
         var total     = $subBoxes.length;
         var checked   = $subBoxes.filter(':checked').length;
-        var $master   = $('input.sparkplus-group-master-checkbox[data-group="' + groupKey + '"]');
+        var $master   = $(masterSelector + '[data-group="' + groupKey + '"]');
         if (checked === 0) {
             $master.prop('checked', false).prop('indeterminate', false);
         } else if (checked === total) {
@@ -190,20 +168,80 @@ jQuery(document).ready(function($) {
         } else {
             $master.prop('checked', false).prop('indeterminate', true);
         }
+    }
+
+    // ─── Group master: Generate (CPT tab) ───
+    $(document).on('change', '.sparkplus-group-master-checkbox', function() {
+        var groupKey = $(this).data('group');
+        var checked  = $(this).prop('checked');
+        var $subRows = $('tr.sparkplus-sub-field-row[data-group="' + groupKey + '"]');
+        $subRows.find('.sparkplus-sub-field-checkbox').prop('checked', checked).prop('indeterminate', false);
+        if (checked) {
+            // Uncheck all clear sub-checkboxes + master
+            $subRows.find('.sparkplus-sub-field-clear-checkbox').prop('checked', false).prop('indeterminate', false);
+            $('input.sparkplus-group-master-clear-checkbox[data-group="' + groupKey + '"]')
+                .prop('checked', false).prop('indeterminate', false);
+        }
     });
 
-    // Initialise group checkbox states on page load
-    $('tr.sparkplus-group-header-row').each(function() {
-        var groupKey  = $(this).data('group');
-        var $subBoxes = $('tr.sparkplus-sub-field-row[data-group="' + groupKey + '"] .sparkplus-sub-field-checkbox');
-        var total     = $subBoxes.length;
-        var checked   = $subBoxes.filter(':checked').length;
-        var $master   = $(this).find('.sparkplus-group-master-checkbox');
-        if (total > 0) {
-            if (checked === total)   { $master.prop('checked', true).prop('indeterminate', false); }
-            else if (checked === 0) { $master.prop('checked', false).prop('indeterminate', false); }
-            else                    { $master.prop('checked', false).prop('indeterminate', true); }
+    // ─── Group master: Clear (CPT tab) ───
+    $(document).on('change', '.sparkplus-group-master-clear-checkbox', function() {
+        var groupKey = $(this).data('group');
+        var checked  = $(this).prop('checked');
+        var $subRows = $('tr.sparkplus-sub-field-row[data-group="' + groupKey + '"]');
+        $subRows.find('.sparkplus-sub-field-clear-checkbox').prop('checked', checked).prop('indeterminate', false);
+        if (checked) {
+            // Uncheck all generate sub-checkboxes + master
+            $subRows.find('.sparkplus-sub-field-checkbox').prop('checked', false).prop('indeterminate', false);
+            $('input.sparkplus-group-master-checkbox[data-group="' + groupKey + '"]')
+                .prop('checked', false).prop('indeterminate', false);
         }
+    });
+
+    // ─── Group accordion toggle (CPT tab) ───
+    $(document).on('click', '.sparkplus-group-toggle', function() {
+        var $headerRow = $(this).closest('.sparkplus-group-header-row');
+        var groupKey   = $headerRow.data('group');
+        var $subRows   = $('tr.sparkplus-sub-field-row[data-group="' + groupKey + '"]');
+
+        $headerRow.toggleClass('sparkplus-group-open');
+        $subRows.each(function() {
+            var $row = $(this);
+            if ($headerRow.hasClass('sparkplus-group-open')) {
+                $row.show().find('td').hide().slideDown(200);
+            } else {
+                $row.find('td').slideUp(200, function() { $row.hide(); });
+            }
+        });
+    });
+
+    // ─── Sub-field checkbox → update generate group master ───
+    $(document).on('change', '.sparkplus-sub-field-checkbox', function() {
+        var groupKey = $(this).data('group');
+        // Enforce mutual exclusivity at sub-field level
+        if ($(this).prop('checked')) {
+            $(this).closest('tr').find('.sparkplus-sub-field-clear-checkbox').prop('checked', false);
+        }
+        syncGroupMaster(groupKey, 'input.sparkplus-group-master-checkbox', '.sparkplus-sub-field-checkbox');
+        syncGroupMaster(groupKey, 'input.sparkplus-group-master-clear-checkbox', '.sparkplus-sub-field-clear-checkbox');
+    });
+
+    // ─── Sub-field clear checkbox → update clear group master ───
+    $(document).on('change', '.sparkplus-sub-field-clear-checkbox', function() {
+        var groupKey = $(this).data('group');
+        // Enforce mutual exclusivity at sub-field level
+        if ($(this).prop('checked')) {
+            $(this).closest('tr').find('.sparkplus-sub-field-checkbox').prop('checked', false);
+        }
+        syncGroupMaster(groupKey, 'input.sparkplus-group-master-clear-checkbox', '.sparkplus-sub-field-clear-checkbox');
+        syncGroupMaster(groupKey, 'input.sparkplus-group-master-checkbox', '.sparkplus-sub-field-checkbox');
+    });
+
+    // ─── Initialise group checkbox states on page load ───
+    $('tr.sparkplus-group-header-row').each(function() {
+        var groupKey = $(this).data('group');
+        syncGroupMaster(groupKey, 'input.sparkplus-group-master-checkbox', '.sparkplus-sub-field-checkbox');
+        syncGroupMaster(groupKey, 'input.sparkplus-group-master-clear-checkbox', '.sparkplus-sub-field-clear-checkbox');
     });
 
 });

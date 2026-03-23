@@ -23,12 +23,10 @@ foreach ($post_types as $post_type) {
     }
 }
 
-// Get current settings
 // Check if post type is being changed via URL parameter
 $selected_post_type = isset($_GET['cpt']) ? sanitize_key(wp_unslash($_GET['cpt'])) : get_option('sparkplus_selected_post_type', 'post');
 
 // Get CPT configs from consolidated JSON structure
-global $sparkplus;
 $cpt_configs = $sparkplus->get_cpt_configs();
 
 // Get field configurations for the selected post type
@@ -176,10 +174,11 @@ if (!empty($selected_post_type)) {
             <table class="form-table sparkplus-fields-table" role="presentation">
                 <thead>
                     <tr>
-                        <th style="width: 8%; text-align: center;"><?php esc_html_e('Generate', 'sparkplus'); ?></th>
-                        <th style="width: 20%;"><?php esc_html_e('Field Name', 'sparkplus'); ?></th>
-                        <th style="width: 13%;"><?php esc_html_e('Type / Source', 'sparkplus'); ?></th>
-                        <th style="width: 39%;"><?php esc_html_e('Description / Prompt', 'sparkplus'); ?></th>
+                        <th style="width: 6%; text-align: center;"><?php esc_html_e('Generate', 'sparkplus'); ?></th>
+                        <th style="width: 6%; text-align: center;"><?php esc_html_e('Clear', 'sparkplus'); ?></th>
+                        <th style="width: 18%;"><?php esc_html_e('Field Name', 'sparkplus'); ?></th>
+                        <th style="width: 12%;"><?php esc_html_e('Type / Source', 'sparkplus'); ?></th>
+                        <th style="width: 38%;"><?php esc_html_e('Description / Prompt', 'sparkplus'); ?></th>
                         <th style="width: 15%;"><?php esc_html_e('Text/Image Options', 'sparkplus'); ?></th>
                     </tr>
                 </thead>
@@ -190,9 +189,12 @@ if (!empty($selected_post_type)) {
                             $group_cfg         = isset($current_field_configs[$field['key']]) ? $current_field_configs[$field['key']] : array();
                             $sub_count_total   = count($field['sub_fields']);
                             $sub_count_enabled = 0;
+                            $sub_count_clear   = 0;
                             foreach ($field['sub_fields'] as $sf) {
-                                $sf_on = isset($group_cfg['sub_fields'][$sf['key']]['enabled']) ? $group_cfg['sub_fields'][$sf['key']]['enabled'] : true;
+                                $sf_on    = isset($group_cfg['sub_fields'][$sf['key']]['enabled']) ? $group_cfg['sub_fields'][$sf['key']]['enabled'] : true;
+                                $sf_clear = isset($group_cfg['sub_fields'][$sf['key']]['clear']) ? $group_cfg['sub_fields'][$sf['key']]['clear'] : false;
                                 if ($sf_on) { $sub_count_enabled++; }
+                                if ($sf_clear) { $sub_count_clear++; }
                             }
                             ?>
                             <input type="hidden" name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][type]" value="group" />
@@ -200,16 +202,27 @@ if (!empty($selected_post_type)) {
                                 <td data-label="<?php esc_attr_e('Generate', 'sparkplus'); ?>" style="text-align: center; vertical-align: middle;">
                                     <input
                                         type="checkbox"
-                                        class="sparkplus-group-master-checkbox"
+                                        class="sparkplus-group-master-checkbox sparkplus-generate-checkbox"
                                         data-group="<?php echo esc_attr($field['key']); ?>"
-                                        title="<?php esc_attr_e('Toggle all fields in this group', 'sparkplus'); ?>"
+                                        title="<?php esc_attr_e('Toggle generation for all fields in this group', 'sparkplus'); ?>"
                                         <?php if ($sub_count_total > 0 && $sub_count_enabled === $sub_count_total) { echo 'checked'; } ?>
                                     />
                                 </td>
-                                <td colspan="4" style="background: #f6f7f7; padding: 8px 12px; border-left: 3px solid #2271b1;">
+                                <td data-label="<?php esc_attr_e('Clear', 'sparkplus'); ?>" style="text-align: center; vertical-align: middle;">
+                                    <input
+                                        type="checkbox"
+                                        class="sparkplus-group-master-clear-checkbox sparkplus-clear-checkbox"
+                                        data-group="<?php echo esc_attr($field['key']); ?>"
+                                        title="<?php esc_attr_e('Toggle clearing for all fields in this group', 'sparkplus'); ?>"
+                                        <?php if ($sub_count_total > 0 && $sub_count_clear === $sub_count_total) { echo 'checked'; } ?>
+                                    />
+                                </td>
+                                <td colspan="4" class="sparkplus-group-toggle" style="background: #f6f7f7; padding: 8px 12px; border-left: 3px solid #2271b1; cursor: pointer; user-select: none;">
+                                    <span class="dashicons dashicons-arrow-right-alt2 sparkplus-group-chevron" style="vertical-align: middle; margin-right: 4px; transition: transform 0.2s ease;"></span>
                                     <strong><?php echo esc_html($field['label']); ?></strong>
                                     <code style="margin-left: 6px; font-size: 11px; color: #666;"><?php echo esc_html($field['key']); ?></code>
                                     <span style="margin-left: 8px; font-size: 11px; color: #777; background: #e0e0e0; padding: 1px 5px; border-radius: 3px;">Group &bull; ACF</span>
+                                    <span class="sparkplus-group-count" style="margin-left: 6px; font-size: 11px; color: #888;">(<?php echo intval($sub_count_total); ?> <?php echo intval($sub_count_total) === 1 ? esc_html__('field', 'sparkplus') : esc_html__('fields', 'sparkplus'); ?>)</span>
                                 </td>
                             </tr>
                             <?php foreach ($field['sub_fields'] as $sub_field) : ?>
@@ -220,13 +233,13 @@ if (!empty($selected_post_type)) {
                                 $sub_quality  = isset($sub_cfg['quality']) ? $sub_cfg['quality'] : 'auto';
                                 $sub_webp     = isset($sub_cfg['webp_quality']) ? $sub_cfg['webp_quality'] : 80;
                                 ?>
-                                <tr class="sparkplus-sub-field-row" data-group="<?php echo esc_attr($field['key']); ?>">
+                                <tr class="sparkplus-sub-field-row" data-group="<?php echo esc_attr($field['key']); ?>" style="display: none;">
                                     <td data-label="<?php esc_attr_e('Generate', 'sparkplus'); ?>" style="text-align: center; vertical-align: middle;">
                                         <input
                                             type="checkbox"
                                             name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][enabled]"
                                             value="1"
-                                            class="sparkplus-field-enable-checkbox sparkplus-sub-field-checkbox"
+                                            class="sparkplus-field-enable-checkbox sparkplus-sub-field-checkbox sparkplus-generate-checkbox"
                                             data-group="<?php echo esc_attr($field['key']); ?>"
                                             <?php
                                             if (isset($sub_cfg['enabled'])) {
@@ -235,6 +248,16 @@ if (!empty($selected_post_type)) {
                                                 checked(true, true);
                                             }
                                             ?>
+                                        />
+                                    </td>
+                                    <td data-label="<?php esc_attr_e('Clear', 'sparkplus'); ?>" style="text-align: center; vertical-align: middle;">
+                                        <input
+                                            type="checkbox"
+                                            name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][clear]"
+                                            value="1"
+                                            class="sparkplus-field-clear-checkbox sparkplus-sub-field-clear-checkbox sparkplus-clear-checkbox"
+                                            data-group="<?php echo esc_attr($field['key']); ?>"
+                                            <?php checked(isset($sub_cfg['clear']) && $sub_cfg['clear'], true); ?>
                                         />
                                     </td>
                                     <td data-label="<?php esc_attr_e('Field Name', 'sparkplus'); ?>" style="padding-left: 24px;">
@@ -307,14 +330,11 @@ if (!empty($selected_post_type)) {
                                         type="checkbox" 
                                         name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][enabled]"
                                         value="1"
-                                        class="sparkplus-field-enable-checkbox"
+                                        class="sparkplus-field-enable-checkbox sparkplus-generate-checkbox"
                                         <?php 
-                                        // Check if this field has been saved before
                                         if (isset($current_field_configs[$field['key']])) {
-                                            // Use saved value
                                             checked($current_field_configs[$field['key']]['enabled'], true);
                                         } else {
-                                            // Default to checked for new fields
                                             checked(true, true);
                                         }
                                         ?>
@@ -323,6 +343,23 @@ if (!empty($selected_post_type)) {
                                         <?php
                                         /* translators: %s: field label */
                                         echo esc_html(sprintf(__('Enable generation for %s', 'sparkplus'), $field['label']));
+                                        ?>
+                                    </span>
+                                </label>
+                            </td>
+                            <td data-label="<?php esc_attr_e('Clear', 'sparkplus'); ?>" style="text-align: center; vertical-align: middle;">
+                                <label style="display: inline-block; margin: 0;">
+                                    <input 
+                                        type="checkbox" 
+                                        name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][clear]"
+                                        value="1"
+                                        class="sparkplus-field-clear-checkbox sparkplus-clear-checkbox"
+                                        <?php checked(isset($current_field_configs[$field['key']]['clear']) && $current_field_configs[$field['key']]['clear'], true); ?>
+                                    />
+                                    <span class="screen-reader-text">
+                                        <?php
+                                        /* translators: %s: field label */
+                                        echo esc_html(sprintf(__('Clear content for %s', 'sparkplus'), $field['label']));
                                         ?>
                                     </span>
                                 </label>

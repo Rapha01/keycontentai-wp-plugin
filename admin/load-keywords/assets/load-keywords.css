@@ -12,10 +12,6 @@
     width: 100%;
 }
 
-.sparkplus-loadkeywords-bottom-row {
-    margin-top: 20px;
-}
-
 .sparkplus-loadkeywords-left {
     flex: 1;
     display: flex;
@@ -124,83 +120,7 @@
     margin: 0;
 }
 
-/* Debug Tabs */
-.sparkplus-loadkeywords-debug-tabs {
-    display: flex;
-    gap: 0;
-    border-bottom: 2px solid #dcdcde;
-    margin-bottom: 0;
-}
-
-.sparkplus-loadkeywords-debug-tab {
-    padding: 12px 20px;
-    background: #f6f7f7;
-    border: none;
-    border-bottom: 3px solid transparent;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    color: #50575e;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.sparkplus-loadkeywords-debug-tab:hover {
-    background: #fff;
-    color: #2271b1;
-}
-
-.sparkplus-loadkeywords-debug-tab.sparkplus-loadkeywords-debug-tab-active {
-    background: #fff;
-    color: #2271b1;
-    border-bottom-color: #2271b1;
-}
-
-.sparkplus-loadkeywords-debug-tab .dashicons {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-}
-
-/* Debug Tab Content */
-.sparkplus-loadkeywords-debug-tab-content {
-    position: relative;
-}
-
-.sparkplus-loadkeywords-debug-pane {
-    display: none;
-    animation: sparkplus-loadkeywords-fadeIn 0.3s ease-in;
-}
-
-.sparkplus-loadkeywords-debug-pane.sparkplus-loadkeywords-debug-pane-active {
-    display: block;
-}
-
-@keyframes sparkplus-loadkeywords-fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes sparkplus-loadkeywords-slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.sparkplus-loadkeywords-debug-output,
-.sparkplus-loadkeywords-prompt-output,
-.sparkplus-loadkeywords-api-response-output {
+.sparkplus-loadkeywords-debug-output {
     background: #f9f9f9;
     border: 1px solid #dcdcde;
     border-radius: 4px;
@@ -212,12 +132,15 @@
     line-height: 1.6;
 }
 
-.sparkplus-loadkeywords-prompt-output,
-.sparkplus-loadkeywords-api-response-output {
-    background: #1e1e1e;
-    color: #d4d4d4;
-    white-space: pre-wrap;
-    word-break: break-word;
+@keyframes sparkplus-loadkeywords-slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .sparkplus-loadkeywords-debug-empty {
@@ -266,8 +189,7 @@
         flex-direction: column;
     }
     
-    .sparkplus-loadkeywords-left,
-    .sparkplus-loadkeywords-right {
+    .sparkplus-loadkeywords-left {
         flex: 1 1 auto;
         max-width: 100%;
         min-width: 100%;

@@ -114,22 +114,11 @@ class SparkPlus {
      * Load plugin dependencies
      */
     private function load_dependencies() {
-        // Load utility functions
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/util.php';
-        
-        // Load sanitization functions
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/sanitizer.php';
-        
-        // Load prompt builder class
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/prompt-builder.php';
-        
-        // Load OpenAI API caller class
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/openai-api-caller.php';
-        
-        // Load content generator class
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/content-generator.php';
-        
-        // Load keyword loader class
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/keyword-loader.php';
         
         // Load admin components (only in admin)
@@ -148,41 +137,41 @@ class SparkPlus {
     public function add_admin_menu() {
         // Add top-level menu
         add_menu_page(
-            __('SparkPlus', 'sparkplus'),           // Page title
-            __('SparkPlus', 'sparkplus'),           // Menu title
-            'manage_options',                              // Capability
-            'sparkplus-load-keywords',                  // Menu slug
-            array($this, 'render_load_keywords_page'),    // Callback
-            'dashicons-edit',                              // Icon
-            60                                             // Position
+            __('SparkPlus', 'sparkplus'),
+            __('SparkPlus', 'sparkplus'),
+            'manage_options',
+            'sparkplus-load-keywords',
+            array($this, 'render_load_keywords_page'),
+            'dashicons-edit',
+            60
         );
         
         // Add submenu items
         add_submenu_page(
-            'sparkplus-load-keywords',                  // Parent slug
-            __('Load Keywords', 'sparkplus'),          // Page title
-            __('Load Keywords', 'sparkplus'),          // Menu title
-            'manage_options',                              // Capability
-            'sparkplus-load-keywords',                  // Menu slug (same as parent for first item)
-            array($this, 'render_load_keywords_page')     // Callback
+            'sparkplus-load-keywords',
+            __('Load Keywords', 'sparkplus'),
+            __('Load Keywords', 'sparkplus'),
+            'manage_options',
+            'sparkplus-load-keywords',
+            array($this, 'render_load_keywords_page')
         );
 
         add_submenu_page(
-            'sparkplus-load-keywords',                  // Parent slug
-            __('Generation', 'sparkplus'),             // Page title
-            __('Generation', 'sparkplus'),             // Menu title
-            'manage_options',                              // Capability
-            'sparkplus-generation',                     // Menu slug
-            array($this, 'render_generation_page')        // Callback
+            'sparkplus-load-keywords',
+            __('Generation', 'sparkplus'),
+            __('Generation', 'sparkplus'),
+            'manage_options',
+            'sparkplus-generation',
+            array($this, 'render_generation_page')
         );
         
         add_submenu_page(
-            'sparkplus-load-keywords',                  // Parent slug
-            __('Settings', 'sparkplus'),               // Page title
-            __('Settings', 'sparkplus'),               // Menu title
-            'manage_options',                              // Capability
-            'sparkplus-settings',                       // Menu slug
-            array($this, 'render_settings_page')          // Callback
+            'sparkplus-load-keywords',
+            __('Settings', 'sparkplus'),
+            __('Settings', 'sparkplus'),
+            'manage_options',
+            'sparkplus-settings',
+            array($this, 'render_settings_page')
         );
     }
     

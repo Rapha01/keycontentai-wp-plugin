@@ -122,17 +122,55 @@
     border: 1px solid #0073aa;
 }
 
-.sparkplus-source-meta {
-    background: #cce5ff;
-    color: #004085;
-}
-
 /* Checkbox column styling */
-.sparkplus-field-enable-checkbox {
+.sparkplus-field-enable-checkbox,
+.sparkplus-field-clear-checkbox {
     cursor: pointer;
     margin: 0 !important;
     transform: scale(2.5) !important;
     transform-origin: center !important;
+}
+
+/* Clear checkbox tint */
+.sparkplus-field-clear-checkbox:checked {
+    accent-color: #d63638;
+}
+
+/* Group accordion */
+.sparkplus-group-toggle:hover {
+    background: #eef1f3 !important;
+}
+
+.sparkplus-group-chevron {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #2271b1;
+}
+
+.sparkplus-group-header-row.sparkplus-group-open .sparkplus-group-chevron {
+    transform: rotate(90deg);
+}
+
+/* Group master checkbox indeterminate (dash) state */
+.sparkplus-group-master-checkbox,
+.sparkplus-group-master-clear-checkbox {
+    position: relative;
+}
+
+.sparkplus-group-master-checkbox:indeterminate::before,
+.sparkplus-group-master-clear-checkbox:indeterminate::before {
+    content: '';
+    display: block;
+    width: 10px;
+    height: 2px;
+    background: #2271b1;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .sparkplus-fields-table td p.description {
@@ -177,25 +215,27 @@
         color: #1e1e1e;
     }
     
-    /* Hide label for checkbox column (first column) */
-    .sparkplus-fields-table tbody td:first-child:before {
-        display: none;
-    }
-    
-    /* Hide label for field name column (second column) - field name is already prominent */
+    /* Hide label for checkbox columns (Generate + Clear) */
+    .sparkplus-fields-table tbody td:first-child:before,
     .sparkplus-fields-table tbody td:nth-child(2):before {
         display: none;
     }
     
+    /* Hide label for field name column (third column) - field name is already prominent */
+    .sparkplus-fields-table tbody td:nth-child(3):before {
+        display: none;
+    }
+    
     /* Center checkbox on mobile with proper spacing */
-    .sparkplus-fields-table tbody td:first-child {
+    .sparkplus-fields-table tbody td:first-child,
+    .sparkplus-fields-table tbody td:nth-child(2) {
         text-align: center;
         background: #f6f7f7;
         padding: 20px 15px;
     }
     
     /* Add extra padding to field name cell */
-    .sparkplus-fields-table tbody td:nth-child(2) {
+    .sparkplus-fields-table tbody td:nth-child(3) {
         padding: 15px;
     }
     
