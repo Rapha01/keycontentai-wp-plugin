@@ -19,7 +19,8 @@ $target_group = get_option('sparkplus_target_group', '');
 $usp = get_option('sparkplus_usp', '');
 $advantages = get_option('sparkplus_advantages', '');
 $buying_reasons = get_option('sparkplus_buying_reasons', '');
-$additional_context = get_option('sparkplus_additional_context', '');
+$additional_context_text = get_option('sparkplus_additional_context_text', '');
+$additional_context_image = get_option('sparkplus_additional_context_image', '');
 
 // Get WYSIWYG formatting options
 $wysiwyg_formatting = get_option('sparkplus_wysiwyg_formatting', array(
@@ -33,6 +34,7 @@ $wysiwyg_formatting = get_option('sparkplus_wysiwyg_formatting', array(
 
 <div class="sparkplus-tab-panel">
     
+    <h2><?php esc_html_e('General Context', 'sparkplus'); ?></h2>
     <p class="description" style="margin-bottom: 20px;">
         <?php esc_html_e('Configure your general context and business information. This data will be used to personalize AI-generated content.', 'sparkplus'); ?>
     </p>
@@ -191,20 +193,39 @@ $wysiwyg_formatting = get_option('sparkplus_wysiwyg_formatting', array(
                 
                 <tr>
                     <th scope="row">
-                        <label for="sparkplus_additional_context">
-                            <?php esc_html_e('Additional Context', 'sparkplus'); ?>
+                        <label for="sparkplus_additional_context_text">
+                            <?php esc_html_e('Additional Context (Text)', 'sparkplus'); ?>
                         </label>
                     </th>
                     <td>
                         <textarea 
-                            id="sparkplus_additional_context" 
-                            name="sparkplus_additional_context" 
+                            id="sparkplus_additional_context_text" 
+                            name="sparkplus_additional_context_text" 
                             rows="5"
                             class="large-text"
-                            placeholder="<?php esc_attr_e('Any additional information, brand voice guidelines, or context that should influence the content generation...', 'sparkplus'); ?>"
-                        ><?php echo esc_textarea($additional_context); ?></textarea>
+                            placeholder="<?php esc_attr_e('Any additional information, brand voice guidelines, or context that should influence text content generation...', 'sparkplus'); ?>"
+                        ><?php echo esc_textarea($additional_context_text); ?></textarea>
                         <p class="description">
-                            <?php esc_html_e('Any other relevant information about your brand, tone of voice, or specific requirements.', 'sparkplus'); ?>
+                            <?php esc_html_e('Additional context used when generating text fields (title, content, excerpt, text ACF fields, etc.).', 'sparkplus'); ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="sparkplus_additional_context_image">
+                            <?php esc_html_e('Additional Context (Image)', 'sparkplus'); ?>
+                        </label>
+                    </th>
+                    <td>
+                        <textarea 
+                            id="sparkplus_additional_context_image" 
+                            name="sparkplus_additional_context_image" 
+                            rows="5"
+                            class="large-text"
+                            placeholder="<?php esc_attr_e('Any additional information or guidelines that should influence image generation (e.g., style, colors, themes)...', 'sparkplus'); ?>"
+                        ><?php echo esc_textarea($additional_context_image); ?></textarea>
+                        <p class="description">
+                            <?php esc_html_e('Additional context used when generating image fields (featured image, image ACF fields, etc.).', 'sparkplus'); ?>
                         </p>
                     </td>
                 </tr>

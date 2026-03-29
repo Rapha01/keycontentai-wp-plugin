@@ -484,14 +484,18 @@ class SparkPlus_Content_Generator {
 
     private function get_cpt_settings($post_type) {
         // Get CPT-specific additional context and settings from consolidated configs
-        $cpt_additional_context = '';
+        $cpt_additional_context_text = '';
+        $cpt_additional_context_image = '';
         $include_existing_content = true; // Default to true
         $include_acf_instructions = false; // Default to false
         global $sparkplus;
         if ($sparkplus && method_exists($sparkplus, 'get_cpt_configs')) {
             $cpt_configs = $sparkplus->get_cpt_configs();
-            if (isset($cpt_configs[$post_type]['additional_context'])) {
-                $cpt_additional_context = $cpt_configs[$post_type]['additional_context'];
+            if (isset($cpt_configs[$post_type]['additional_context_text'])) {
+                $cpt_additional_context_text = $cpt_configs[$post_type]['additional_context_text'];
+            }
+            if (isset($cpt_configs[$post_type]['additional_context_image'])) {
+                $cpt_additional_context_image = $cpt_configs[$post_type]['additional_context_image'];
             }
             if (isset($cpt_configs[$post_type]['include_existing_content'])) {
                 $include_existing_content = (bool) $cpt_configs[$post_type]['include_existing_content'];
@@ -525,9 +529,11 @@ class SparkPlus_Content_Generator {
             // Custom Fields for this post type
             'custom_fields' => $this->get_custom_fields_config($post_type),
             
-            // Two levels of additional context (General Context + CPT)
-            'general_context_additional_context' => get_option('sparkplus_additional_context', ''),
-            'cpt_additional_context' => $cpt_additional_context,
+            // Two levels of additional context (General Context + CPT), split by text/image
+            'general_context_additional_context_text' => get_option('sparkplus_additional_context_text', ''),
+            'general_context_additional_context_image' => get_option('sparkplus_additional_context_image', ''),
+            'cpt_additional_context_text' => $cpt_additional_context_text,
+            'cpt_additional_context_image' => $cpt_additional_context_image,
             
             // Include existing content setting
             'include_existing_content' => $include_existing_content,
@@ -543,8 +549,10 @@ class SparkPlus_Content_Generator {
             'company_name' => $settings['company_name'],
             'industry' => $settings['industry'],
             'custom_fields_count' => count($settings['custom_fields']),
-            'has_general_context' => !empty($settings['general_context_additional_context']),
-            'has_cpt_context' => !empty($settings['cpt_additional_context'])
+            'has_general_context_text' => !empty($settings['general_context_additional_context_text']),
+            'has_general_context_image' => !empty($settings['general_context_additional_context_image']),
+            'has_cpt_context_text' => !empty($settings['cpt_additional_context_text']),
+            'has_cpt_context_image' => !empty($settings['cpt_additional_context_image'])
         ));
         
         // Validate required settings

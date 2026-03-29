@@ -43,7 +43,8 @@ class SparkPlus_Sanitizer {
             
             if (!isset($sanitized[$post_type_clean])) {
                 $sanitized[$post_type_clean] = array(
-                    'additional_context' => '',
+                    'additional_context_text' => '',
+                    'additional_context_image' => '',
                     'include_existing_content' => true,
                     'include_acf_instructions' => false,
                     'fields' => array()
@@ -65,9 +66,12 @@ class SparkPlus_Sanitizer {
                 $sanitized[$post_type_clean]['include_acf_instructions'] = false;
             }
             
-            // Handle additional_context
-            if (isset($data['additional_context'])) {
-                $sanitized[$post_type_clean]['additional_context'] = sanitize_textarea_field($data['additional_context']);
+            // Handle additional_context (text + image)
+            if (isset($data['additional_context_text'])) {
+                $sanitized[$post_type_clean]['additional_context_text'] = sanitize_textarea_field($data['additional_context_text']);
+            }
+            if (isset($data['additional_context_image'])) {
+                $sanitized[$post_type_clean]['additional_context_image'] = sanitize_textarea_field($data['additional_context_image']);
             }
             
             // Handle fields

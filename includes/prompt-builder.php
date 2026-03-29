@@ -32,65 +32,120 @@ class SparkPlus_Prompt_Builder {
         }
     }
     
+    // ─── Public API ────────────────────────────────────────────────────────
+
     /**
-     * Build the complete prompt for OpenAI
-     * 
-     * @param array $cpt_settings CPT-level settings (general + CPT-specific)
-     * @param array $post_settings Post-specific settings (keyword, post context)
-     * @param array $custom_fields Custom fields configuration
-     * @param int $post_id Current post ID (for excluding from linking pool)
-     * @return string The complete prompt
+     * Build the complete text generation prompt.
+     *
+     * Assembles shared context sections (topic, company, audience, etc.)
+     * together with text-specific sections (field instructions, output format,
+     * internal linking, WYSIWYG rules).
+     *
+     * @param array $cpt_settings  CPT-level settings (including custom_fields).
+     * @param array $post_settings Post-specific settings (keyword, post context).
+     * @param int   $post_id       Current post ID.
+     * @return string The complete text prompt (empty if no text fields).
      */
-    public function build_prompt($cpt_settings, $post_settings, $custom_fields, $post_id = 0) {
-        $prompt_parts = array();
-        
-        // 1. System Role and Context
-        $prompt_parts[] = $this->build_system_context($cpt_settings);
-        
-        // 2. Language Instruction
-        $prompt_parts[] = $this->build_language_instruction($cpt_settings);
-        
-        // 3. Topic/Keyword
-        $prompt_parts[] = $this->build_topic_section($post_settings);
-        
-        // 4. Company/General Context Information
-        $prompt_parts[] = $this->build_general_context($cpt_settings);
-        
-        // 5. Target Audience
-        $prompt_parts[] = $this->build_target_audience_section($cpt_settings);
-        
-        // 6. Post Type Specific Context
-        $prompt_parts[] = $this->build_post_type_context($cpt_settings);
-        
-        // 7. Post-Specific Additional Context
-        $prompt_parts[] = $this->build_post_specific_context($post_settings);
-        
-        // 8. Existing Content Context (if enabled and post exists)
-        $prompt_parts[] = $this->build_existing_content_section($cpt_settings, $custom_fields, $post_id);
-        
-        // 9. Internal Linking Pool
-        $prompt_parts[] = $this->build_internal_linking_section($custom_fields, $post_id);
-        
-        // 10. WYSIWYG Formatting Rules (if applicable)
-        $prompt_parts[] = $this->build_wysiwyg_formatting_rules($custom_fields);
-        
-        // 11. Custom Fields Instructions
-        $prompt_parts[] = $this->build_custom_fields_instructions($custom_fields, !empty($cpt_settings['include_acf_instructions']));
-        
-        // 12. Output Format Instructions
-        $prompt_parts[] = $this->build_output_format_instructions($custom_fields);
-        
-        // 13. Final Instructions
-        $prompt_parts[] = $this->build_final_instructions($cpt_settings);
-        
-        // Combine all parts with double line breaks
-        return implode("\n\n\n", array_filter($prompt_parts));
+    public function build_text_prompt( $cpt_settings, $post_settings, $post_id = 0 ) {
+        $this->add_debug( 'build_text_prompt', 'Building text prompt' );
+
+        // Filter to text-only fields (exclude image fields)
+        $text_fields = array_values( array_filter( $cpt_settings['custom_fields'], function ( $f ) {
+            return $f['type'] !== 'image';
+        } ) );
+
+        if ( empty( $text_fields ) ) {
+            $this->add_debug( 'build_text_prompt', 'No text fields found — skipping text generation' );
+            return '';
+        }
+
+        $parts = array();
+
+        // --- Shared sections ---
+        $parts[] = $this->build_system_context();
+        $parts[] = $this->build_language_instruction( $cpt_settings );
+        $parts[] = $this->build_topic_section( $post_settings );
+        $parts[] = $this->build_general_context( $cpt_settings, 'text' );
+        $parts[] = $this->build_target_audience_section( $cpt_settings );
+        $parts[] = $this->build_post_type_context( $cpt_settings, 'text' );
+        $parts[] = $this->build_post_specific_context( $post_settings );
+        $parts[] = $this->build_existing_content_section( $cpt_settings, $text_fields, $post_id );
+
+        // --- Text-specific sections ---
+        $parts[] = $this->build_internal_linking_section( $text_fields, $post_id );
+        $parts[] = $this->build_wysiwyg_formatting_rules( $text_fields );
+        $parts[] = $this->build_custom_fields_instructions( $text_fields, ! empty( $cpt_settings['include_acf_instructions'] ) );
+        $parts[] = $this->build_output_format_instructions( $text_fields );
+        $parts[] = $this->build_final_instructions( $cpt_settings );
+
+        $prompt = implode( "\n\n\n", array_filter( $parts ) );
+
+        $this->add_debug( 'build_text_prompt', array(
+            'prompt_length'     => strlen( $prompt ),
+            'prompt_preview'    => $this->get_prompt_preview( $prompt, 300 ),
+            'prompt'            => $prompt,
+            'keyword'           => $post_settings['keyword'],
+            'language'          => $cpt_settings['language'],
+            'text_fields_count' => count( $text_fields ),
+        ) );
+
+        return $prompt;
     }
-    
+
     /**
-     * Build system context and role
+     * Build the complete image generation prompt for a single field.
+     *
+     * Assembles the same shared context sections as text (topic, company,
+     * audience, etc.) together with image-specific sections (field header,
+     * image instructions, style requirements).
+     *
+     * @param array $cpt_settings  CPT-level settings.
+     * @param array $post_settings Post-specific settings (keyword, etc.).
+     * @param array $field         Image field configuration.
+     * @param int   $post_id       Current post ID.
+     * @return string The image generation prompt.
      */
-    private function build_system_context($settings) {
+    public function build_image_prompt( $cpt_settings, $post_settings, $field, $post_id ) {
+        $this->add_debug( 'build_image_prompt', array(
+            'field_key'   => $field['key'],
+            'field_label' => $field['label'],
+            'post_id'     => $post_id,
+        ) );
+
+        $keyword = isset( $post_settings['keyword'] ) ? $post_settings['keyword'] : '';
+
+        $parts = array();
+
+        // --- Image field header + instructions ---
+        $parts[] = $this->build_image_field_section( $field, $cpt_settings, $keyword );
+
+        // --- Shared sections ---
+        $parts[] = $this->build_topic_section( $post_settings );
+        $parts[] = $this->build_general_context( $cpt_settings, 'image' );
+        $parts[] = $this->build_target_audience_section( $cpt_settings );
+        $parts[] = $this->build_post_type_context( $cpt_settings, 'image' );
+        $parts[] = $this->build_post_specific_context( $post_settings );
+
+        // --- Image-specific sections ---
+        $parts[] = $this->build_image_style_requirements();
+        $parts[] = $this->build_existing_content_for_image( $post_id );
+
+        $prompt = implode( "\n\n", array_filter( $parts ) );
+
+        $this->add_debug( 'build_image_prompt', array(
+            'field_key' => $field['key'],
+            'prompt'    => $prompt,
+        ) );
+
+        return $prompt;
+    }
+
+    // ─── Shared Sections ──────────────────────────────────────────────────
+
+    /**
+     * Build system context and role (text prompts only).
+     */
+    private function build_system_context() {
         return "You are an expert content writer and SEO specialist. Your task is to create high-quality, engaging, and SEO-optimized content for a professional website.";
     }
     
@@ -128,42 +183,49 @@ class SparkPlus_Prompt_Builder {
             return '';
         }
         
-        return "# Topic\n**Keyword:** {$post_settings['keyword']}\nCreate comprehensive content about this topic.";
+        return "# Topic\n**Keyword:** {$post_settings['keyword']}";
     }
     
     /**
-     * Build general context/company context
+     * Build general context / company context.
+     *
+     * @param array  $settings CPT-level settings.
+     * @param string $type     'text' or 'image' — selects the matching additional-context field.
      */
-    private function build_general_context($settings) {
+    private function build_general_context( $settings, $type = 'text' ) {
         $context_parts = array();
-        
-        $context_parts[] = "# General Context";
-        
-        if (!empty($settings['company_name'])) {
+
+        if ( ! empty( $settings['company_name'] ) ) {
             $context_parts[] = "- Company: {$settings['company_name']}";
         }
-        
-        if (!empty($settings['industry'])) {
+        if ( ! empty( $settings['industry'] ) ) {
             $context_parts[] = "- Industry: {$settings['industry']}";
         }
-        
-        if (!empty($settings['usp'])) {
+        if ( ! empty( $settings['usp'] ) ) {
             $context_parts[] = "- Unique Selling Proposition: {$settings['usp']}";
         }
-        
-        if (!empty($settings['advantages'])) {
+        if ( ! empty( $settings['advantages'] ) ) {
             $context_parts[] = "- Key Advantages: {$settings['advantages']}";
         }
-        
-        if (!empty($settings['buying_reasons'])) {
+        if ( ! empty( $settings['buying_reasons'] ) ) {
             $context_parts[] = "- Why Customers Choose Us: {$settings['buying_reasons']}";
         }
-        
-        if (!empty($settings['general_context_additional_context'])) {
-            $context_parts[] = "- Additional Context: {$settings['general_context_additional_context']}";
+
+        $key = ( $type === 'image' )
+            ? 'general_context_additional_context_image'
+            : 'general_context_additional_context_text';
+
+        if ( ! empty( $settings[ $key ] ) ) {
+            $context_parts[] = "- Additional Context: {$settings[ $key ]}";
         }
-        
-        return implode("\n", $context_parts);
+
+        if ( empty( $context_parts ) ) {
+            return '';
+        }
+
+        array_unshift( $context_parts, '# General Context' );
+
+        return implode( "\n", $context_parts );
     }
     
     /**
@@ -178,21 +240,26 @@ class SparkPlus_Prompt_Builder {
     }
     
     /**
-     * Build post type specific context
+     * Build post-type-specific context.
+     *
+     * @param array  $settings CPT-level settings.
+     * @param string $type     'text' or 'image' — selects the matching additional-context field.
      */
-    private function build_post_type_context($settings) {
+    private function build_post_type_context( $settings, $type = 'text' ) {
         $context_parts = array();
-        
-        $post_type = $settings['post_type'];
-        $context_parts[] = "# Post Type: {$post_type}";
-        
-        // Check if there's post-type-specific additional context
-        if (!empty($settings['cpt_additional_context'])) {
-            $context_parts[] = "## Specific Instructions for This Post Type";
-            $context_parts[] = $settings['cpt_additional_context'];
+
+        $context_parts[] = "# Post Type: {$settings['post_type']}";
+
+        $key = ( $type === 'image' )
+            ? 'cpt_additional_context_image'
+            : 'cpt_additional_context_text';
+
+        if ( ! empty( $settings[ $key ] ) ) {
+            $context_parts[] = '## Specific Instructions for This Post Type';
+            $context_parts[] = $settings[ $key ];
         }
-        
-        return implode("\n", $context_parts);
+
+        return implode( "\n", $context_parts );
     }
     
     /**
@@ -356,6 +423,8 @@ class SparkPlus_Prompt_Builder {
         return implode("\n", $section_parts);
     }
     
+    // ─── Text-Specific Sections ──────────────────────────────────────────
+
     /**
      * Build internal linking section
      */
@@ -728,6 +797,8 @@ class SparkPlus_Prompt_Builder {
         return implode("\n", $instructions);
     }
     
+    // ─── Utilities ───────────────────────────────────────────────────────
+
     /**
      * Build allowed HTML tags string based on formatting options
      * 
@@ -802,109 +873,64 @@ class SparkPlus_Prompt_Builder {
         return substr($prompt, 0, $max_length) . "... [truncated, total length: " . strlen($prompt) . " characters]";
     }
     
+    // ─── Image-Specific Sections ──────────────────────────────────────────
+
     /**
-     * Build text generation prompt (filters text fields and builds prompt)
-     * 
-     * @param array $cpt_settings CPT-level settings (including custom_fields)
-     * @param array $post_settings Post-specific settings
-     * @return string The complete text prompt (empty string if no text fields)
+     * Build the image field header and field-specific instructions.
      */
-    public function build_text_prompt($cpt_settings, $post_settings, $post_id = 0) {
-        $this->add_debug('build_text_prompt', 'Building text prompt');
-        
-        // Filter only text fields (exclude image fields)
-        $text_fields = array_filter($cpt_settings['custom_fields'], function($field) {
-            return $field['type'] !== 'image';
-        });
-        
-        if (empty($text_fields)) {
-            $this->add_debug('build_text_prompt', 'No text fields found - skipping text generation');
+    private function build_image_field_section( $field, $cpt_settings, $keyword ) {
+        $parts = array();
+
+        $parts[] = "# Image Field: {$field['label']}";
+        $parts[] = "**Field key:** `{$field['key']}`";
+
+        // Field-specific description / ACF instructions
+        $use_acf = ! empty( $cpt_settings['include_acf_instructions'] ) && ! empty( $field['acf_instructions'] );
+        $has_custom = ! empty( $field['description'] ) || $use_acf;
+
+        if ( $has_custom ) {
+            $lines = array();
+            if ( $use_acf ) {
+                $lines[] = $field['acf_instructions'];
+            }
+            if ( ! empty( $field['description'] ) ) {
+                $lines[] = $field['description'];
+            }
+            $parts[] = "# Specific Instructions\n" . implode( "\n", $lines );
+        } else {
+            $parts[] = "# Instructions\nCreate a professional, high-quality image that represents the field '{$field['label']}' in the context of: {$keyword}";
+        }
+
+        return implode( "\n", $parts );
+    }
+
+    /**
+     * Build generic image style requirements.
+     */
+    private function build_image_style_requirements() {
+        return "# Style Requirements\n"
+            . "- Professional and modern\n"
+            . "- High-quality composition\n"
+            . "- Clear and well-lit\n"
+            . "- Suitable for commercial use\n"
+            . "- Match the tone and context of the post content";
+    }
+
+    /**
+     * Build existing-content reference for image prompts (lighter framing).
+     */
+    private function build_existing_content_for_image( $post_id ) {
+        $content = $this->get_post_content( $post_id );
+        if ( empty( $content ) ) {
             return '';
         }
-        
-        // Build the complete prompt
-        $prompt = $this->build_prompt($cpt_settings, $post_settings, $text_fields, $post_id);
-        
-        // Log prompt details (including full prompt for debug tab)
-        $this->add_debug('build_text_prompt', array(
-            'prompt_length' => strlen($prompt),
-            'prompt_preview' => $this->get_prompt_preview($prompt, 300),
-            'prompt' => $prompt,  // Use 'prompt' key for debug.js to extract
-            'keyword' => $post_settings['keyword'],
-            'language' => $cpt_settings['language'],
-            'text_fields_count' => count($text_fields)
-        ));
-        
-        return $prompt;
-    }
-    
-    /**
-     * Build image generation prompt (single field)
-     * 
-     * @param array $cpt_settings CPT-level settings
-     * @param array $post_settings Post-specific settings (including keyword)
-     * @param array $field Image field configuration
-     * @param int $post_id The post ID to retrieve existing content from
-     * @return string The image generation prompt
-     */
-    public function build_image_prompt($cpt_settings, $post_settings, $field, $post_id) {
-        $this->add_debug('build_image_prompt', array(
-            'field_key' => $field['key'],
-            'field_label' => $field['label'],
-            'post_id' => $post_id
-        ));
-        
-        $prompt_parts = array();
-        
-        $keyword = isset($post_settings['keyword']) ? $post_settings['keyword'] : '';
-        
-        // 1. Image field purpose (most important)
-        $prompt_parts[] = "# Image Field: {$field['label']}";
-        $prompt_parts[] = "**Field key:** `{$field['key']}`";
-        
-        // 2. Primary topic/keyword
-        if (!empty($keyword)) {
-            $prompt_parts[] = "# Primary Topic\n{$keyword}";
-        }
-        
-        // 3. Field-specific description or default instruction
-        $use_acf_instructions = !empty($cpt_settings['include_acf_instructions']) && !empty($field['acf_instructions']);
-        $has_custom_instructions = !empty($field['description']) || $use_acf_instructions;
-        if ($has_custom_instructions) {
-            $instruction_lines = array();
-            if ($use_acf_instructions) {
-                $instruction_lines[] = $field['acf_instructions'];
-            }
-            if (!empty($field['description'])) {
-                $instruction_lines[] = $field['description'];
-            }
-            $prompt_parts[] = "# Specific Instructions\n" . implode("\n", $instruction_lines);
-        } else {
-            $prompt_parts[] = "# Instructions\nCreate a professional, high-quality image that represents the field '{$field['label']}' in the context of: {$keyword}";
-        }
-        
-        // 4. Add context from company/industry if available
-        if (!empty($cpt_settings['industry'])) {
-            $prompt_parts[] = "# Industry Context\n{$cpt_settings['industry']}";
-        }
-        
-        // 5. Style requirements
-        $prompt_parts[] = "# Style Requirements\n- Professional and modern\n- High-quality composition\n- Clear and well-lit\n- Suitable for commercial use\n- Match the tone and context of the post content";
-        
-        // 6. Retrieve existing post content for context (at the end for reference)
-        $post_content = $this->get_post_content($post_id);
-        if (!empty($post_content)) {
-            $prompt_parts[] = "# Existing Post Content (Reference Only)\nThe following content is provided as additional context and may help you better understand the topic and tone of the image to generate. You may reference this content if the instructions above mention specific fields or require context from the post. However, this is optional reference material - focus primarily on the instructions and requirements specified above.\n\n" . $post_content;
-        }
-        
-        $full_prompt = implode("\n\n", $prompt_parts);
-        
-        $this->add_debug('build_image_prompt', array(
-            'field_key' => $field['key'],
-            'prompt' => $full_prompt
-        ));
-        
-        return $full_prompt;
+
+        return "# Existing Post Content (Reference Only)\n"
+            . "The following content is provided as additional context and may help you better understand "
+            . "the topic and tone of the image to generate. You may reference this content if the instructions "
+            . "above mention specific fields or require context from the post. However, this is optional "
+            . "reference material — focus primarily on the instructions and requirements specified above.\n\n"
+            . $content;
     }
     
     /**

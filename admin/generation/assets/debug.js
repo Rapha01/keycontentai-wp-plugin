@@ -100,8 +100,13 @@
     
     /**
      * Add debug entry
+     *
+     * @param {string}  step     Label for the debug step
+     * @param {*}       data     Arbitrary payload (object or string)
+     * @param {boolean} isError  Whether this entry represents an error
+     * @param {string}  source   Origin: 'client' or 'server'
      */
-    function addDebugEntry(step, data, isError) {
+    function addDebugEntry(step, data, isError, source) {
         const timestamp = new Date().toLocaleTimeString();
         
         // Add to debug data
@@ -109,7 +114,8 @@
             step: step,
             data: data,
             timestamp: timestamp,
-            isError: isError || false
+            isError: isError || false,
+            source: source || null
         });
         
         // Extract prompt and response if available
@@ -171,9 +177,16 @@
                 $entry.addClass('error');
             }
             
-            const $header = $('<div class="sparkplus-debug-entry-header"></div>')
-                .text(entry.step)
-                .append('<span class="sparkplus-debug-timestamp">' + entry.timestamp + '</span>');
+            const $header = $('<div class="sparkplus-debug-entry-header"></div>');
+            
+            // Source badge (Client / Server)
+            if (entry.source) {
+                const badgeClass = 'sparkplus-debug-source sparkplus-debug-source-' + entry.source;
+                $header.append('<span class="' + badgeClass + '">' + entry.source.charAt(0).toUpperCase() + entry.source.slice(1) + '</span> ');
+            }
+            
+            $header.append(document.createTextNode(entry.step));
+            $header.append('<span class="sparkplus-debug-timestamp">' + entry.timestamp + '</span>');
             
             const content = typeof entry.data === 'object' 
                 ? JSON.stringify(entry.data, null, 2) 

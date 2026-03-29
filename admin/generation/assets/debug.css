@@ -104,6 +104,33 @@
     font-weight: normal;
 }
 
+/* Source badges (Client / Server) */
+.sparkplus-debug-source {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-right: 6px;
+    flex-shrink: 0;
+}
+
+.sparkplus-debug-source-server {
+    background: #e7f5fe;
+    color: #135e96;
+}
+
+.sparkplus-debug-source-client {
+    background: #fef0e7;
+    color: #9a4e0e;
+}
+
+.sparkplus-debug-entry.error .sparkplus-debug-source {
+    background: #fce8e8;
+    color: #d63638;
+}
+
 .sparkplus-debug-entry-content {
     color: #1e1e1e;
     white-space: pre-wrap;

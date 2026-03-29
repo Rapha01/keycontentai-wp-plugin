@@ -2,13 +2,14 @@
 /**
  * Plugin Name: SparkPlus
  * Description: Creates and populates custom post types with AI-generated content based on user keywords.
- * Version: 1.0.0
+ * Version: 1.0.2
  * Author: olympagency
  * Author URI: https://olympagency.com/
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: sparkplus
  * Domain Path: /languages
+ * TEST CHANGE
  */
 
 // Exit if accessed directly
@@ -41,7 +42,8 @@ define('SPARKPLUS_PLUGIN_BASENAME', plugin_basename(__FILE__));
  *   sparkplus_usp               text     Unique selling proposition
  *   sparkplus_advantages        text     Product advantages
  *   sparkplus_buying_reasons    text     Reasons for buying
- *   sparkplus_additional_context text    Additional brand context
+ *   sparkplus_additional_context_text  text    Additional context for text generation
+ *   sparkplus_additional_context_image text    Additional context for image generation
  *   sparkplus_wysiwyg_formatting array   Allowed HTML elements (paragraphs, bold, italic, headings, lists)
  *
  * CPT Settings (tab: cpt)
@@ -50,7 +52,8 @@ define('SPARKPLUS_PLUGIN_BASENAME', plugin_basename(__FILE__));
  *                                        Structure: {
  *                                          [post_type]: {
  *                                            fields: {...},
- *                                            additional_context: string,
+ *                                            additional_context_text: string,
+ *                                            additional_context_image: string,
  *                                            include_existing_content: bool (default: true)
  *                                          }
  *                                        }

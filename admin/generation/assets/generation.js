@@ -183,8 +183,36 @@
     /**
      * Add debug entry
      */
-    function addDebugEntry(step, data, isError) {
-        window.SparkPlusDebug?.addEntry(step, data, isError);
+    function addDebugEntry(step, data, isError, source) {
+        window.SparkPlusDebug?.addEntry(step, data, isError, source);
+    }
+    
+    /**
+     * Centralized error handler — logs to debug panel AND shows WordPress notice.
+     * Every generation error should flow through here so behaviour is consistent.
+     *
+     * @param {jQuery}  $row    The post row element
+     * @param {string}  step    Debug step label (e.g. 'generate_text', 'validation')
+     * @param {string}  message Human-readable error message
+     * @param {string}  source  'client' or 'server'
+     */
+    function handleError($row, step, message, source) {
+        // 1. Log to debug panel
+        addDebugEntry(step, { error: message }, true, source);
+        
+        // 2. Show WordPress admin notice
+        const postId  = $row.data('post-id');
+        const keyword = $row.find('.sparkplus-keyword-input').val() || $row.find('td:eq(2) strong').text().trim();
+        const label   = keyword ? keyword + ' (ID ' + postId + ')' : 'Post ' + postId;
+        const $notice = $('<div class="notice notice-error sparkplus-generation-notice"><p><strong>' + $('<span>').text(label).html() + ':</strong> ' + $('<span>').text(message).html() + '</p></div>');
+        $('#sparkplus-generation-notices').append($notice);
+        
+        // 3. Console log
+        console.error('Generation failed for post', postId, ':', message);
+        
+        // 4. Update row status and continue queue
+        updatePostStatus($row, 'error');
+        processNextPost();
     }
     
     /**
@@ -254,6 +282,9 @@
         isGenerating = true;
         stopRequested = false;
         console.log('Starting generation for', getQueuedCount(), 'posts');
+        
+        // Clear previous error notices
+        $('#sparkplus-generation-notices').empty();
         
         // Disable queue management buttons
         $('#sparkplus-queue-all, #sparkplus-unqueue-all')
@@ -337,10 +368,10 @@
         try {
             // 1. Fetch field metadata
             const metaResp = await ajaxPromise({ action: 'sparkplus_get_generation_meta', post_id: postId });
-            metaResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false));
+            metaResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false, 'server'));
 
             if (!metaResp.success) {
-                onPostComplete($row, false, metaResp.data?.message || 'Failed to fetch generation metadata');
+                handleError($row, 'get_generation_meta', metaResp.data?.message || 'Failed to fetch generation metadata', 'server');
                 return;
             }
 
@@ -348,17 +379,17 @@
 
             // Nothing to do — no generate fields and no clear fields
             if (text_fields.length === 0 && image_fields.length === 0 && !has_clear_fields) {
-                onPostComplete($row, false, 'No fields selected for generation or clearing');
+                handleError($row, 'validation', 'No fields selected for generation or clearing', 'client');
                 return;
             }
 
             // 2. Generate text fields
             if (text_fields.length > 0) {
                 const textResp = await ajaxPromise({ action: 'sparkplus_generate_text', post_id: postId });
-                textResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false));
+                textResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false, 'server'));
 
                 if (!textResp.success) {
-                    onPostComplete($row, false, textResp.data?.message || 'Text generation failed');
+                    handleError($row, 'generate_text', textResp.data?.message || 'Text generation failed', 'server');
                     return;
                 }
             }
@@ -370,10 +401,10 @@
                     post_id:     postId,
                     field_index: img.index,
                 });
-                imgResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false));
+                imgResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false, 'server'));
 
                 if (!imgResp.success) {
-                    onPostComplete($row, false, imgResp.data?.message || 'Image generation failed (' + img.label + ')');
+                    handleError($row, 'generate_image', imgResp.data?.message || 'Image generation failed (' + img.label + ')', 'server');
                     return;
                 }
             }
@@ -381,10 +412,10 @@
             // 4. Clear fields marked for clearing
             if (has_clear_fields) {
                 const clearResp = await ajaxPromise({ action: 'sparkplus_clear_fields', post_id: postId });
-                clearResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false));
+                clearResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false, 'server'));
 
                 if (!clearResp.success) {
-                    onPostComplete($row, false, clearResp.data?.message || 'Field clearing failed');
+                    handleError($row, 'clear_fields', clearResp.data?.message || 'Field clearing failed', 'server');
                     return;
                 }
             }
@@ -392,27 +423,19 @@
             // 5. Stamp generation timestamp
             await ajaxPromise({ action: 'sparkplus_stamp_generation', post_id: postId });
 
-            onPostComplete($row, true, null);
+            onPostComplete($row);
 
         } catch (err) {
             const detail = err.error || err.message || 'Unknown network error';
-            addDebugEntry('Network error', { status: err.status, error: detail }, true);
-            onPostComplete($row, false, 'Network error: ' + detail);
+            handleError($row, 'network', 'Network error: ' + detail, 'client');
         }
     }
     
     /**
-     * Handle post generation result
+     * Handle successful post generation
      */
-    function onPostComplete($row, success, errorMessage) {
-        updatePostStatus($row, success ? 'finished' : 'error');
-        
-        if (success) {
-            // Generation completed
-        } else {
-            console.error('Generation failed for post', $row.data('post-id'), ':', errorMessage);
-        }
-        
+    function onPostComplete($row) {
+        updatePostStatus($row, 'finished');
         processNextPost();
     }
     

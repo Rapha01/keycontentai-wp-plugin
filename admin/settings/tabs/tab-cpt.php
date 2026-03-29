@@ -33,7 +33,8 @@ $cpt_configs = $sparkplus->get_cpt_configs();
 $current_field_configs = isset($cpt_configs[$selected_post_type]['fields']) ? $cpt_configs[$selected_post_type]['fields'] : array();
 
 // Get additional context for the selected post type
-$current_additional_context = isset($cpt_configs[$selected_post_type]['additional_context']) ? $cpt_configs[$selected_post_type]['additional_context'] : '';
+$current_additional_context_text = isset($cpt_configs[$selected_post_type]['additional_context_text']) ? $cpt_configs[$selected_post_type]['additional_context_text'] : '';
+$current_additional_context_image = isset($cpt_configs[$selected_post_type]['additional_context_image']) ? $cpt_configs[$selected_post_type]['additional_context_image'] : '';
 
 // Get include existing content setting (defaults to true)
 $include_existing_content = isset($cpt_configs[$selected_post_type]['include_existing_content']) ? $cpt_configs[$selected_post_type]['include_existing_content'] : true;
@@ -191,7 +192,7 @@ if (!empty($selected_post_type)) {
                             $sub_count_enabled = 0;
                             $sub_count_clear   = 0;
                             foreach ($field['sub_fields'] as $sf) {
-                                $sf_on    = isset($group_cfg['sub_fields'][$sf['key']]['enabled']) ? $group_cfg['sub_fields'][$sf['key']]['enabled'] : true;
+                                $sf_on    = isset($group_cfg['sub_fields'][$sf['key']]['enabled']) ? $group_cfg['sub_fields'][$sf['key']]['enabled'] : false;
                                 $sf_clear = isset($group_cfg['sub_fields'][$sf['key']]['clear']) ? $group_cfg['sub_fields'][$sf['key']]['clear'] : false;
                                 if ($sf_on) { $sub_count_enabled++; }
                                 if ($sf_clear) { $sub_count_clear++; }
@@ -244,8 +245,6 @@ if (!empty($selected_post_type)) {
                                             <?php
                                             if (isset($sub_cfg['enabled'])) {
                                                 checked($sub_cfg['enabled'], true);
-                                            } else {
-                                                checked(true, true);
                                             }
                                             ?>
                                         />
@@ -334,8 +333,6 @@ if (!empty($selected_post_type)) {
                                         <?php 
                                         if (isset($current_field_configs[$field['key']])) {
                                             checked($current_field_configs[$field['key']]['enabled'], true);
-                                        } else {
-                                            checked(true, true);
                                         }
                                         ?>
                                     />
@@ -513,20 +510,39 @@ if (!empty($selected_post_type)) {
                 </tr>
                 <tr>
                     <th scope="row">
-                        <label for="sparkplus_cpt_additional_context_<?php echo esc_attr($selected_post_type); ?>">
-                            <?php esc_html_e('Additional Context', 'sparkplus'); ?>
+                        <label for="sparkplus_cpt_additional_context_text_<?php echo esc_attr($selected_post_type); ?>">
+                            <?php esc_html_e('Additional Context (Text)', 'sparkplus'); ?>
                         </label>
                     </th>
                     <td>
                         <textarea 
-                            id="sparkplus_cpt_additional_context_<?php echo esc_attr($selected_post_type); ?>"
-                            name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][additional_context]"
+                            id="sparkplus_cpt_additional_context_text_<?php echo esc_attr($selected_post_type); ?>"
+                            name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][additional_context_text]"
                             rows="5"
                             class="large-text"
                             placeholder="<?php esc_attr_e('E.g., This post type is used for case studies. Focus on results and data. Always include a call-to-action at the end.', 'sparkplus'); ?>"
-                        ><?php echo esc_textarea($current_additional_context); ?></textarea>
+                        ><?php echo esc_textarea($current_additional_context_text); ?></textarea>
                         <p class="description">
-                            <?php esc_html_e('Provide specific instructions or context for this post type. This will be used by the AI when generating content.', 'sparkplus'); ?>
+                            <?php esc_html_e('Specific instructions for text generation on this post type.', 'sparkplus'); ?>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="sparkplus_cpt_additional_context_image_<?php echo esc_attr($selected_post_type); ?>">
+                            <?php esc_html_e('Additional Context (Image)', 'sparkplus'); ?>
+                        </label>
+                    </th>
+                    <td>
+                        <textarea 
+                            id="sparkplus_cpt_additional_context_image_<?php echo esc_attr($selected_post_type); ?>"
+                            name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][additional_context_image]"
+                            rows="5"
+                            class="large-text"
+                            placeholder="<?php esc_attr_e('E.g., Use minimalist style, bright colors, no text overlays on images.', 'sparkplus'); ?>"
+                        ><?php echo esc_textarea($current_additional_context_image); ?></textarea>
+                        <p class="description">
+                            <?php esc_html_e('Specific instructions for image generation on this post type.', 'sparkplus'); ?>
                         </p>
                     </td>
                 </tr>

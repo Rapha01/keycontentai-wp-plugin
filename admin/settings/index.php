@@ -23,7 +23,7 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])
             <?php esc_html_e('CPT', 'sparkplus'); ?>
         </a>
         <a href="?page=sparkplus-settings&tab=general-context" class="nav-tab <?php echo esc_attr( $active_tab === 'general-context' ? 'nav-tab-active' : '' ); ?>">
-            <?php esc_html_e('General Context', 'sparkplus'); ?>
+            <?php esc_html_e('General', 'sparkplus'); ?>
         </a>
         <a href="?page=sparkplus-settings&tab=internal-linking" class="nav-tab <?php echo esc_attr( $active_tab === 'internal-linking' ? 'nav-tab-active' : '' ); ?>">
             <?php esc_html_e('Internal Linking', 'sparkplus'); ?>

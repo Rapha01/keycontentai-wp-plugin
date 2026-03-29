@@ -33,6 +33,7 @@ if ($is_configured) {
 
 <div class="wrap">
     <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+    <div id="sparkplus-generation-notices"></div>
     
     <?php if (!$is_configured) : ?>
         <div class="notice notice-warning">

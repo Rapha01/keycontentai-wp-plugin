@@ -361,7 +361,7 @@ class SparkPlus_Admin_Ajax_Handler {
                 }
                 
                 // Textarea fields
-                $textarea_fields = array('sparkplus_usp', 'sparkplus_advantages', 'sparkplus_buying_reasons', 'sparkplus_additional_context');
+                $textarea_fields = array('sparkplus_usp', 'sparkplus_advantages', 'sparkplus_buying_reasons', 'sparkplus_additional_context_text', 'sparkplus_additional_context_image');
                 foreach ($textarea_fields as $field) {
                     if (isset($_POST[$field])) {
                         update_option($field, sanitize_textarea_field(wp_unslash($_POST[$field])));
