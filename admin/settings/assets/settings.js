@@ -244,4 +244,13 @@ jQuery(document).ready(function($) {
         syncGroupMaster(groupKey, 'input.sparkplus-group-master-clear-checkbox', '.sparkplus-sub-field-clear-checkbox');
     });
 
+    // ─── Post-object linking-pool warning toggle ───
+    $(document).on('change', '.sparkplus-generate-checkbox', function() {
+        var $row = $(this).closest('tr');
+        var $warning = $row.find('.sparkplus-post-object-warning');
+        if ($warning.length) {
+            $warning.toggle($(this).prop('checked'));
+        }
+    });
+
 });

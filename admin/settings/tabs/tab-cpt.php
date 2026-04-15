@@ -42,6 +42,9 @@ $include_existing_content = isset($cpt_configs[$selected_post_type]['include_exi
 // Get include ACF instruction fields setting (defaults to false)
 $include_acf_instructions = isset($cpt_configs[$selected_post_type]['include_acf_instructions']) ? $cpt_configs[$selected_post_type]['include_acf_instructions'] : false;
 
+// Check if linking pool is enabled (used for post_object warnings)
+$linking_pool_enabled = (bool) get_option('sparkplus_linking_enable', false);
+
 // Get custom fields for the selected post type
 $custom_fields = array();
 if (!empty($selected_post_type)) {
@@ -228,7 +231,9 @@ if (!empty($selected_post_type)) {
                             </tr>
                             <?php foreach ($field['sub_fields'] as $sub_field) : ?>
                                 <?php
-                                $sub_is_image = in_array($sub_field['type'], array('image', 'file', 'gallery'));
+                                $sub_is_image       = in_array($sub_field['type'], array('image', 'file', 'gallery'));
+                                $sub_is_post_object = $sub_field['type'] === 'post_object';
+                                $sub_hide_options   = $sub_field['type'] === 'true_false';
                                 $sub_cfg      = isset($group_cfg['sub_fields'][$sub_field['key']]) ? $group_cfg['sub_fields'][$sub_field['key']] : array();
                                 $sub_size     = isset($sub_cfg['size']) ? $sub_cfg['size'] : 'auto';
                                 $sub_quality  = isset($sub_cfg['quality']) ? $sub_cfg['quality'] : 'auto';
@@ -282,9 +287,20 @@ if (!empty($selected_post_type)) {
                                             class="large-text"
                                             placeholder="<?php esc_attr_e('E.g., A brief summary of the content, maximum 150 characters', 'sparkplus'); ?>"
                                         ><?php echo isset($sub_cfg['description']) ? esc_textarea($sub_cfg['description']) : ''; ?></textarea>
+                                        <?php if ($sub_is_post_object && !$linking_pool_enabled) : ?>
+                                            <p class="sparkplus-post-object-warning" style="display: <?php echo (!empty($sub_cfg['enabled'])) ? 'block' : 'none'; ?>;">
+                                                <span class="dashicons dashicons-warning"></span>
+                                                <?php esc_html_e('The linking pool is not enabled. Enable it in the Internal Linking tab for this field to work. Make sure the linking pool contains the posts that are allowed for this post_object field.', 'sparkplus'); ?>
+                                            </p>
+                                        <?php endif; ?>
                                     </td>
                                     <td data-label="<?php esc_attr_e('Text/Image Options', 'sparkplus'); ?>">
-                                        <?php if ($sub_is_image) : ?>
+                                        <?php if ($sub_hide_options) : ?>
+                                            <!-- No options for this field type -->
+                                        <?php elseif ($sub_is_post_object) : ?>
+                                            <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('Nr. of Posts', 'sparkplus'); ?></label>
+                                            <input type="number" name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][word_count]" value="<?php echo isset($sub_cfg['word_count']) ? esc_attr($sub_cfg['word_count']) : ''; ?>" class="small-text" min="1" step="1" placeholder="<?php esc_attr_e('Posts', 'sparkplus'); ?>" />
+                                        <?php elseif ($sub_is_image) : ?>
                                             <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('Dimensions', 'sparkplus'); ?></label>
                                             <select name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][size]" style="width: 100%;">
                                                 <option value="auto" <?php selected($sub_size, 'auto'); ?>><?php esc_html_e('Auto (Recommended)', 'sparkplus'); ?></option>
@@ -317,7 +333,9 @@ if (!empty($selected_post_type)) {
                         <?php else : ?>
                         <?php
                         // Determine if this is an image field
-                        $is_image_field = in_array($field['type'], array('image', 'file', 'gallery'));
+                        $is_image_field  = in_array($field['type'], array('image', 'file', 'gallery'));
+                        $is_post_object  = $field['type'] === 'post_object';
+                        $hide_options    = $field['type'] === 'true_false';
                         $current_size = isset($current_field_configs[$field['key']]['size']) ? $current_field_configs[$field['key']]['size'] : 'auto';
                         $current_quality = isset($current_field_configs[$field['key']]['quality']) ? $current_field_configs[$field['key']]['quality'] : 'auto';
                         $current_webp_quality = isset($current_field_configs[$field['key']]['webp_quality']) ? $current_field_configs[$field['key']]['webp_quality'] : 80;
@@ -383,9 +401,29 @@ if (!empty($selected_post_type)) {
                                     class="large-text"
                                     placeholder="<?php esc_attr_e('E.g., A brief summary of the content, maximum 150 characters', 'sparkplus'); ?>"
                                 ><?php echo isset($current_field_configs[$field['key']]['description']) ? esc_textarea($current_field_configs[$field['key']]['description']) : ''; ?></textarea>
+                                <?php if ($is_post_object && !$linking_pool_enabled) : ?>
+                                    <p class="sparkplus-post-object-warning" style="display: <?php echo (!empty($current_field_configs[$field['key']]['enabled'])) ? 'block' : 'none'; ?>;">
+                                        <span class="dashicons dashicons-warning"></span>
+                                        <?php esc_html_e('The linking pool is not enabled. Enable it in the Internal Linking tab for this field to work. Make sure the linking pool contains the posts that are allowed for this post_object field.', 'sparkplus'); ?>
+                                    </p>
+                                <?php endif; ?>
                             </td>
                             <td data-label="<?php esc_attr_e('WordCount/Dimensions', 'sparkplus'); ?>">
-                                <?php if ($is_image_field) : ?>
+                                <?php if ($hide_options) : ?>
+                                    <!-- No options for this field type -->
+                                <?php elseif ($is_post_object) : ?>
+                                    <!-- Post Count Input -->
+                                    <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('Nr. of Posts', 'sparkplus'); ?></label>
+                                    <input 
+                                        type="number" 
+                                        name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][word_count]"
+                                        value="<?php echo isset($current_field_configs[$field['key']]['word_count']) ? esc_attr($current_field_configs[$field['key']]['word_count']) : ''; ?>"
+                                        class="small-text"
+                                        min="1"
+                                        step="1"
+                                        placeholder="<?php esc_attr_e('Posts', 'sparkplus'); ?>"
+                                    />
+                                <?php elseif ($is_image_field) : ?>
                                     <!-- Image Size Dropdown -->
                                     <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('Dimensions', 'sparkplus'); ?></label>
                                     <select 

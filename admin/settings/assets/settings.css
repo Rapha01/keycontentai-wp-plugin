@@ -346,3 +346,23 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+/* Post-object linking pool warning */
+.sparkplus-post-object-warning {
+    margin: 6px 0 0;
+    padding: 5px 8px;
+    background: #fff8e5;
+    border-left: 3px solid #dba617;
+    border-radius: 2px;
+    font-size: 12px;
+    color: #6e4e00;
+}
+
+.sparkplus-post-object-warning .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    vertical-align: text-bottom;
+    margin-right: 3px;
+    color: #dba617;
+}

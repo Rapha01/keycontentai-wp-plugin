@@ -666,10 +666,11 @@ class SparkPlus_Prompt_Builder {
         }
 
         $type_guide = array(
-            'text'       => '**text** — Short plain text. Output a plain text string; no HTML or markdown.',
-            'textarea'   => '**textarea** — Multi-line plain text. Use \\n for line breaks; no HTML.',
-            'wysiwyg'    => '**wysiwyg** — Rich text editor. HTML formatting is allowed (see WYSIWYG Field Formatting rules above).',
-            'true_false' => '**true_false** — Boolean. You MUST output the integer `1` (true/yes) or `0` (false/no). No other value is accepted.',
+            'text'        => '**text** — Short plain text. Output a plain text string; no HTML or markdown.',
+            'textarea'    => '**textarea** — Multi-line plain text. Use \\n for line breaks; no HTML.',
+            'wysiwyg'     => '**wysiwyg** — Rich text editor. HTML formatting is allowed (see WYSIWYG Field Formatting rules above).',
+            'true_false'  => '**true_false** — Boolean. You MUST output the integer `1` (true/yes) or `0` (false/no). No other value is accepted.',
+            'post_object' => '**post_object** — Related post(s). Output a JSON array of integer post IDs chosen from the Internal Linking pool. Example: `[12, 34]`. Only use IDs listed in the linking section.',
         );
 
         $guide_lines = array();
@@ -715,7 +716,11 @@ class SparkPlus_Prompt_Builder {
                     $instructions[] = "      Description: {$field['description']}";
                 }
                 if (!empty($field['word_count']) && $field['word_count'] > 0) {
-                    $instructions[] = "      Target Word Count: approximately {$field['word_count']} words";
+                    if ( $field['type'] === 'post_object' ) {
+                        $instructions[] = "      Select approximately {$field['word_count']} posts from the Internal Linking pool";
+                    } else {
+                        $instructions[] = "      Target Word Count: approximately {$field['word_count']} words";
+                    }
                 }
                 $instructions[] = "";
                 $sub_num++;
@@ -729,7 +734,11 @@ class SparkPlus_Prompt_Builder {
                     $instructions[] = "   Description: {$field['description']}";
                 }
                 if (!empty($field['word_count']) && $field['word_count'] > 0) {
-                    $instructions[] = "   Target Word Count: approximately {$field['word_count']} words";
+                    if ( $field['type'] === 'post_object' ) {
+                        $instructions[] = "   Select approximately {$field['word_count']} posts from the Internal Linking pool";
+                    } else {
+                        $instructions[] = "   Target Word Count: approximately {$field['word_count']} words";
+                    }
                 }
                 $instructions[] = "";
                 $field_num++;
@@ -773,12 +782,12 @@ class SparkPlus_Prompt_Builder {
                 $sub_total = count($item['sub_keys']);
                 foreach ($item['sub_keys'] as $j => $sub_field) {
                     $sub_comma      = ($j < $sub_total - 1) ? ',' : '';
-                    $placeholder    = ( $sub_field['field_type'] === 'true_false' ) ? '1' : '"content for this field"';
+                    $placeholder    = $this->get_json_placeholder( $sub_field['field_type'] );
                     $instructions[] = "    \"{$sub_field['key']}\": {$placeholder}{$sub_comma}";
                 }
                 $instructions[] = "  }{$comma}";
             } else {
-                $placeholder    = ( $item['field_type'] === 'true_false' ) ? '1' : '"content for this field"';
+                $placeholder    = $this->get_json_placeholder( $item['field_type'] );
                 $instructions[] = "  \"{$item['key']}\": {$placeholder}{$comma}";
             }
         }
@@ -792,9 +801,27 @@ class SparkPlus_Prompt_Builder {
         $instructions[] = "- For WYSIWYG fields: include HTML tags as specified in the field instructions";
         $instructions[] = "- For non-WYSIWYG text fields: use plain text with \\n for line breaks, no HTML";
         $instructions[] = "- For true_false fields: output the integer 1 (true/yes) or 0 (false/no) — no quotes, no other values";
-        $instructions[] = "- All field values must be strings, except true_false fields which must be integers (1 or 0)";
+        $instructions[] = "- For post_object fields: output a JSON array of integer post IDs (e.g. [12, 34]) — only use IDs from the Internal Linking pool";
+        $instructions[] = "- All field values must be strings, except true_false fields (integers 1 or 0) and post_object fields (arrays of integers)";
         
         return implode("\n", $instructions);
+    }
+
+    /**
+     * Get JSON placeholder value for the output format template based on field type.
+     *
+     * @param string $field_type ACF field type.
+     * @return string Placeholder for JSON template.
+     */
+    private function get_json_placeholder( $field_type ) {
+        switch ( $field_type ) {
+            case 'true_false':
+                return '1';
+            case 'post_object':
+                return '[12, 34]';
+            default:
+                return '"content for this field"';
+        }
     }
     
     // ─── Utilities ───────────────────────────────────────────────────────

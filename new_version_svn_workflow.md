@@ -37,7 +37,7 @@ At this point, the new version is in `trunk` on the server.
 
 ## 5) Tag the release (server-side copy)
 1. Right‑click `trunk` → **TortoiseSVN → Branch/Tag…**
-2. **To path:** `/tags/1.2.3`
+2. **To path:** `YOUR-PLUGIN-SLUG/tags/1.2.3`
 3. Select **HEAD revision** (or “Working copy” only if you know why—HEAD is typical right after committing)
 4. Message: `Tag 1.2.3`
 5. OK
