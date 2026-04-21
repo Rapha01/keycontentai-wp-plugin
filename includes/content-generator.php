@@ -194,8 +194,9 @@ class SparkPlus_Content_Generator {
             // Build field lists directly — no validation, just data.
             global $sparkplus;
             $cpt_configs   = $sparkplus->get_cpt_configs();
-            $user_settings = isset( $cpt_configs[ $post->post_type ]['fields'] ) ? $cpt_configs[ $post->post_type ]['fields'] : array();
-            $all_fields    = $this->build_all_fields_map( $post->post_type );
+            $user_settings    = isset( $cpt_configs[ $post->post_type ]['fields'] ) ? $cpt_configs[ $post->post_type ]['fields'] : array();
+            $include_rankmath = (bool) get_option( 'sparkplus_seo_rankmath_enable', false );
+            $all_fields       = $this->build_all_fields_map( $post->post_type, $include_rankmath );
 
             $text_fields  = array();
             $image_fields = array();
@@ -309,6 +310,13 @@ class SparkPlus_Content_Generator {
                     continue;
                 }
 
+                // RankMath field — clear via post meta
+                if ( $field['source'] === 'rankmath' ) {
+                    update_post_meta( $post_id, $field['key'], '' );
+                    $cleared++;
+                    continue;
+                }
+
                 // ACF image field — set to empty
                 if ( in_array( $field['type'], array( 'image', 'file', 'gallery' ), true ) ) {
                     if ( function_exists( 'update_field' ) ) {
@@ -378,9 +386,10 @@ class SparkPlus_Content_Generator {
     private function get_clear_fields_config( $post_type ) {
         global $sparkplus;
         $cpt_configs   = $sparkplus->get_cpt_configs();
-        $user_settings = isset( $cpt_configs[ $post_type ]['fields'] ) ? $cpt_configs[ $post_type ]['fields'] : array();
+        $user_settings    = isset( $cpt_configs[ $post_type ]['fields'] ) ? $cpt_configs[ $post_type ]['fields'] : array();
+        $include_rankmath = (bool) get_option( 'sparkplus_seo_rankmath_enable', false );
 
-        $all_fields = $this->build_all_fields_map( $post_type );
+        $all_fields = $this->build_all_fields_map( $post_type, $include_rankmath );
         $clear_list = array();
 
         foreach ( $all_fields as $field_key => $field_data ) {
@@ -411,10 +420,13 @@ class SparkPlus_Content_Generator {
     }
 
     /**
-     * Build the full map of all available fields (WP + ACF) for a post type.
+     * Build the full map of all available fields (WP + ACF + RankMath) for a post type.
      * Shared by get_custom_fields_config and get_clear_fields_config.
+     *
+     * @param string $post_type       Post type slug.
+     * @param bool   $include_rankmath Whether to append RankMath SEO fields.
      */
-    private function build_all_fields_map( $post_type ) {
+    private function build_all_fields_map( $post_type, $include_rankmath = false ) {
         $all_fields = array();
 
         // WordPress baseline fields
@@ -476,6 +488,22 @@ class SparkPlus_Content_Generator {
                         }
                     }
                 }
+            }
+        }
+
+        // RankMath SEO fields
+        if ( $include_rankmath && defined( 'RANK_MATH_VERSION' ) ) {
+            $rankmath_field_defs = array(
+                'rank_math_title'       => array( 'label' => 'SEO Title',       'type' => 'text' ),
+                'rank_math_description' => array( 'label' => 'SEO Description', 'type' => 'textarea' ),
+            );
+            foreach ( $rankmath_field_defs as $rm_key => $rm_info ) {
+                $all_fields[ $rm_key ] = array(
+                    'key'    => $rm_key,
+                    'label'  => $rm_info['label'],
+                    'type'   => $rm_info['type'],
+                    'source' => 'rankmath',
+                );
             }
         }
 
@@ -592,9 +620,10 @@ class SparkPlus_Content_Generator {
         
         global $sparkplus;
         $cpt_configs = $sparkplus->get_cpt_configs();
-        $user_settings = isset($cpt_configs[$post_type]['fields']) ? $cpt_configs[$post_type]['fields'] : array();
+        $user_settings    = isset($cpt_configs[$post_type]['fields']) ? $cpt_configs[$post_type]['fields'] : array();
+        $include_rankmath = (bool) get_option( 'sparkplus_seo_rankmath_enable', false );
         
-        $all_fields = $this->build_all_fields_map( $post_type );
+        $all_fields = $this->build_all_fields_map( $post_type, $include_rankmath );
         
         // Overlay user settings onto existing fields (left join)
         $enabled_fields = array();
@@ -816,6 +845,7 @@ class SparkPlus_Content_Generator {
         $wp_fields    = array();
         $acf_fields   = array();
         $group_fields = array(); // [ group_key => [ sub_key => value ] ]
+        $rm_fields    = array();
         
         foreach ($custom_fields as $field) {
             // Skip image fields
@@ -846,6 +876,8 @@ class SparkPlus_Content_Generator {
                 $wp_fields[$field_key] = $parsed_content[$field_key];
             } elseif ($field['source'] === 'acf') {
                 $acf_fields[$field_key] = $parsed_content[$field_key];
+            } elseif ($field['source'] === 'rankmath') {
+                $rm_fields[$field_key] = $parsed_content[$field_key];
             }
         }
         
@@ -905,7 +937,17 @@ class SparkPlus_Content_Generator {
             ));
         }
         
-        $total_updated = count($wp_fields) + count($acf_fields) + count($group_fields);
+        // Update RankMath meta fields
+        if (!empty($rm_fields)) {
+            foreach ($rm_fields as $field_key => $field_value) {
+                update_post_meta($post_id, $field_key, $field_value);
+            }
+            $this->add_debug('update_post_with_texts', array(
+                'rankmath_fields_updated' => array_keys($rm_fields)
+            ));
+        }
+
+        $total_updated = count($wp_fields) + count($acf_fields) + count($group_fields) + count($rm_fields);
         
         $this->add_debug('update_post_with_texts', array(
             'status' => 'completed',

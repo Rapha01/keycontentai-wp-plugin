@@ -122,6 +122,12 @@
     border: 1px solid #0073aa;
 }
 
+.sparkplus-source-rm {
+    background: #fce8f3;
+    color: #8f1b5e;
+    border: 1px solid #c9326e;
+}
+
 /* Checkbox column styling */
 .sparkplus-field-enable-checkbox,
 .sparkplus-field-clear-checkbox {

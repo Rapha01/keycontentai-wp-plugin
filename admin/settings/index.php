@@ -28,6 +28,12 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])
         <a href="?page=sparkplus-settings&tab=internal-linking" class="nav-tab <?php echo esc_attr( $active_tab === 'internal-linking' ? 'nav-tab-active' : '' ); ?>">
             <?php esc_html_e('Internal Linking', 'sparkplus'); ?>
         </a>
+        <a href="?page=sparkplus-settings&tab=seo" class="nav-tab <?php echo esc_attr( $active_tab === 'seo' ? 'nav-tab-active' : '' ); ?>">
+            <?php esc_html_e('SEO', 'sparkplus'); ?>
+        </a>
+        <a href="?page=sparkplus-settings&tab=taxonomies" class="nav-tab <?php echo esc_attr( $active_tab === 'taxonomies' ? 'nav-tab-active' : '' ); ?>">
+            <?php esc_html_e('Taxonomies', 'sparkplus'); ?>
+        </a>
         <a href="?page=sparkplus-settings&tab=api-settings" class="nav-tab <?php echo esc_attr( $active_tab === 'api-settings' ? 'nav-tab-active' : '' ); ?>">
             <?php esc_html_e('API', 'sparkplus'); ?>
         </a>
@@ -52,6 +58,12 @@ $active_tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])
                 break;
             case 'api-settings':
                 $tab_file = SPARKPLUS_PLUGIN_DIR . 'admin/settings/tabs/tab-api-settings.php';
+                break;
+            case 'taxonomies':
+                $tab_file = SPARKPLUS_PLUGIN_DIR . 'admin/settings/tabs/tab-taxonomies.php';
+                break;
+            case 'seo':
+                $tab_file = SPARKPLUS_PLUGIN_DIR . 'admin/settings/tabs/tab-seo.php';
                 break;
             case 'reset':
                 $tab_file = SPARKPLUS_PLUGIN_DIR . 'admin/settings/tabs/tab-reset.php';

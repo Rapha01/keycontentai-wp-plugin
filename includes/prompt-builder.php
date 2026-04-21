@@ -653,6 +653,36 @@ class SparkPlus_Prompt_Builder {
     /**
      * Build custom fields instructions
      */
+    /**
+     * Return special SEO copy-writing instructions for RankMath meta fields.
+     *
+     * @param string $key  Field key (rank_math_title | rank_math_description).
+     * @return string      Multi-line instruction string, or empty string for unknown keys.
+     */
+    private function get_rankmath_field_instructions( $key ) {
+        if ( $key === 'rank_math_title' ) {
+            return implode( "\n", array(
+                '   ⚑ SEO Meta Title — follow these rules strictly:',
+                '     • Maximum 60 characters (including spaces). Count carefully.',
+                '     • Place the primary keyword as close to the beginning as possible.',
+                '     • Write in title case. Be concise and compelling.',
+                '     • Do NOT append the site/brand name — RankMath adds that automatically.',
+                '     • Do NOT use quotation marks, pipes, or special characters.',
+            ) );
+        }
+        if ( $key === 'rank_math_description' ) {
+            return implode( "\n", array(
+                '   ⚑ SEO Meta Description — follow these rules strictly:',
+                '     • Between 150 and 160 characters (including spaces). Count carefully.',
+                '     • Include the primary keyword naturally in the first half of the sentence.',
+                '     • Write a single clear, action-oriented sentence that summarises the page and encourages click-through.',
+                '     • Do NOT use quotation marks or markdown formatting.',
+                '     • Do NOT truncate — the sentence must feel complete.',
+            ) );
+        }
+        return '';
+    }
+
     private function build_custom_fields_instructions($custom_fields, $include_acf_instructions = false) {
         $instructions = array();
         $instructions[] = "# Content Fields to Generate";
@@ -715,6 +745,10 @@ class SparkPlus_Prompt_Builder {
                 if (!empty($field['description'])) {
                     $instructions[] = "      Description: {$field['description']}";
                 }
+                $rm_hint = isset( $field['key'] ) ? $this->get_rankmath_field_instructions( $field['key'] ) : '';
+                if ( $rm_hint !== '' ) {
+                    $instructions[] = $rm_hint;
+                }
                 if (!empty($field['word_count']) && $field['word_count'] > 0) {
                     if ( $field['type'] === 'post_object' ) {
                         $instructions[] = "      Select approximately {$field['word_count']} posts from the Internal Linking pool";
@@ -732,6 +766,10 @@ class SparkPlus_Prompt_Builder {
                 }
                 if (!empty($field['description'])) {
                     $instructions[] = "   Description: {$field['description']}";
+                }
+                $rm_hint = isset( $field['key'] ) ? $this->get_rankmath_field_instructions( $field['key'] ) : '';
+                if ( $rm_hint !== '' ) {
+                    $instructions[] = $rm_hint;
                 }
                 if (!empty($field['word_count']) && $field['word_count'] > 0) {
                     if ( $field['type'] === 'post_object' ) {

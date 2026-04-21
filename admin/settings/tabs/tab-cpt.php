@@ -45,6 +45,10 @@ $include_acf_instructions = isset($cpt_configs[$selected_post_type]['include_acf
 // Check if linking pool is enabled (used for post_object warnings)
 $linking_pool_enabled = (bool) get_option('sparkplus_linking_enable', false);
 
+// RankMath availability and per-post-type toggle
+$rankmath_active  = defined('RANK_MATH_VERSION');
+$include_rankmath = (bool) get_option('sparkplus_seo_rankmath_enable', false);
+
 // Get custom fields for the selected post type
 $custom_fields = array();
 if (!empty($selected_post_type)) {
@@ -118,6 +122,22 @@ if (!empty($selected_post_type)) {
                 }
             }
         }
+    }
+
+    // RankMath SEO fields (appended when RankMath is active and toggle is on)
+    if ($rankmath_active && $include_rankmath) {
+        $custom_fields[] = array(
+            'key'    => 'rank_math_title',
+            'label'  => __('SEO Title', 'sparkplus'),
+            'type'   => 'text',
+            'source' => 'RM',
+        );
+        $custom_fields[] = array(
+            'key'    => 'rank_math_description',
+            'label'  => __('SEO Description', 'sparkplus'),
+            'type'   => 'textarea',
+            'source' => 'RM',
+        );
     }
 }
 ?>
@@ -335,7 +355,7 @@ if (!empty($selected_post_type)) {
                         // Determine if this is an image field
                         $is_image_field  = in_array($field['type'], array('image', 'file', 'gallery'));
                         $is_post_object  = $field['type'] === 'post_object';
-                        $hide_options    = $field['type'] === 'true_false';
+                        $hide_options    = $field['type'] === 'true_false' || ( isset( $field['source'] ) && $field['source'] === 'RM' );
                         $current_size = isset($current_field_configs[$field['key']]['size']) ? $current_field_configs[$field['key']]['size'] : 'auto';
                         $current_quality = isset($current_field_configs[$field['key']]['quality']) ? $current_field_configs[$field['key']]['quality'] : 'auto';
                         $current_webp_quality = isset($current_field_configs[$field['key']]['webp_quality']) ? $current_field_configs[$field['key']]['webp_quality'] : 80;
@@ -546,6 +566,7 @@ if (!empty($selected_post_type)) {
                         </p>
                     </td>
                 </tr>
+
                 <tr>
                     <th scope="row">
                         <label for="sparkplus_cpt_additional_context_text_<?php echo esc_attr($selected_post_type); ?>">

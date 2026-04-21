@@ -376,6 +376,13 @@ class SparkPlus_Admin_Ajax_Handler {
                 $updated++;
                 break;
                 
+            case 'seo':
+                // RankMath integration toggle
+                $val = isset($_POST['sparkplus_seo_rankmath_enable']) && $_POST['sparkplus_seo_rankmath_enable'] === '1';
+                update_option('sparkplus_seo_rankmath_enable', $val);
+                $updated++;
+                break;
+
             case 'cpt':
                 // Selected post type
                 if (isset($_POST['sparkplus_selected_post_type'])) {
