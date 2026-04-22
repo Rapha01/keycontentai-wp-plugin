@@ -201,10 +201,11 @@ class SparkPlus_Admin_Ajax_Handler {
         $debug_mode = isset($_POST['debug']) && sanitize_text_field(wp_unslash($_POST['debug'])) === '1';
         $auto_publish = isset($_POST['auto_publish']) && sanitize_text_field(wp_unslash($_POST['auto_publish'])) === '1';
         $additional_context = isset($_POST['additional_context']) ? sanitize_textarea_field(wp_unslash($_POST['additional_context'])) : '';
+        $parent_post_id = isset($_POST['parent_post_id']) ? absint($_POST['parent_post_id']) : 0;
         
         // Load keyword using the keyword loader class
         $loader = new SparkPlus_Keyword_Loader();
-        $result = $loader->load_keyword($keyword, $debug_mode, $auto_publish, $additional_context);
+        $result = $loader->load_keyword($keyword, $debug_mode, $auto_publish, $additional_context, $parent_post_id);
         
         // Return response
         if ($result['success']) {

@@ -204,6 +204,7 @@ jQuery(document).ready(function($) {
         var existingCount = 0;
         var autoPublish = $autoPublish.is(':checked');
         var useContext = $enableContext.is(':checked');
+        var parentPostId = $('#sparkplus-parent-post').length ? parseInt($('#sparkplus-parent-post').val(), 10) || 0 : 0;
         
         while (isRunning) {
             // Get the first keyword from textarea
@@ -219,7 +220,7 @@ jQuery(document).ready(function($) {
             
             try {
                 // Call the AJAX endpoint
-                var result = await processKeyword(keyword, autoPublish, additionalContext);
+                var result = await processKeyword(keyword, autoPublish, additionalContext, parentPostId);
                 
                 // Track counts
                 if (result.exists) {
@@ -257,7 +258,7 @@ jQuery(document).ready(function($) {
     }
     
     // Process a single keyword
-    async function processKeyword(keyword, autoPublish, additionalContext) {
+    async function processKeyword(keyword, autoPublish, additionalContext, parentPostId) {
         // Check if debug container is visible
         var debugMode = $debugContainer.is(':visible');
         
@@ -272,6 +273,11 @@ jQuery(document).ready(function($) {
         // Add additional context if provided
         if (additionalContext !== null && additionalContext !== undefined) {
             ajaxData.additional_context = additionalContext;
+        }
+
+        // Add parent post ID if set
+        if (parentPostId && parentPostId > 0) {
+            ajaxData.parent_post_id = parentPostId;
         }
         
         return new Promise((resolve, reject) => {

@@ -118,6 +118,33 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
                                 <?php esc_html_e('When checked, new posts will be published instead of saved as drafts. Existing draft posts will also be published.', 'sparkplus'); ?>
                             </p>
                         </div>
+
+                        <?php
+                        // Build parent post dropdown — published posts of the selected post type
+                        $parent_posts = get_posts( array(
+                            'post_type'      => $selected_post_type,
+                            'post_status'    => 'publish',
+                            'posts_per_page' => -1,
+                            'orderby'        => 'title',
+                            'order'          => 'ASC',
+                        ) );
+                        if ( ! empty( $parent_posts ) ) :
+                        ?>
+                        <div class="sparkplus-parent-option" style="margin-top: 10px; padding: 6px 10px; background: #f6f7f7; border-left: 3px solid #2271b1; border-radius: 3px;">
+                            <label style="display: block; font-weight: 500; font-size: 13px; margin: 0 0 4px;" for="sparkplus-parent-post">
+                                <?php esc_html_e('Parent post (optional)', 'sparkplus'); ?>
+                            </label>
+                            <select id="sparkplus-parent-post" name="parent_post_id" style="max-width: 100%; width: 100%;">
+                                <option value="0"><?php esc_html_e('— None (top-level) —', 'sparkplus'); ?></option>
+                                <?php foreach ( $parent_posts as $parent ) : ?>
+                                    <option value="<?php echo esc_attr( $parent->ID ); ?>"><?php echo esc_html( $parent->post_title ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="description" style="margin: 3px 0 0; font-size: 11px; line-height: 1.3;">
+                                <?php esc_html_e('When selected, all newly created posts will be set as hierarchical children of this post.', 'sparkplus'); ?>
+                            </p>
+                        </div>
+                        <?php endif; ?>
                         
                         <div class="sparkplus-loadkeywords-actions">
                             <button type="submit" id="sparkplus-start-btn" class="button button-primary button-hero">

@@ -663,9 +663,10 @@ class SparkPlus_Prompt_Builder {
         if ( $key === 'rank_math_title' ) {
             return implode( "\n", array(
                 '   ⚑ SEO Meta Title — follow these rules strictly:',
-                '     • Maximum 60 characters (including spaces). Count carefully.',
-                '     • Place the primary keyword as close to the beginning as possible.',
-                '     • Write in title case. Be concise and compelling.',
+                '     • Maximum 60 characters (including spaces). Character counts close to the maximum are better. Count carefully.',
+                '     • Include the primary keyword naturally — it does NOT have to be the very first word but earlier mentions of the keyword are preferrable.',
+                '     • Internally write 3 candidate titles using clearly different structures. Do NOT output these candidates — output only the third one as the final value.',
+                '     • Avoid generic, formulaic phrasing. The title should stand out and make the reader want to click.',
                 '     • Do NOT append the site/brand name — RankMath adds that automatically.',
                 '     • Do NOT use quotation marks, pipes, or special characters.',
             ) );
@@ -673,7 +674,7 @@ class SparkPlus_Prompt_Builder {
         if ( $key === 'rank_math_description' ) {
             return implode( "\n", array(
                 '   ⚑ SEO Meta Description — follow these rules strictly:',
-                '     • Between 150 and 160 characters (including spaces). Count carefully.',
+                '     • Between 145 and 150 characters (including spaces). Count carefully.',
                 '     • Include the primary keyword naturally in the first half of the sentence.',
                 '     • Write a single clear, action-oriented sentence that summarises the page and encourages click-through.',
                 '     • Do NOT use quotation marks or markdown formatting.',

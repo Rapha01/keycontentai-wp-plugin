@@ -27,7 +27,7 @@ class SparkPlus_Keyword_Loader {
      * @param string $additional_context Optional additional context for the post
      * @return array Result array with success status, message, and data
      */
-    public function load_keyword($keyword, $debug_mode = false, $auto_publish = false, $additional_context = '') {
+    public function load_keyword($keyword, $debug_mode = false, $auto_publish = false, $additional_context = '', $parent_post_id = 0) {
         // Get selected post type from settings
         $post_type = get_option('sparkplus_selected_post_type', 'post');
         
@@ -137,14 +137,19 @@ class SparkPlus_Keyword_Loader {
             'post_title'   => $keyword,
             'post_type'    => $post_type,
             'post_status'  => $auto_publish ? 'publish' : 'draft',
-            'post_author'  => get_current_user_id()
+            'post_author'  => get_current_user_id(),
         );
+
+        if ( $parent_post_id > 0 ) {
+            $post_data['post_parent'] = $parent_post_id;
+        }
         
         if ($debug_mode) {
             $result['debug'][] = array(
                 'step' => 'create_post',
                 'data' => array(
-                    'post_data' => $post_data
+                    'post_data'      => $post_data,
+                    'parent_post_id' => $parent_post_id,
                 )
             );
         }
