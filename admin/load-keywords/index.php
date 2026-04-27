@@ -120,10 +120,10 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
                         </div>
 
                         <?php
-                        // Build parent post dropdown — published posts of the selected post type
+                        // Build parent post dropdown — published + draft posts of the selected post type
                         $parent_posts = get_posts( array(
                             'post_type'      => $selected_post_type,
-                            'post_status'    => 'publish',
+                            'post_status'    => array( 'publish', 'draft' ),
                             'posts_per_page' => -1,
                             'orderby'        => 'title',
                             'order'          => 'ASC',
@@ -137,7 +137,12 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
                             <select id="sparkplus-parent-post" name="parent_post_id" style="max-width: 100%; width: 100%;">
                                 <option value="0"><?php esc_html_e('— None (top-level) —', 'sparkplus'); ?></option>
                                 <?php foreach ( $parent_posts as $parent ) : ?>
-                                    <option value="<?php echo esc_attr( $parent->ID ); ?>"><?php echo esc_html( $parent->post_title ); ?></option>
+                                    <option value="<?php echo esc_attr( $parent->ID ); ?>">
+                                        <?php
+                                        $status_label = $parent->post_status === 'draft' ? ' ' . __('(draft)', 'sparkplus') : '';
+                                        echo esc_html( $parent->post_title . $status_label );
+                                        ?>
+                                    </option>
                                 <?php endforeach; ?>
                             </select>
                             <p class="description" style="margin: 3px 0 0; font-size: 11px; line-height: 1.3;">
