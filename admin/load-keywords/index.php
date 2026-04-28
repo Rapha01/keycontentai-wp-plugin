@@ -13,10 +13,9 @@ if (!defined('ABSPATH')) {
 
 // Get the selected post type from settings
 $selected_post_type = get_option('sparkplus_selected_post_type', 'post');
-$api_key = get_option('sparkplus_openai_api_key', '');
 
-// Check if settings are configured
-$is_configured = !empty($api_key) && !empty($selected_post_type);
+// Check if settings are configured (provider-aware)
+$is_configured = sparkplus_is_text_provider_configured() && !empty($selected_post_type);
 ?>
 
 <div class="wrap">
@@ -29,9 +28,9 @@ $is_configured = !empty($api_key) && !empty($selected_post_type);
                 <?php esc_html_e('Please configure the plugin settings before creating content.', 'sparkplus'); ?>
             </p>
             <p>
-                <?php if (empty($api_key)) : ?>
+                <?php if ( ! sparkplus_is_text_provider_configured() ) : ?>
                     <a href="<?php echo esc_url(admin_url('admin.php?page=sparkplus-settings&tab=api-settings')); ?>" class="button button-primary">
-                        <?php esc_html_e('Set OpenAI API Key', 'sparkplus'); ?>
+                        <?php esc_html_e('Configure API Keys', 'sparkplus'); ?>
                     </a>
                 <?php endif; ?>
                 

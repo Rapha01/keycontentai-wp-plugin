@@ -15,16 +15,12 @@ if (!defined('ABSPATH')) {
 }
 
 class SparkPlus_Content_Generator {
-    private $debug_log = array();
-    private $api_caller = null;
+    private $debug_log    = array();
     private $prompt_builder = null;
 
     public function __construct() {
-        // Initialize API caller with debug callback
-        $this->api_caller = new SparkPlus_OpenAI_API_Caller(array($this, 'add_debug'));
-        
-        // Initialize prompt builder with debug callback
-        $this->prompt_builder = new SparkPlus_Prompt_Builder(array($this, 'add_debug'));
+        // Initialize prompt builder with debug callback.
+        $this->prompt_builder = new SparkPlus_Prompt_Builder( array( $this, 'add_debug' ) );
     }
     
     public function add_debug($step, $data) {
@@ -115,7 +111,8 @@ class SparkPlus_Content_Generator {
             );
 
             // 3. Make API call to generate the image.
-            $image_response = $this->api_caller->generate_image( $image_prompt, $cpt_settings['api_key'], $image_options );
+            $image_provider = SparkPlus_API_Manager::make_image_provider( $cpt_settings['image_model'], array( $this, 'add_debug' ) );
+            $image_response  = $image_provider->generate_image( $image_prompt, $image_options );
 
             if ( $image_response && isset( $image_response['data'][0]['b64_json'] ) ) {
                 $webp_quality = isset( $field['webp_quality'] ) ? $field['webp_quality'] : 80;
@@ -141,7 +138,7 @@ class SparkPlus_Content_Generator {
                     ) );
                 }
 
-                $alt_text = $this->generate_and_set_alt_text( $attachment_id, $image_prompt, $cpt_settings['api_key'], $cpt_settings['text_model'] );
+                $alt_text = $this->generate_and_set_alt_text( $attachment_id, $image_prompt, $cpt_settings['text_model'] );
                 $this->update_post_with_image( $post_id, $field, $attachment_id );
 
                 $this->add_debug( 'generate_single_image', array(
@@ -535,9 +532,8 @@ class SparkPlus_Content_Generator {
         
         $settings = array(
             // API Settings
-            'api_key' => get_option('sparkplus_openai_api_key', ''),
-            'text_model' => get_option('sparkplus_text_model', 'gpt-5.2'),
-            'image_model' => get_option('sparkplus_image_model', 'gpt-image-1.5'),
+            'text_model'  => get_option( 'sparkplus_text_model',  sparkplus_get_supported_models()['text']['default'] ),
+            'image_model' => get_option( 'sparkplus_image_model', sparkplus_get_supported_models()['image']['default'] ),
             
             // Post Type
             'post_type' => $post_type,
@@ -572,7 +568,6 @@ class SparkPlus_Content_Generator {
         
         $this->add_debug('get_cpt_settings', array(
             'post_type' => $settings['post_type'],
-            'has_api_key' => !empty($settings['api_key']),
             'language' => $settings['language'],
             'company_name' => $settings['company_name'],
             'industry' => $settings['industry'],
@@ -584,14 +579,26 @@ class SparkPlus_Content_Generator {
         ));
         
         // Validate required settings
-        if (empty($settings['api_key'])) {
-            throw new Exception(esc_html__('OpenAI API key is not configured. Please add it in the settings.', 'sparkplus'));
-        }
-        
         if (empty($settings['post_type'])) {
             throw new Exception(esc_html__('No post type selected. Please configure in the settings.', 'sparkplus'));
         }
-        
+
+        // Validate that the saved models are still supported
+        if ( sparkplus_get_model_provider( $settings['text_model'], 'text' ) === null ) {
+            throw new Exception( sprintf(
+                /* translators: %s: deprecated model name */
+                __( 'The text generation model "%s" is no longer supported. Please go to Settings → API and select a current model, then save.', 'sparkplus' ),
+                $settings['text_model']
+            ) );
+        }
+        if ( sparkplus_get_model_provider( $settings['image_model'], 'image' ) === null ) {
+            throw new Exception( sprintf(
+                /* translators: %s: deprecated model name */
+                __( 'The image generation model "%s" is no longer supported. Please go to Settings → API and select a current model, then save.', 'sparkplus' ),
+                $settings['image_model']
+            ) );
+        }
+
         return $settings;
     }
     
@@ -691,10 +698,11 @@ class SparkPlus_Content_Generator {
             return 0;
         }
         
-        $text_response = $this->api_caller->generate_text($text_prompt, $cpt_settings['api_key'], array(
+        $text_provider = SparkPlus_API_Manager::make_text_provider( $cpt_settings['text_model'], array( $this, 'add_debug' ) );
+        $text_response = $text_provider->generate_text( $text_prompt, array(
             'model' => $cpt_settings['text_model'],
-            'step'  => 'generate_text'
-        ));
+            'step'  => 'generate_text',
+        ) );
         
         // Parse JSON response
         $parsed_content = json_decode($text_response['content'], true);
@@ -773,13 +781,12 @@ class SparkPlus_Content_Generator {
     /**
      * Generate and set alt text for an image attachment
      * 
-     * @param int $attachment_id The attachment ID
-     * @param string $image_prompt The original image generation prompt
-     * @param string $api_key The API key
-     * @param string $model The text model to use
+     * @param int    $attachment_id The attachment ID
+     * @param string $image_prompt  The original image generation prompt
+     * @param string $model         The text model to use
      * @return string|null The generated alt text, or null if failed
      */
-    private function generate_and_set_alt_text($attachment_id, $image_prompt, $api_key, $model) {
+    private function generate_and_set_alt_text( $attachment_id, $image_prompt, $model ) {
         // Build a prompt to generate concise alt text with clear length requirement
         $alt_text_prompt = "Based on this image description, generate a concise and descriptive alt text for web accessibility and SEO.\n\n";
         $alt_text_prompt .= "Image description:\n" . $image_prompt . "\n\n";
@@ -788,10 +795,11 @@ class SparkPlus_Content_Generator {
         
         try {
             // Make API call to generate alt text (always use JSON format)
-            $response = $this->api_caller->generate_text($alt_text_prompt, $api_key, array(
+            $alt_provider = SparkPlus_API_Manager::make_text_provider( $model, array( $this, 'add_debug' ) );
+            $response     = $alt_provider->generate_text( $alt_text_prompt, array(
                 'model' => $model,
-                'step'  => 'generate_alt_text'
-            ));
+                'step'  => 'generate_alt_text',
+            ) );
             
             // Parse JSON response
             $parsed = json_decode($response['content'], true);

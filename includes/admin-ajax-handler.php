@@ -334,9 +334,19 @@ class SparkPlus_Admin_Ajax_Handler {
         
         switch ($tab) {
             case 'api-settings':
-                // API Key
+                // OpenAI API Key
                 if (isset($_POST['sparkplus_openai_api_key'])) {
                     update_option('sparkplus_openai_api_key', sanitize_text_field(wp_unslash($_POST['sparkplus_openai_api_key'])));
+                    $updated++;
+                }
+                // Anthropic API Key
+                if (isset($_POST['sparkplus_anthropic_api_key'])) {
+                    update_option('sparkplus_anthropic_api_key', sanitize_text_field(wp_unslash($_POST['sparkplus_anthropic_api_key'])));
+                    $updated++;
+                }
+                // Gemini API Key
+                if (isset($_POST['sparkplus_gemini_api_key'])) {
+                    update_option('sparkplus_gemini_api_key', sanitize_text_field(wp_unslash($_POST['sparkplus_gemini_api_key'])));
                     $updated++;
                 }
                 // Text Model

@@ -120,7 +120,12 @@ class SparkPlus {
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/util.php';
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/sanitizer.php';
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/prompt-builder.php';
-        require_once SPARKPLUS_PLUGIN_DIR . 'includes/openai-api-caller.php';
+        // Multi-provider API layer: base → providers → manager
+        require_once SPARKPLUS_PLUGIN_DIR . 'includes/api/class-provider-base.php';
+        require_once SPARKPLUS_PLUGIN_DIR . 'includes/api/providers/class-openai-provider.php';
+        require_once SPARKPLUS_PLUGIN_DIR . 'includes/api/providers/class-anthropic-provider.php';
+        require_once SPARKPLUS_PLUGIN_DIR . 'includes/api/providers/class-gemini-provider.php';
+        require_once SPARKPLUS_PLUGIN_DIR . 'includes/api/class-api-manager.php';
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/content-generator.php';
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/keyword-loader.php';
         
