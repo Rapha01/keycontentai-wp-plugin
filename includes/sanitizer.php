@@ -90,26 +90,30 @@ class SparkPlus_Sanitizer {
                             foreach ($field_data['sub_fields'] as $sub_key => $sub_data) {
                                 $sub_key_clean = sanitize_key($sub_key);
                                 $sanitized_group['sub_fields'][$sub_key_clean] = array(
-                                    'description'  => isset($sub_data['description']) ? sanitize_textarea_field($sub_data['description']) : '',
-                                    'word_count'   => isset($sub_data['word_count']) ? absint($sub_data['word_count']) : 0,
-                                    'enabled'      => isset($sub_data['enabled']) ? (bool) $sub_data['enabled'] : false,
-                                    'clear'        => isset($sub_data['clear']) ? (bool) $sub_data['clear'] : false,
-                                    'size'         => isset($sub_data['size']) ? sanitize_text_field($sub_data['size']) : 'auto',
-                                    'quality'      => isset($sub_data['quality']) ? sanitize_text_field($sub_data['quality']) : 'auto',
-                                    'webp_quality' => isset($sub_data['webp_quality']) ? max(1, min(100, absint($sub_data['webp_quality']))) : 80,
+                                    'description'         => isset($sub_data['description']) ? sanitize_textarea_field($sub_data['description']) : '',
+                                    'word_count'          => isset($sub_data['word_count']) ? absint($sub_data['word_count']) : 0,
+                                    'enabled'             => isset($sub_data['enabled']) ? (bool) $sub_data['enabled'] : false,
+                                    'clear'               => isset($sub_data['clear']) ? (bool) $sub_data['clear'] : false,
+                                    'aspect_ratio'        => isset($sub_data['aspect_ratio'])        ? sanitize_text_field($sub_data['aspect_ratio'])        : 'square',
+                                    'gen_quality'         => isset($sub_data['gen_quality'])         ? sanitize_text_field($sub_data['gen_quality'])         : 'medium',
+                                    'output_resolution'   => isset($sub_data['output_resolution'])   ? sanitize_text_field($sub_data['output_resolution'])   : 'medium',
+                                    'webp_quality'        => isset($sub_data['webp_quality']) ? max(1, min(100, absint($sub_data['webp_quality']))) : 80,
+                                    'reference_image_url' => isset($sub_data['reference_image_url']) ? esc_url_raw($sub_data['reference_image_url']) : '',
                                 );
                             }
                         }
                         $sanitized[$post_type_clean]['fields'][$field_key_clean] = $sanitized_group;
                     } else {
                         $sanitized[$post_type_clean]['fields'][$field_key_clean] = array(
-                            'description'  => isset($field_data['description']) ? sanitize_textarea_field($field_data['description']) : '',
-                            'word_count'   => isset($field_data['word_count']) ? absint($field_data['word_count']) : 0,
-                            'enabled'      => isset($field_data['enabled']) ? (bool) $field_data['enabled'] : false,
-                            'clear'        => isset($field_data['clear']) ? (bool) $field_data['clear'] : false,
-                            'size'         => isset($field_data['size']) ? sanitize_text_field($field_data['size']) : 'auto',
-                            'quality'      => isset($field_data['quality']) ? sanitize_text_field($field_data['quality']) : 'auto',
-                            'webp_quality' => isset($field_data['webp_quality']) ? max(1, min(100, absint($field_data['webp_quality']))) : 80,
+                            'description'         => isset($field_data['description']) ? sanitize_textarea_field($field_data['description']) : '',
+                            'word_count'          => isset($field_data['word_count']) ? absint($field_data['word_count']) : 0,
+                            'enabled'             => isset($field_data['enabled']) ? (bool) $field_data['enabled'] : false,
+                            'clear'               => isset($field_data['clear']) ? (bool) $field_data['clear'] : false,
+                            'aspect_ratio'        => isset($field_data['aspect_ratio'])        ? sanitize_text_field($field_data['aspect_ratio'])        : 'square',
+                            'gen_quality'         => isset($field_data['gen_quality'])         ? sanitize_text_field($field_data['gen_quality'])         : 'medium',
+                            'output_resolution'   => isset($field_data['output_resolution'])   ? sanitize_text_field($field_data['output_resolution'])   : 'medium',
+                            'webp_quality'        => isset($field_data['webp_quality']) ? max(1, min(100, absint($field_data['webp_quality']))) : 80,
+                            'reference_image_url' => isset($field_data['reference_image_url']) ? esc_url_raw($field_data['reference_image_url']) : '',
                         );
                     }
                 }

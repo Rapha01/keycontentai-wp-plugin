@@ -253,4 +253,40 @@ jQuery(document).ready(function($) {
         }
     });
 
+    // ─── Reference Image Media Picker ───
+    $(document).on('click', '.sparkplus-ref-image-btn', function(e) {
+        e.preventDefault();
+        var $btn  = $(this);
+        var $wrap = $btn.closest('.sparkplus-ref-image-wrap').length
+            ? $btn.closest('.sparkplus-ref-image-wrap')
+            : $btn.parent();
+        var $input   = $wrap.find('.sparkplus-ref-image-url');
+        var $name    = $wrap.find('.sparkplus-ref-image-name');
+        var $clear   = $wrap.find('.sparkplus-ref-image-clear');
+
+        var frame = wp.media({
+            title:    'Select Reference Image',
+            multiple: false,
+            library:  { type: 'image' },
+            button:   { text: 'Use this image' }
+        });
+
+        frame.on('select', function() {
+            var attachment = frame.state().get('selection').first().toJSON();
+            $input.val(attachment.url);
+            $name.text(attachment.filename || attachment.url.split('/').pop());
+            $clear.show();
+        });
+
+        frame.open();
+    });
+
+    $(document).on('click', '.sparkplus-ref-image-clear', function(e) {
+        e.preventDefault();
+        var $wrap = $(this).parent();
+        $wrap.find('.sparkplus-ref-image-url').val('');
+        $wrap.find('.sparkplus-ref-image-name').text('No image selected');
+        $(this).hide();
+    });
+
 });

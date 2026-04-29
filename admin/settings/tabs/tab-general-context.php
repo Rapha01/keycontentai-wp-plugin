@@ -33,7 +33,6 @@ $wysiwyg_formatting = get_option('sparkplus_wysiwyg_formatting', array(
 ?>
 
 <div class="sparkplus-tab-panel">
-    
     <h2><?php esc_html_e('General Context', 'sparkplus'); ?></h2>
     <p class="description" style="margin-bottom: 20px;">
         <?php esc_html_e('Configure your general context and business information. This data will be used to personalize AI-generated content.', 'sparkplus'); ?>

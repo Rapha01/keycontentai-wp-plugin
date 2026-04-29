@@ -250,8 +250,12 @@ function sparkplus_get_supported_models() {
                 'gemini' => array(
                     'label'  => 'Google Gemini',
                     'models' => array(
-                        'gemini-2.5-pro'   => 'Gemini 2.5 Pro',
-                        'gemini-2.5-flash' => 'Gemini 2.5 Flash',
+                        'gemini-3.1-pro-preview'       => 'Gemini 3.1 Pro (Preview)',
+                        'gemini-3-flash-preview'        => 'Gemini 3 Flash (Preview)',
+                        'gemini-3.1-flash-lite-preview' => 'Gemini 3.1 Flash Lite (Preview)',
+                        'gemini-2.5-pro'                => 'Gemini 2.5 Pro',
+                        'gemini-2.5-flash'              => 'Gemini 2.5 Flash',
+                        'gemini-2.5-flash-lite'         => 'Gemini 2.5 Flash Lite',
                     ),
                 ),
             ),
@@ -266,6 +270,14 @@ function sparkplus_get_supported_models() {
                         'gpt-image-1.5'    => 'gpt-image-1.5',
                         'gpt-image-1'      => 'gpt-image-1',
                         'gpt-image-1-mini' => 'gpt-image-1-mini',
+                    ),
+                ),
+                'gemini' => array(
+                    'label'  => 'Google Gemini',
+                    'models' => array(
+                        'gemini-3.1-flash-image-preview' => 'Gemini 3.1 Flash Image (Preview)',
+                        'gemini-3-pro-image-preview'     => 'Gemini 3 Pro Image (Preview)',
+                        'gemini-2.5-flash-image'         => 'Gemini 2.5 Flash Image',
                     ),
                 ),
             ),

@@ -46,7 +46,7 @@ class SparkPlus_OpenAI_Provider extends SparkPlus_Provider_Base {
                 'Content-Type'  => 'application/json',
             ),
             'body'      => json_encode( $request_body ),
-            'timeout'   => 120,
+            'timeout'   => 300,
             'sslverify' => true,
         ) );
 
@@ -129,7 +129,7 @@ class SparkPlus_OpenAI_Provider extends SparkPlus_Provider_Base {
      * Generate an image using the OpenAI Images API.
      *
      * @param string $prompt  Image description prompt.
-     * @param array  $options Optional parameters (model, size, quality, n).
+     * @param array  $options Optional parameters (model, aspect_ratio, gen_quality, output_resolution, n).
      * @return array { 'data' => [ [ 'b64_json' => string ] ] }
      * @throws Exception On API / network failure.
      */
@@ -143,18 +143,26 @@ class SparkPlus_OpenAI_Provider extends SparkPlus_Provider_Base {
         $api_endpoint = 'https://api.openai.com/v1/images/generations';
 
         $defaults = array(
-            'model'   => 'gpt-image-1.5',
-            'size'    => 'auto',
-            'quality' => 'auto',
-            'n'       => 1,
+            'model'        => 'gpt-image-1.5',
+            'aspect_ratio' => 'square',
+            'gen_quality'  => 'medium',
+            'n'            => 1,
         );
         $options = wp_parse_args( $options, $defaults );
+
+        // Map generic aspect_ratio to OpenAI size strings.
+        $size_map = array(
+            'square'    => '1024x1024',
+            'landscape' => '1792x1024',
+            'portrait'  => '1024x1792',
+        );
+        $size = isset( $size_map[ $options['aspect_ratio'] ] ) ? $size_map[ $options['aspect_ratio'] ] : '1024x1024';
 
         $request_body = array(
             'model'   => $options['model'],
             'prompt'  => $prompt,
-            'size'    => $options['size'],
-            'quality' => $options['quality'],
+            'size'    => $size,
+            'quality' => $options['gen_quality'], // low / medium / high — direct passthrough for gpt-image-1/2
             'n'       => $options['n'],
         );
 
@@ -172,7 +180,7 @@ class SparkPlus_OpenAI_Provider extends SparkPlus_Provider_Base {
                 'Content-Type'  => 'application/json',
             ),
             'body'      => json_encode( $request_body ),
-            'timeout'   => 120,
+            'timeout'   => 300,
             'sslverify' => true,
         ) );
 

@@ -25,8 +25,8 @@ $image_model = get_option( 'sparkplus_image_model', $image_model_default );
 $text_model_deprecated  = sparkplus_get_model_provider( $text_model,  'text'  ) === null;
 $image_model_deprecated = sparkplus_get_model_provider( $image_model, 'image' ) === null;
 
-$text_by_provider  = array_intersect_key( $supported_models['text']['by_provider'],  array( 'openai' => true ) );
-$image_by_provider = array_intersect_key( $supported_models['image']['by_provider'], array( 'openai' => true ) );
+$text_by_provider  = array_diff_key( $supported_models['text']['by_provider'],  array( 'anthropic' => true ) );
+$image_by_provider = array_diff_key( $supported_models['image']['by_provider'], array( 'anthropic' => true ) );
 ?>
 
 <div class="sparkplus-tab-panel">

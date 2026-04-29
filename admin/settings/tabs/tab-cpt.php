@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * CPT Settings Tab Content
  */
@@ -254,10 +254,12 @@ if (!empty($selected_post_type)) {
                                 $sub_is_image       = in_array($sub_field['type'], array('image', 'file', 'gallery'));
                                 $sub_is_post_object = $sub_field['type'] === 'post_object';
                                 $sub_hide_options   = $sub_field['type'] === 'true_false';
-                                $sub_cfg      = isset($group_cfg['sub_fields'][$sub_field['key']]) ? $group_cfg['sub_fields'][$sub_field['key']] : array();
-                                $sub_size     = isset($sub_cfg['size']) ? $sub_cfg['size'] : 'auto';
-                                $sub_quality  = isset($sub_cfg['quality']) ? $sub_cfg['quality'] : 'auto';
-                                $sub_webp     = isset($sub_cfg['webp_quality']) ? $sub_cfg['webp_quality'] : 80;
+                                $sub_cfg               = isset($group_cfg['sub_fields'][$sub_field['key']]) ? $group_cfg['sub_fields'][$sub_field['key']] : array();
+                                $sub_aspect_ratio        = isset($sub_cfg['aspect_ratio'])        ? $sub_cfg['aspect_ratio']        : 'square';
+                                $sub_gen_quality         = isset($sub_cfg['gen_quality'])         ? $sub_cfg['gen_quality']         : 'medium';
+                                $sub_output_resolution   = isset($sub_cfg['output_resolution'])   ? $sub_cfg['output_resolution']   : 'medium';
+                                $sub_webp                = isset($sub_cfg['webp_quality'])        ? $sub_cfg['webp_quality']        : 80;
+                                $sub_reference_image_url = isset($sub_cfg['reference_image_url']) ? $sub_cfg['reference_image_url'] : '';
                                 ?>
                                 <tr class="sparkplus-sub-field-row" data-group="<?php echo esc_attr($field['key']); ?>" style="display: none;">
                                     <td data-label="<?php esc_attr_e('Generate', 'sparkplus'); ?>" style="text-align: center; vertical-align: middle;">
@@ -313,6 +315,17 @@ if (!empty($selected_post_type)) {
                                                 <?php esc_html_e('The linking pool is not enabled. Enable it in the Internal Linking tab for this field to work. Make sure the linking pool contains the posts that are allowed for this post_object field.', 'sparkplus'); ?>
                                             </p>
                                         <?php endif; ?>
+                                        <?php if ($sub_is_image) : ?>
+                                        <div style="margin-top: 6px;">
+                                            <label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;margin-bottom:3px;color:#666;"><?php esc_html_e('Reference Image', 'sparkplus'); ?> <span class="dashicons dashicons-editor-help" style="font-size:13px;width:13px;height:13px;cursor:help;color:#72aee6;" title="<?php esc_attr_e('Attach a reference image (e.g. a logo) to include as visual context alongside the prompt. Only works with Gemini image generation models.', 'sparkplus'); ?>"></span></label>
+                                            <div style="display:flex;align-items:center;gap:6px;">
+                                                <input type="hidden" name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][reference_image_url]" value="<?php echo esc_attr($sub_reference_image_url); ?>" class="sparkplus-ref-image-url" />
+                                                <span class="sparkplus-ref-image-name" style="font-size:11px;color:#666;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo $sub_reference_image_url ? esc_html(basename($sub_reference_image_url)) : esc_html__('No image selected', 'sparkplus'); ?></span>
+                                                <button type="button" class="button button-small sparkplus-ref-image-btn"><?php esc_html_e('Select', 'sparkplus'); ?></button>
+                                                <button type="button" class="button button-small sparkplus-ref-image-clear" style="<?php echo $sub_reference_image_url ? '' : 'display:none;'; ?>color:#a00;" title="<?php esc_attr_e('Remove reference image', 'sparkplus'); ?>">&#215;</button>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
                                     </td>
                                     <td data-label="<?php esc_attr_e('Text/Image Options', 'sparkplus'); ?>">
                                         <?php if ($sub_hide_options) : ?>
@@ -321,26 +334,38 @@ if (!empty($selected_post_type)) {
                                             <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('Nr. of Posts', 'sparkplus'); ?></label>
                                             <input type="number" name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][word_count]" value="<?php echo isset($sub_cfg['word_count']) ? esc_attr($sub_cfg['word_count']) : ''; ?>" class="small-text" min="1" step="1" placeholder="<?php esc_attr_e('Posts', 'sparkplus'); ?>" />
                                         <?php elseif ($sub_is_image) : ?>
-                                            <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('Dimensions', 'sparkplus'); ?></label>
-                                            <select name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][size]" style="width: 100%;">
-                                                <option value="auto" <?php selected($sub_size, 'auto'); ?>><?php esc_html_e('Auto (Recommended)', 'sparkplus'); ?></option>
-                                                <option value="1024x1024" <?php selected($sub_size, '1024x1024'); ?>>1024 x 1024 (Square)</option>
-                                                <option value="1024x1536" <?php selected($sub_size, '1024x1536'); ?>>1024 x 1536 (Portrait)</option>
-                                                <option value="1536x1024" <?php selected($sub_size, '1536x1024'); ?>>1536 x 1024 (Landscape)</option>
-                                            </select>
-                                            <div style="margin-top: 8px; display: flex; gap: 8px;">
-                                                <div style="flex: 1;">
-                                                    <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('AI Quality', 'sparkplus'); ?></label>
-                                                    <select name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][quality]" style="width: 100%;">
-                                                        <option value="auto" <?php selected($sub_quality, 'auto'); ?>><?php esc_html_e('Auto', 'sparkplus'); ?></option>
-                                                        <option value="low" <?php selected($sub_quality, 'low'); ?>><?php esc_html_e('Low', 'sparkplus'); ?></option>
-                                                        <option value="medium" <?php selected($sub_quality, 'medium'); ?>><?php esc_html_e('Medium', 'sparkplus'); ?></option>
-                                                        <option value="high" <?php selected($sub_quality, 'high'); ?>><?php esc_html_e('High', 'sparkplus'); ?></option>
+                                            <!-- Aspect Ratio + WebP Row -->
+                                            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                                <div style="flex: 2;">
+                                                    <label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;margin-bottom:2px;color:#666;"><?php esc_html_e('Aspect Ratio', 'sparkplus'); ?> <span class="dashicons dashicons-editor-help" style="font-size:13px;width:13px;height:13px;cursor:help;color:#72aee6;" title="<?php esc_attr_e('Controls image proportions. Applies to all models. Square = 1:1. Landscape = 16:9. Portrait = 9:16.', 'sparkplus'); ?>"></span></label>
+                                                    <select name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][aspect_ratio]" style="width: 100%;">
+                                                        <option value="square"    <?php selected($sub_aspect_ratio, 'square');    ?>><?php esc_html_e('Square (1:1)',    'sparkplus'); ?></option>
+                                                        <option value="landscape" <?php selected($sub_aspect_ratio, 'landscape'); ?>><?php esc_html_e('Landscape (16:9)', 'sparkplus'); ?></option>
+                                                        <option value="portrait"  <?php selected($sub_aspect_ratio, 'portrait');  ?>><?php esc_html_e('Portrait (9:16)',  'sparkplus'); ?></option>
                                                     </select>
                                                 </div>
                                                 <div style="flex: 1;">
-                                                    <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('WebP %', 'sparkplus'); ?></label>
+                                                    <label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;margin-bottom:2px;color:#666;"><?php esc_html_e('WebP %', 'sparkplus'); ?> <span class="dashicons dashicons-editor-help" style="font-size:13px;width:13px;height:13px;cursor:help;color:#72aee6;" title="<?php esc_attr_e('JPEG/WebP compression quality for saved images. 1 = smallest file, 100 = best quality. Default 80 is a good balance.', 'sparkplus'); ?>"></span></label>
                                                     <input type="number" name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][webp_quality]" value="<?php echo esc_attr($sub_webp); ?>" class="small-text" min="1" max="100" step="1" style="width: 100%;" placeholder="80" />
+                                                </div>
+                                            </div>
+                                            <!-- Gen Quality + Resolution Row -->
+                                            <div style="display: flex; gap: 8px;">
+                                                <div style="flex: 1;">
+                                                    <label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;margin-bottom:2px;color:#666;"><?php esc_html_e('Gen. Quality', 'sparkplus'); ?> <span class="dashicons dashicons-editor-help" style="font-size:13px;width:13px;height:13px;cursor:help;color:#72aee6;" title="<?php esc_attr_e('AI generation quality. Low = faster/cheaper, High = best detail. OpenAI models only - Gemini always uses full quality.', 'sparkplus'); ?>"></span></label>
+                                                    <select name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][gen_quality]" style="width: 100%;">
+                                                        <option value="low"    <?php selected($sub_gen_quality, 'low');    ?>><?php esc_html_e('Low',    'sparkplus'); ?></option>
+                                                        <option value="medium" <?php selected($sub_gen_quality, 'medium'); ?>><?php esc_html_e('Medium', 'sparkplus'); ?></option>
+                                                        <option value="high"   <?php selected($sub_gen_quality, 'high');   ?>><?php esc_html_e('High',   'sparkplus'); ?></option>
+                                                    </select>
+                                                </div>
+                                                <div style="flex: 1;">
+                                                    <label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;margin-bottom:2px;color:#666;"><?php esc_html_e('Resolution', 'sparkplus'); ?> <span class="dashicons dashicons-editor-help" style="font-size:13px;width:13px;height:13px;cursor:help;color:#72aee6;" title="<?php esc_attr_e('Output image resolution. Low = 1K, Medium = 2K, High = 4K. Gemini models only - does not affect OpenAI resolution.', 'sparkplus'); ?>"></span></label>
+                                                    <select name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][output_resolution]" style="width: 100%;">
+                                                        <option value="low"    <?php selected($sub_output_resolution, 'low');    ?>><?php esc_html_e('Low',    'sparkplus'); ?></option>
+                                                        <option value="medium" <?php selected($sub_output_resolution, 'medium'); ?>><?php esc_html_e('Medium', 'sparkplus'); ?></option>
+                                                        <option value="high"   <?php selected($sub_output_resolution, 'high');   ?>><?php esc_html_e('High',   'sparkplus'); ?></option>
+                                                    </select>
                                                 </div>
                                             </div>
                                         <?php else : ?>
@@ -356,9 +381,11 @@ if (!empty($selected_post_type)) {
                         $is_image_field  = in_array($field['type'], array('image', 'file', 'gallery'));
                         $is_post_object  = $field['type'] === 'post_object';
                         $hide_options    = $field['type'] === 'true_false' || ( isset( $field['source'] ) && $field['source'] === 'RM' );
-                        $current_size = isset($current_field_configs[$field['key']]['size']) ? $current_field_configs[$field['key']]['size'] : 'auto';
-                        $current_quality = isset($current_field_configs[$field['key']]['quality']) ? $current_field_configs[$field['key']]['quality'] : 'auto';
-                        $current_webp_quality = isset($current_field_configs[$field['key']]['webp_quality']) ? $current_field_configs[$field['key']]['webp_quality'] : 80;
+                        $current_aspect_ratio        = isset($current_field_configs[$field['key']]['aspect_ratio'])        ? $current_field_configs[$field['key']]['aspect_ratio']        : 'square';
+                        $current_gen_quality         = isset($current_field_configs[$field['key']]['gen_quality'])         ? $current_field_configs[$field['key']]['gen_quality']         : 'medium';
+                        $current_output_resolution   = isset($current_field_configs[$field['key']]['output_resolution'])   ? $current_field_configs[$field['key']]['output_resolution']   : 'medium';
+                        $current_webp_quality        = isset($current_field_configs[$field['key']]['webp_quality'])        ? $current_field_configs[$field['key']]['webp_quality']        : 80;
+                        $current_reference_image_url = isset($current_field_configs[$field['key']]['reference_image_url']) ? $current_field_configs[$field['key']]['reference_image_url'] : '';
                         ?>
                         <tr>
                             <td data-label="<?php esc_attr_e('Generate', 'sparkplus'); ?>" style="text-align: center; vertical-align: middle;">
@@ -427,6 +454,17 @@ if (!empty($selected_post_type)) {
                                         <?php esc_html_e('The linking pool is not enabled. Enable it in the Internal Linking tab for this field to work. Make sure the linking pool contains the posts that are allowed for this post_object field.', 'sparkplus'); ?>
                                     </p>
                                 <?php endif; ?>
+                                <?php if ($is_image_field) : ?>
+                                <div style="margin-top: 6px;">
+                                    <label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;margin-bottom:3px;color:#666;"><?php esc_html_e('Reference Image', 'sparkplus'); ?> <span class="dashicons dashicons-editor-help" style="font-size:13px;width:13px;height:13px;cursor:help;color:#72aee6;" title="<?php esc_attr_e('Attach a reference image (e.g. a logo) to include as visual context alongside the prompt. Only works with Gemini image generation models.', 'sparkplus'); ?>"></span></label>
+                                    <div style="display:flex;align-items:center;gap:6px;">
+                                        <input type="hidden" name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][reference_image_url]" value="<?php echo esc_attr($current_reference_image_url); ?>" class="sparkplus-ref-image-url" />
+                                        <span class="sparkplus-ref-image-name" style="font-size:11px;color:#666;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo $current_reference_image_url ? esc_html(basename($current_reference_image_url)) : esc_html__('No image selected', 'sparkplus'); ?></span>
+                                        <button type="button" class="button button-small sparkplus-ref-image-btn"><?php esc_html_e('Select', 'sparkplus'); ?></button>
+                                        <button type="button" class="button button-small sparkplus-ref-image-clear" style="<?php echo $current_reference_image_url ? '' : 'display:none;'; ?>color:#a00;" title="<?php esc_attr_e('Remove reference image', 'sparkplus'); ?>">&#215;</button>
+                                    </div>
+                                </div>
+                                <?php endif; ?>
                             </td>
                             <td data-label="<?php esc_attr_e('WordCount/Dimensions', 'sparkplus'); ?>">
                                 <?php if ($hide_options) : ?>
@@ -444,41 +482,23 @@ if (!empty($selected_post_type)) {
                                         placeholder="<?php esc_attr_e('Posts', 'sparkplus'); ?>"
                                     />
                                 <?php elseif ($is_image_field) : ?>
-                                    <!-- Image Size Dropdown -->
-                                    <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('Dimensions', 'sparkplus'); ?></label>
-                                    <select 
-                                        name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][size]"
-                                        style="width: 100%;"
-                                    >
-                                        <option value="auto" <?php selected($current_size, 'auto'); ?>><?php esc_html_e('Auto (Recommended)', 'sparkplus'); ?></option>
-                                        <option value="1024x1024" <?php selected($current_size, '1024x1024'); ?>>1024 x 1024 (Square)</option>
-                                        <option value="1024x1536" <?php selected($current_size, '1024x1536'); ?>>1024 x 1536 (Portrait)</option>
-                                        <option value="1536x1024" <?php selected($current_size, '1536x1024'); ?>>1536 x 1024 (Landscape)</option>
-                                    </select>
-                                    
-                                    <!-- AI Quality and WebP Quality Row -->
-                                    <div style="margin-top: 8px; display: flex; gap: 8px;">
-                                        <!-- AI Quality Dropdown -->
-                                        <div style="flex: 1;">
-                                            <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('AI Quality', 'sparkplus'); ?></label>
-                                            <select 
-                                                name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][quality]"
-                                                class="sparkplus-quality-select"
-                                                data-field-key="<?php echo esc_attr($field['key']); ?>"
+                                    <!-- Aspect Ratio + WebP Row -->
+                                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                        <div style="flex: 2;">
+                                            <label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;margin-bottom:2px;color:#666;"><?php esc_html_e('Aspect Ratio', 'sparkplus'); ?> <span class="dashicons dashicons-editor-help" style="font-size:13px;width:13px;height:13px;cursor:help;color:#72aee6;" title="<?php esc_attr_e('Controls image proportions. Applies to all models. Square = 1:1. Landscape = 16:9. Portrait = 9:16.', 'sparkplus'); ?>"></span></label>
+                                            <select
+                                                name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][aspect_ratio]"
                                                 style="width: 100%;"
                                             >
-                                                <option value="auto" <?php selected($current_quality, 'auto'); ?>><?php esc_html_e('Auto', 'sparkplus'); ?></option>
-                                                <option value="low" <?php selected($current_quality, 'low'); ?>><?php esc_html_e('Low', 'sparkplus'); ?></option>
-                                                <option value="medium" <?php selected($current_quality, 'medium'); ?>><?php esc_html_e('Medium', 'sparkplus'); ?></option>
-                                                <option value="high" <?php selected($current_quality, 'high'); ?>><?php esc_html_e('High', 'sparkplus'); ?></option>
+                                                <option value="square"    <?php selected($current_aspect_ratio, 'square');    ?>><?php esc_html_e('Square (1:1)',    'sparkplus'); ?></option>
+                                                <option value="landscape" <?php selected($current_aspect_ratio, 'landscape'); ?>><?php esc_html_e('Landscape (16:9)', 'sparkplus'); ?></option>
+                                                <option value="portrait"  <?php selected($current_aspect_ratio, 'portrait');  ?>><?php esc_html_e('Portrait (9:16)',  'sparkplus'); ?></option>
                                             </select>
                                         </div>
-                                        
-                                        <!-- WebP Quality Input -->
                                         <div style="flex: 1;">
-                                            <label style="display: block; font-size: 10px; margin-bottom: 2px; color: #666;"><?php esc_html_e('WebP %', 'sparkplus'); ?></label>
-                                            <input 
-                                                type="number" 
+                                            <label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;margin-bottom:2px;color:#666;"><?php esc_html_e('WebP %', 'sparkplus'); ?> <span class="dashicons dashicons-editor-help" style="font-size:13px;width:13px;height:13px;cursor:help;color:#72aee6;" title="<?php esc_attr_e('JPEG/WebP compression quality for saved images. 1 = smallest file, 100 = best quality. Default 80 is a good balance.', 'sparkplus'); ?>"></span></label>
+                                            <input
+                                                type="number"
                                                 name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][webp_quality]"
                                                 value="<?php echo esc_attr($current_webp_quality); ?>"
                                                 class="small-text"
@@ -488,6 +508,31 @@ if (!empty($selected_post_type)) {
                                                 style="width: 100%;"
                                                 placeholder="80"
                                             />
+                                        </div>
+                                    </div>
+                                    <!-- Gen Quality + Resolution Row -->
+                                    <div style="display: flex; gap: 8px;">
+                                        <div style="flex: 1;">
+                                            <label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;margin-bottom:2px;color:#666;"><?php esc_html_e('Gen. Quality', 'sparkplus'); ?> <span class="dashicons dashicons-editor-help" style="font-size:13px;width:13px;height:13px;cursor:help;color:#72aee6;" title="<?php esc_attr_e('AI generation quality. Low = faster/cheaper, High = best detail. OpenAI models only - Gemini always uses full quality.', 'sparkplus'); ?>"></span></label>
+                                            <select
+                                                name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][gen_quality]"
+                                                style="width: 100%;"
+                                            >
+                                                <option value="low"    <?php selected($current_gen_quality, 'low');    ?>><?php esc_html_e('Low',    'sparkplus'); ?></option>
+                                                <option value="medium" <?php selected($current_gen_quality, 'medium'); ?>><?php esc_html_e('Medium', 'sparkplus'); ?></option>
+                                                <option value="high"   <?php selected($current_gen_quality, 'high');   ?>><?php esc_html_e('High',   'sparkplus'); ?></option>
+                                            </select>
+                                        </div>
+                                        <div style="flex: 1;">
+                                            <label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;margin-bottom:2px;color:#666;"><?php esc_html_e('Resolution', 'sparkplus'); ?> <span class="dashicons dashicons-editor-help" style="font-size:13px;width:13px;height:13px;cursor:help;color:#72aee6;" title="<?php esc_attr_e('Output image resolution. Low = 1K, Medium = 2K, High = 4K. Gemini models only - does not affect OpenAI resolution.', 'sparkplus'); ?>"></span></label>
+                                            <select
+                                                name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][output_resolution]"
+                                                style="width: 100%;"
+                                            >
+                                                <option value="low"    <?php selected($current_output_resolution, 'low');    ?>><?php esc_html_e('Low',    'sparkplus'); ?></option>
+                                                <option value="medium" <?php selected($current_output_resolution, 'medium'); ?>><?php esc_html_e('Medium', 'sparkplus'); ?></option>
+                                                <option value="high"   <?php selected($current_output_resolution, 'high');   ?>><?php esc_html_e('High',   'sparkplus'); ?></option>
+                                            </select>
                                         </div>
                                     </div>
                                 <?php else : ?>

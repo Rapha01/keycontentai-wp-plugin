@@ -72,7 +72,7 @@ class SparkPlus_Anthropic_Provider extends SparkPlus_Provider_Base {
                 'Content-Type'      => 'application/json',
             ),
             'body'      => json_encode( $request_body ),
-            'timeout'   => 120,
+            'timeout'   => 300,
             'sslverify' => true,
         ) );
 

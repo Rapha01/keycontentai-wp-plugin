@@ -105,9 +105,11 @@ class SparkPlus_Content_Generator {
 
             // 2. Prepare image options from field config.
             $image_options = array(
-                'model'   => $cpt_settings['image_model'],
-                'size'    => isset( $field['size'] )    ? $field['size']    : 'auto',
-                'quality' => isset( $field['quality'] ) ? $field['quality'] : 'auto',
+                'model'               => $cpt_settings['image_model'],
+                'aspect_ratio'        => isset( $field['aspect_ratio'] )        ? $field['aspect_ratio']        : 'square',
+                'gen_quality'         => isset( $field['gen_quality'] )         ? $field['gen_quality']         : 'medium',
+                'output_resolution'   => isset( $field['output_resolution'] )   ? $field['output_resolution']   : 'medium',
+                'reference_image_url' => isset( $field['reference_image_url'] ) ? $field['reference_image_url'] : '',
             );
 
             // 3. Make API call to generate the image.
@@ -643,12 +645,14 @@ class SparkPlus_Content_Generator {
                     $sub_user = isset($group_user['sub_fields'][$sub_key]) ? $group_user['sub_fields'][$sub_key] : array();
                     if (!empty($sub_user['enabled'])) {
                         $enabled_fields[] = array_merge($sub_data, array(
-                            'description'  => isset($sub_user['description']) ? $sub_user['description'] : '',
-                            'word_count'   => isset($sub_user['word_count']) ? intval($sub_user['word_count']) : 0,
-                            'size'         => isset($sub_user['size']) ? $sub_user['size'] : 'auto',
-                            'quality'      => isset($sub_user['quality']) ? $sub_user['quality'] : 'auto',
-                            'webp_quality' => isset($sub_user['webp_quality']) ? intval($sub_user['webp_quality']) : 80,
-                            'enabled'      => true,
+                            'description'         => isset($sub_user['description'])         ? $sub_user['description']               : '',
+                            'word_count'          => isset($sub_user['word_count'])          ? intval($sub_user['word_count'])         : 0,
+                            'aspect_ratio'        => isset($sub_user['aspect_ratio'])        ? $sub_user['aspect_ratio']              : 'square',
+                            'gen_quality'         => isset($sub_user['gen_quality'])         ? $sub_user['gen_quality']               : 'medium',
+                            'output_resolution'   => isset($sub_user['output_resolution'])   ? $sub_user['output_resolution']         : 'medium',
+                            'webp_quality'        => isset($sub_user['webp_quality'])        ? intval($sub_user['webp_quality'])      : 80,
+                            'reference_image_url' => isset($sub_user['reference_image_url']) ? $sub_user['reference_image_url']       : '',
+                            'enabled'             => true,
                         ));
                     }
                 }
@@ -656,12 +660,14 @@ class SparkPlus_Content_Generator {
                 // Regular field
                 if (isset($user_settings[$field_key]) && !empty($user_settings[$field_key]['enabled'])) {
                     $enabled_fields[] = array_merge($field_data, array(
-                        'description'  => isset($user_settings[$field_key]['description']) ? $user_settings[$field_key]['description'] : '',
-                        'word_count'   => isset($user_settings[$field_key]['word_count']) ? intval($user_settings[$field_key]['word_count']) : 0,
-                        'size'         => isset($user_settings[$field_key]['size']) ? $user_settings[$field_key]['size'] : 'auto',
-                        'quality'      => isset($user_settings[$field_key]['quality']) ? $user_settings[$field_key]['quality'] : 'auto',
-                        'webp_quality' => isset($user_settings[$field_key]['webp_quality']) ? intval($user_settings[$field_key]['webp_quality']) : 80,
-                        'enabled'      => true,
+                        'description'         => isset($user_settings[$field_key]['description'])         ? $user_settings[$field_key]['description']               : '',
+                        'word_count'          => isset($user_settings[$field_key]['word_count'])          ? intval($user_settings[$field_key]['word_count'])         : 0,
+                        'aspect_ratio'        => isset($user_settings[$field_key]['aspect_ratio'])        ? $user_settings[$field_key]['aspect_ratio']              : 'square',
+                        'gen_quality'         => isset($user_settings[$field_key]['gen_quality'])         ? $user_settings[$field_key]['gen_quality']               : 'medium',
+                        'output_resolution'   => isset($user_settings[$field_key]['output_resolution'])   ? $user_settings[$field_key]['output_resolution']         : 'medium',
+                        'webp_quality'        => isset($user_settings[$field_key]['webp_quality'])        ? intval($user_settings[$field_key]['webp_quality'])      : 80,
+                        'reference_image_url' => isset($user_settings[$field_key]['reference_image_url']) ? $user_settings[$field_key]['reference_image_url']       : '',
+                        'enabled'             => true,
                     ));
                 }
             }

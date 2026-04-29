@@ -338,6 +338,8 @@ class SparkPlus {
                 SPARKPLUS_VERSION
             );
             
+            wp_enqueue_media();
+
             wp_enqueue_script(
                 'sparkplus-settings',
                 SPARKPLUS_PLUGIN_URL . 'admin/settings/assets/settings.js',
