@@ -392,6 +392,10 @@ class SparkPlus_Admin_Ajax_Handler {
                 $val = isset($_POST['sparkplus_seo_rankmath_enable']) && $_POST['sparkplus_seo_rankmath_enable'] === '1';
                 update_option('sparkplus_seo_rankmath_enable', $val);
                 $updated++;
+
+                $val = isset($_POST['sparkplus_seo_slug_enable']) && $_POST['sparkplus_seo_slug_enable'] === '1';
+                update_option('sparkplus_seo_slug_enable', $val);
+                $updated++;
                 break;
 
             case 'cpt':

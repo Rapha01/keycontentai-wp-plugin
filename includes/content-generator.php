@@ -195,7 +195,8 @@ class SparkPlus_Content_Generator {
             $cpt_configs   = $sparkplus->get_cpt_configs();
             $user_settings    = isset( $cpt_configs[ $post->post_type ]['fields'] ) ? $cpt_configs[ $post->post_type ]['fields'] : array();
             $include_rankmath = (bool) get_option( 'sparkplus_seo_rankmath_enable', false );
-            $all_fields       = $this->build_all_fields_map( $post->post_type, $include_rankmath );
+            $include_slug     = (bool) get_option( 'sparkplus_seo_slug_enable', false );
+            $all_fields       = $this->build_all_fields_map( $post->post_type, $include_rankmath, $include_slug );
 
             $text_fields  = array();
             $image_fields = array();
@@ -301,6 +302,9 @@ class SparkPlus_Content_Generator {
                         case 'post_excerpt':
                             $wp_update['post_excerpt'] = '';
                             break;
+                        case 'post_slug':
+                            $wp_update['post_name'] = '';
+                            break;
                         case '_thumbnail_id':
                             delete_post_thumbnail( $post_id );
                             break;
@@ -387,8 +391,9 @@ class SparkPlus_Content_Generator {
         $cpt_configs   = $sparkplus->get_cpt_configs();
         $user_settings    = isset( $cpt_configs[ $post_type ]['fields'] ) ? $cpt_configs[ $post_type ]['fields'] : array();
         $include_rankmath = (bool) get_option( 'sparkplus_seo_rankmath_enable', false );
+        $include_slug     = (bool) get_option( 'sparkplus_seo_slug_enable', false );
 
-        $all_fields = $this->build_all_fields_map( $post_type, $include_rankmath );
+        $all_fields = $this->build_all_fields_map( $post_type, $include_rankmath, $include_slug );
         $clear_list = array();
 
         foreach ( $all_fields as $field_key => $field_data ) {
@@ -425,7 +430,7 @@ class SparkPlus_Content_Generator {
      * @param string $post_type       Post type slug.
      * @param bool   $include_rankmath Whether to append RankMath SEO fields.
      */
-    private function build_all_fields_map( $post_type, $include_rankmath = false ) {
+    private function build_all_fields_map( $post_type, $include_rankmath = false, $include_slug = false ) {
         $all_fields = array();
 
         // WordPress baseline fields
@@ -488,6 +493,16 @@ class SparkPlus_Content_Generator {
                     }
                 }
             }
+        }
+
+        // URL Slug field
+        if ( $include_slug ) {
+            $all_fields['post_slug'] = array(
+                'key'    => 'post_slug',
+                'label'  => 'URL Slug',
+                'type'   => 'text',
+                'source' => 'wordpress',
+            );
         }
 
         // RankMath SEO fields
@@ -631,8 +646,9 @@ class SparkPlus_Content_Generator {
         $cpt_configs = $sparkplus->get_cpt_configs();
         $user_settings    = isset($cpt_configs[$post_type]['fields']) ? $cpt_configs[$post_type]['fields'] : array();
         $include_rankmath = (bool) get_option( 'sparkplus_seo_rankmath_enable', false );
+        $include_slug     = (bool) get_option( 'sparkplus_seo_slug_enable', false );
         
-        $all_fields = $this->build_all_fields_map( $post_type, $include_rankmath );
+        $all_fields = $this->build_all_fields_map( $post_type, $include_rankmath, $include_slug );
         
         // Overlay user settings onto existing fields (left join)
         $enabled_fields = array();
@@ -909,6 +925,10 @@ class SparkPlus_Content_Generator {
             
             if (isset($wp_fields['post_excerpt'])) {
                 $post_data['post_excerpt'] = $wp_fields['post_excerpt'];
+            }
+
+            if (isset($wp_fields['post_slug'])) {
+                $post_data['post_name'] = sanitize_title( $wp_fields['post_slug'] );
             }
             
             $result = wp_update_post($post_data, true);

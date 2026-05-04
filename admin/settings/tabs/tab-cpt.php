@@ -48,6 +48,7 @@ $linking_pool_enabled = (bool) get_option('sparkplus_linking_enable', false);
 // RankMath availability and per-post-type toggle
 $rankmath_active  = defined('RANK_MATH_VERSION');
 $include_rankmath = (bool) get_option('sparkplus_seo_rankmath_enable', false);
+$include_slug     = (bool) get_option('sparkplus_seo_slug_enable', false);
 
 // Get custom fields for the selected post type
 $custom_fields = array();
@@ -122,6 +123,16 @@ if (!empty($selected_post_type)) {
                 }
             }
         }
+    }
+
+    // URL Slug field (appended when enabled in SEO settings)
+    if ($include_slug) {
+        $custom_fields[] = array(
+            'key'    => 'post_slug',
+            'label'  => __('URL Slug', 'sparkplus'),
+            'type'   => 'text',
+            'source' => 'WP',
+        );
     }
 
     // RankMath SEO fields (appended when RankMath is active and toggle is on)
@@ -380,7 +391,7 @@ if (!empty($selected_post_type)) {
                         // Determine if this is an image field
                         $is_image_field  = in_array($field['type'], array('image', 'file', 'gallery'));
                         $is_post_object  = $field['type'] === 'post_object';
-                        $hide_options    = $field['type'] === 'true_false' || ( isset( $field['source'] ) && $field['source'] === 'RM' );
+                        $hide_options    = $field['type'] === 'true_false' || ( isset( $field['source'] ) && $field['source'] === 'RM' ) || $field['key'] === 'post_slug';
                         $current_aspect_ratio        = isset($current_field_configs[$field['key']]['aspect_ratio'])        ? $current_field_configs[$field['key']]['aspect_ratio']        : 'square';
                         $current_gen_quality         = isset($current_field_configs[$field['key']]['gen_quality'])         ? $current_field_configs[$field['key']]['gen_quality']         : 'medium';
                         $current_output_resolution   = isset($current_field_configs[$field['key']]['output_resolution'])   ? $current_field_configs[$field['key']]['output_resolution']   : 'medium';

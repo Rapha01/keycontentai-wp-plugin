@@ -660,6 +660,12 @@ class SparkPlus_Prompt_Builder {
      * @return string      Multi-line instruction string, or empty string for unknown keys.
      */
     private function get_rankmath_field_instructions( $key ) {
+        if ( $key === 'post_slug' ) {
+            return implode( "\n", array(
+                '   ⚑ URL Slug — rules:',
+                '     • Lowercase only. Use hyphens to separate words — no underscores, spaces, or special characters.'
+            ) );
+        }
         if ( $key === 'rank_math_title' ) {
             return implode( "\n", array(
                 '   ⚑ SEO Meta Title — follow these rules strictly:',

@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
 (function() {
 
 $seo_rankmath_enable = (bool) get_option('sparkplus_seo_rankmath_enable', false);
+$seo_slug_enable     = (bool) get_option('sparkplus_seo_slug_enable', false);
 
 ?>
 
@@ -49,6 +50,35 @@ $seo_rankmath_enable = (bool) get_option('sparkplus_seo_rankmath_enable', false)
                                 <?php esc_html_e('RankMath SEO plugin is not active. Install and activate RankMath to use this feature.', 'sparkplus'); ?>
                             </p>
                         <?php endif; ?>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2><?php esc_html_e('URL Slug Generation', 'sparkplus'); ?></h2>
+
+        <table class="form-table" role="presentation">
+            <tbody>
+                <tr>
+                    <th scope="row">
+                        <label for="sparkplus_seo_slug_enable">
+                            <?php esc_html_e('Enable URL Slug Field', 'sparkplus'); ?>
+                        </label>
+                    </th>
+                    <td>
+                        <label>
+                            <input
+                                type="checkbox"
+                                id="sparkplus_seo_slug_enable"
+                                name="sparkplus_seo_slug_enable"
+                                value="1"
+                                <?php checked($seo_slug_enable, true); ?>
+                            />
+                            <?php esc_html_e('Add a URL Slug field to the CPT field list', 'sparkplus'); ?>
+                        </label>
+                        <p class="description">
+                            <?php esc_html_e('When enabled, a "URL Slug" field will appear in the CPT field list. The AI will generate a short, keyword-rich slug (e.g. "best-coffee-grinders-2025") and apply it as the post permalink. After toggling, go to the CPT tab and save once to refresh the field list.', 'sparkplus'); ?>
+                        </p>
                     </td>
                 </tr>
             </tbody>
