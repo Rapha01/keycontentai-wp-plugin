@@ -82,10 +82,11 @@ class SparkPlus_Admin_Ajax_Handler {
         $post_id = absint( wp_unslash( $_POST['post_id'] ) );
         $job_id  = 'sparkplus_job_' . $post_id . '_text_' . uniqid();
 
-        set_transient( $job_id, array( 'status' => 'pending' ), 600 );
+        set_transient( $job_id, array( 'status' => 'pending', 'debug_log' => array() ), 600 );
         $this->flush_early( array( 'success' => true, 'data' => array( 'status' => 'processing', 'job_id' => $job_id ) ) );
 
         $generator = new SparkPlus_Content_Generator();
+        $generator->set_streaming_job_id( $job_id );
         $result    = $generator->generate_text_only( $post_id );
 
         if ( $result['success'] ) {
@@ -125,10 +126,11 @@ class SparkPlus_Admin_Ajax_Handler {
         $field_index = isset( $_POST['field_index'] ) ? absint( wp_unslash( $_POST['field_index'] ) ) : 0;
         $job_id      = 'sparkplus_job_' . $post_id . '_img' . $field_index . '_' . uniqid();
 
-        set_transient( $job_id, array( 'status' => 'pending' ), 600 );
+        set_transient( $job_id, array( 'status' => 'pending', 'debug_log' => array() ), 600 );
         $this->flush_early( array( 'success' => true, 'data' => array( 'status' => 'processing', 'job_id' => $job_id ) ) );
 
         $generator = new SparkPlus_Content_Generator();
+        $generator->set_streaming_job_id( $job_id );
         $result    = $generator->generate_single_image( $post_id, $field_index );
 
         if ( $result['success'] ) {

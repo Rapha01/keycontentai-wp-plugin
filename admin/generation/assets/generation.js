@@ -375,7 +375,7 @@
      * @param {Function} reject   Promise reject
      * @param {number}   attempts Number of polls already made
      */
-    function pollJobStatus(jobId, resolve, reject, attempts = 0) {
+    function pollJobStatus(jobId, resolve, reject, attempts = 0, debugOffset = 0) {
         const maxAttempts = 180; // 6 minutes at 2s intervals
 
         if (attempts >= maxAttempts) {
@@ -401,21 +401,26 @@
                     }
 
                     const job = response.data;
+                    const allEntries = job.debug_log || [];
+
+                    // Stream any new debug entries to the panel immediately
+                    const newEntries = allEntries.slice(debugOffset);
+                    newEntries.forEach(entry => addDebugEntry(entry.step, entry.data, false, 'server'));
+                    const nextOffset = debugOffset + newEntries.length;
 
                     if (job.status === 'complete') {
-                        // Rebuild as a normal success response so callers are unchanged
-                        resolve({ success: true, data: { debug_log: job.debug_log || [] } });
+                        // Resolve with empty debug_log — entries already streamed above
+                        resolve({ success: true, data: { debug_log: [] } });
                     } else if (job.status === 'error') {
-                        // Rebuild as a normal error response so callers are unchanged
-                        resolve({ success: false, data: { message: job.message, debug_log: job.debug_log || [] } });
+                        resolve({ success: false, data: { message: job.message, debug_log: [] } });
                     } else {
                         // Still pending — keep polling
-                        pollJobStatus(jobId, resolve, reject, attempts + 1);
+                        pollJobStatus(jobId, resolve, reject, attempts + 1, nextOffset);
                     }
                 },
                 error: function() {
                     // Transient network hiccup — retry rather than fail
-                    pollJobStatus(jobId, resolve, reject, attempts + 1);
+                    pollJobStatus(jobId, resolve, reject, attempts + 1, debugOffset);
                 },
             });
         }, 2000);

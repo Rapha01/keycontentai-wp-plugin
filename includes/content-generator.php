@@ -15,20 +15,42 @@ if (!defined('ABSPATH')) {
 }
 
 class SparkPlus_Content_Generator {
-    private $debug_log    = array();
-    private $prompt_builder = null;
+    private $debug_log        = array();
+    private $prompt_builder   = null;
+    private $streaming_job_id = null;
 
     public function __construct() {
         // Initialize prompt builder with debug callback.
         $this->prompt_builder = new SparkPlus_Prompt_Builder( array( $this, 'add_debug' ) );
     }
+
+    /**
+     * Enable streaming debug entries into a transient so the client
+     * can read them incrementally while the job is still running.
+     *
+     * @param string $job_id The transient key created by the AJAX handler.
+     */
+    public function set_streaming_job_id( $job_id ) {
+        $this->streaming_job_id = $job_id;
+    }
     
     public function add_debug($step, $data) {
-        $this->debug_log[] = array(
-            'step' => $step,
-            'data' => $data,
-            'timestamp' => current_time('mysql')
+        $entry = array(
+            'step'      => $step,
+            'data'      => $data,
+            'timestamp' => current_time('mysql'),
         );
+        $this->debug_log[] = $entry;
+
+        // Stream entry into the transient immediately so the polling client
+        // can display it before the job finishes.
+        if ( $this->streaming_job_id ) {
+            $transient = get_transient( $this->streaming_job_id );
+            if ( is_array( $transient ) ) {
+                $transient['debug_log'][] = $entry;
+                set_transient( $this->streaming_job_id, $transient, 600 );
+            }
+        }
     }
 
     /**
