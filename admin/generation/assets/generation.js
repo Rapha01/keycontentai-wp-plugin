@@ -343,18 +343,82 @@
 
     /**
      * Wrap jQuery.ajax in a Promise for async/await usage.
+     * If the server returns { status: 'processing', job_id: '...' }, automatically
+     * polls check_job_status until the job completes, then resolves with the result.
      */
     function ajaxPromise(data) {
         return new Promise((resolve, reject) => {
             $.ajax({
                 url: sparkplusGeneration.ajaxUrl,
                 type: 'POST',
-                timeout: 300000, // 5 minutes
+                timeout: 30000, // Short — server responds immediately now
                 data: { ...data, nonce: sparkplusGeneration.nonce },
-                success: resolve,
+                success: function(response) {
+                    if (response.success && response.data?.status === 'processing' && response.data?.job_id) {
+                        // Server is processing async — poll for completion
+                        pollJobStatus(response.data.job_id, resolve, reject);
+                    } else {
+                        resolve(response);
+                    }
+                },
                 error: (xhr, status, error) => reject({ xhr, status, error }),
             });
         });
+    }
+
+    /**
+     * Poll check_job_status every 2s until the job is complete or errors.
+     * Resolves with a response shaped like a normal wp_send_json_success/error response.
+     *
+     * @param {string}   jobId    Transient key returned by the server
+     * @param {Function} resolve  Promise resolve
+     * @param {Function} reject   Promise reject
+     * @param {number}   attempts Number of polls already made
+     */
+    function pollJobStatus(jobId, resolve, reject, attempts = 0) {
+        const maxAttempts = 180; // 6 minutes at 2s intervals
+
+        if (attempts >= maxAttempts) {
+            reject({ error: 'Job polling timed out after 6 minutes' });
+            return;
+        }
+
+        setTimeout(function() {
+            $.ajax({
+                url: sparkplusGeneration.ajaxUrl,
+                type: 'POST',
+                timeout: 10000,
+                data: {
+                    action: 'sparkplus_check_job_status',
+                    job_id: jobId,
+                    nonce: sparkplusGeneration.nonce,
+                },
+                success: function(response) {
+                    if (!response.success) {
+                        // Job expired or lookup error
+                        reject({ error: response.data?.message || 'Job status check failed' });
+                        return;
+                    }
+
+                    const job = response.data;
+
+                    if (job.status === 'complete') {
+                        // Rebuild as a normal success response so callers are unchanged
+                        resolve({ success: true, data: { debug_log: job.debug_log || [] } });
+                    } else if (job.status === 'error') {
+                        // Rebuild as a normal error response so callers are unchanged
+                        resolve({ success: false, data: { message: job.message, debug_log: job.debug_log || [] } });
+                    } else {
+                        // Still pending — keep polling
+                        pollJobStatus(jobId, resolve, reject, attempts + 1);
+                    }
+                },
+                error: function() {
+                    // Transient network hiccup — retry rather than fail
+                    pollJobStatus(jobId, resolve, reject, attempts + 1);
+                },
+            });
+        }, 2000);
     }
 
     /**

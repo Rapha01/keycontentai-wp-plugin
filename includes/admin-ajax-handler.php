@@ -25,7 +25,8 @@ class SparkPlus_Admin_Ajax_Handler {
         add_action('wp_ajax_sparkplus_reset_settings', array($this, 'reset_settings'));
         add_action('wp_ajax_sparkplus_delete_post', array($this, 'delete_post'));
         add_action('wp_ajax_sparkplus_get_post_type_items', array($this, 'get_post_type_items'));
-        add_action('wp_ajax_sparkplus_save_linking_pool', array($this, 'save_linking_pool'));
+        add_action('wp_ajax_sparkplus_save_linking_pool',     array($this, 'save_linking_pool'));
+        add_action('wp_ajax_sparkplus_check_job_status',        array($this, 'check_job_status'));
     }
     
     /**
@@ -63,6 +64,7 @@ class SparkPlus_Admin_Ajax_Handler {
 
     /**
      * AJAX handler: generate only text fields for a post.
+     * Returns immediately with a job_id; result is stored in a transient.
      */
     public function generate_text() {
         check_ajax_referer( 'sparkplus_nonce', 'nonce' );
@@ -77,19 +79,28 @@ class SparkPlus_Admin_Ajax_Handler {
         @set_time_limit( 300 );
         ignore_user_abort( true );
 
-        $post_id   = absint( wp_unslash( $_POST['post_id'] ) );
+        $post_id = absint( wp_unslash( $_POST['post_id'] ) );
+        $job_id  = 'sparkplus_job_' . $post_id . '_text_' . uniqid();
+
+        set_transient( $job_id, array( 'status' => 'pending' ), 600 );
+        $this->flush_early( array( 'success' => true, 'data' => array( 'status' => 'processing', 'job_id' => $job_id ) ) );
+
         $generator = new SparkPlus_Content_Generator();
         $result    = $generator->generate_text_only( $post_id );
 
         if ( $result['success'] ) {
-            wp_send_json_success( array(
+            set_transient( $job_id, array(
+                'status'    => 'complete',
+                'success'   => true,
                 'debug_log' => $result['debug_log'],
-            ) );
+            ), 600 );
         } else {
-            wp_send_json_error( array(
+            set_transient( $job_id, array(
+                'status'    => 'error',
+                'success'   => false,
                 'message'   => $result['message'],
-                'debug_log' => $result['debug_log'],
-            ) );
+                'debug_log' => $result['debug_log'] ?? array(),
+            ), 600 );
         }
     }
 
@@ -110,21 +121,84 @@ class SparkPlus_Admin_Ajax_Handler {
         @set_time_limit( 300 );
         ignore_user_abort( true );
 
-        $post_id      = absint( wp_unslash( $_POST['post_id'] ) );
-        $field_index  = isset( $_POST['field_index'] ) ? absint( wp_unslash( $_POST['field_index'] ) ) : 0;
+        $post_id     = absint( wp_unslash( $_POST['post_id'] ) );
+        $field_index = isset( $_POST['field_index'] ) ? absint( wp_unslash( $_POST['field_index'] ) ) : 0;
+        $job_id      = 'sparkplus_job_' . $post_id . '_img' . $field_index . '_' . uniqid();
+
+        set_transient( $job_id, array( 'status' => 'pending' ), 600 );
+        $this->flush_early( array( 'success' => true, 'data' => array( 'status' => 'processing', 'job_id' => $job_id ) ) );
 
         $generator = new SparkPlus_Content_Generator();
         $result    = $generator->generate_single_image( $post_id, $field_index );
 
         if ( $result['success'] ) {
-            wp_send_json_success( array(
+            set_transient( $job_id, array(
+                'status'    => 'complete',
+                'success'   => true,
                 'debug_log' => $result['debug_log'],
-            ) );
+            ), 600 );
         } else {
-            wp_send_json_error( array(
+            set_transient( $job_id, array(
+                'status'    => 'error',
+                'success'   => false,
                 'message'   => $result['message'],
-                'debug_log' => $result['debug_log'],
-            ) );
+                'debug_log' => $result['debug_log'] ?? array(),
+            ), 600 );
+        }
+    }
+
+    /**
+     * AJAX handler: poll the status of an async job.
+     */
+    public function check_job_status() {
+        check_ajax_referer( 'sparkplus_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'edit_posts' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Unauthorized', 'sparkplus' ) ) );
+        }
+
+        $job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
+        if ( empty( $job_id ) ) {
+            wp_send_json_error( array( 'message' => 'No job ID provided' ) );
+        }
+
+        $data = get_transient( $job_id );
+        if ( $data === false ) {
+            wp_send_json_error( array( 'message' => 'Job not found or expired', 'status' => 'expired' ) );
+        }
+
+        wp_send_json_success( $data );
+    }
+
+    /**
+     * Flush a JSON response to the client and close the HTTP connection,
+     * allowing PHP to continue running without holding the browser open.
+     *
+     * @param array $payload The JSON-encodable payload to send.
+     */
+    private function flush_early( array $payload ) {
+        // Discard any buffered output so Content-Length is accurate
+        while ( ob_get_level() > 0 ) {
+            ob_end_clean();
+        }
+
+        $body = wp_json_encode( $payload );
+
+        header( 'Content-Type: application/json; charset=utf-8' );
+        header( 'Connection: close' );
+        header( 'Content-Length: ' . strlen( $body ) );
+        header( 'X-Accel-Buffering: no' ); // Disable nginx proxy buffering
+
+        echo $body; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
+        if ( function_exists( 'session_write_close' ) ) {
+            session_write_close();
+        }
+
+        flush();
+
+        if ( function_exists( 'fastcgi_finish_request' ) ) {
+            fastcgi_finish_request(); // PHP-FPM: tells nginx the response is complete
         }
     }
 
