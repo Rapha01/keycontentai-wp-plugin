@@ -2,7 +2,7 @@
 /**
  * Plugin Name: SparkPlus
  * Description: Creates and populates custom post types with AI-generated content based on user keywords.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: olympagency
  * Author URI: https://olympagency.com/
  * License: GPL v2 or later
@@ -129,12 +129,15 @@ class SparkPlus {
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/content-generator.php';
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/keyword-loader.php';
         
-        // Load admin components (only in admin)
+        // Always load generation cron handler so WP-Cron callbacks are registered
+        // on every request type, including wp-cron.php (which is not is_admin())
+        require_once SPARKPLUS_PLUGIN_DIR . 'includes/generation-cron.php';
+        new SparkPlus_Generation_Cron();
+
+        // Load admin-only components
         if (is_admin()) {
             require_once SPARKPLUS_PLUGIN_DIR . 'admin/edit-meta-box.php';
             require_once SPARKPLUS_PLUGIN_DIR . 'includes/admin-ajax-handler.php';
-            
-            // Initialize AJAX handler
             new SparkPlus_Admin_Ajax_Handler();
         }
     }

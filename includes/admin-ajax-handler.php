@@ -19,13 +19,13 @@ class SparkPlus_Admin_Ajax_Handler {
         add_action('wp_ajax_sparkplus_generate_image',          array($this, 'generate_image'));
         add_action('wp_ajax_sparkplus_stamp_generation',        array($this, 'stamp_generation'));
         add_action('wp_ajax_sparkplus_clear_fields',            array($this, 'clear_fields'));
-        add_action('wp_ajax_sparkplus_load_keyword', array($this, 'load_keyword'));
-        add_action('wp_ajax_sparkplus_save_post_meta', array($this, 'save_post_meta'));
-        add_action('wp_ajax_sparkplus_save_settings', array($this, 'save_settings'));
-        add_action('wp_ajax_sparkplus_reset_settings', array($this, 'reset_settings'));
-        add_action('wp_ajax_sparkplus_delete_post', array($this, 'delete_post'));
-        add_action('wp_ajax_sparkplus_get_post_type_items', array($this, 'get_post_type_items'));
-        add_action('wp_ajax_sparkplus_save_linking_pool',     array($this, 'save_linking_pool'));
+        add_action('wp_ajax_sparkplus_load_keyword',            array($this, 'load_keyword'));
+        add_action('wp_ajax_sparkplus_save_post_meta',          array($this, 'save_post_meta'));
+        add_action('wp_ajax_sparkplus_save_settings',           array($this, 'save_settings'));
+        add_action('wp_ajax_sparkplus_reset_settings',          array($this, 'reset_settings'));
+        add_action('wp_ajax_sparkplus_delete_post',             array($this, 'delete_post'));
+        add_action('wp_ajax_sparkplus_get_post_type_items',     array($this, 'get_post_type_items'));
+        add_action('wp_ajax_sparkplus_save_linking_pool',       array($this, 'save_linking_pool'));
         add_action('wp_ajax_sparkplus_check_job_status',        array($this, 'check_job_status'));
     }
     
@@ -64,7 +64,7 @@ class SparkPlus_Admin_Ajax_Handler {
 
     /**
      * AJAX handler: generate only text fields for a post.
-     * Returns immediately with a job_id; result is stored in a transient.
+     * Schedules a WP-Cron job and returns the job_id immediately.
      */
     public function generate_text() {
         check_ajax_referer( 'sparkplus_nonce', 'nonce' );
@@ -76,37 +76,19 @@ class SparkPlus_Admin_Ajax_Handler {
             wp_send_json_error( array( 'message' => __( 'No post ID provided', 'sparkplus' ) ) );
         }
 
-        @set_time_limit( 300 );
-        ignore_user_abort( true );
-
         $post_id = absint( wp_unslash( $_POST['post_id'] ) );
         $job_id  = 'sparkplus_job_' . $post_id . '_text_' . uniqid();
 
         set_transient( $job_id, array( 'status' => 'pending', 'debug_log' => array() ), 600 );
-        $this->flush_early( array( 'success' => true, 'data' => array( 'status' => 'processing', 'job_id' => $job_id ) ) );
+        wp_schedule_single_event( time(), 'sparkplus_cron_generate_text', array( $post_id, $job_id ) );
+        $this->trigger_cron();
 
-        $generator = new SparkPlus_Content_Generator();
-        $generator->set_streaming_job_id( $job_id );
-        $result    = $generator->generate_text_only( $post_id );
-
-        if ( $result['success'] ) {
-            set_transient( $job_id, array(
-                'status'    => 'complete',
-                'success'   => true,
-                'debug_log' => $result['debug_log'],
-            ), 600 );
-        } else {
-            set_transient( $job_id, array(
-                'status'    => 'error',
-                'success'   => false,
-                'message'   => $result['message'],
-                'debug_log' => $result['debug_log'] ?? array(),
-            ), 600 );
-        }
+        wp_send_json_success( array( 'status' => 'processing', 'job_id' => $job_id ) );
     }
 
     /**
      * AJAX handler: generate one image field for a post.
+     * Schedules a WP-Cron job and returns the job_id immediately.
      * Expects post_id, field_index (0-based).
      */
     public function generate_image() {
@@ -119,34 +101,15 @@ class SparkPlus_Admin_Ajax_Handler {
             wp_send_json_error( array( 'message' => __( 'No post ID provided', 'sparkplus' ) ) );
         }
 
-        @set_time_limit( 300 );
-        ignore_user_abort( true );
-
         $post_id     = absint( wp_unslash( $_POST['post_id'] ) );
         $field_index = isset( $_POST['field_index'] ) ? absint( wp_unslash( $_POST['field_index'] ) ) : 0;
         $job_id      = 'sparkplus_job_' . $post_id . '_img' . $field_index . '_' . uniqid();
 
         set_transient( $job_id, array( 'status' => 'pending', 'debug_log' => array() ), 600 );
-        $this->flush_early( array( 'success' => true, 'data' => array( 'status' => 'processing', 'job_id' => $job_id ) ) );
+        wp_schedule_single_event( time(), 'sparkplus_cron_generate_image', array( $post_id, $field_index, $job_id ) );
+        $this->trigger_cron();
 
-        $generator = new SparkPlus_Content_Generator();
-        $generator->set_streaming_job_id( $job_id );
-        $result    = $generator->generate_single_image( $post_id, $field_index );
-
-        if ( $result['success'] ) {
-            set_transient( $job_id, array(
-                'status'    => 'complete',
-                'success'   => true,
-                'debug_log' => $result['debug_log'],
-            ), 600 );
-        } else {
-            set_transient( $job_id, array(
-                'status'    => 'error',
-                'success'   => false,
-                'message'   => $result['message'],
-                'debug_log' => $result['debug_log'] ?? array(),
-            ), 600 );
-        }
+        wp_send_json_success( array( 'status' => 'processing', 'job_id' => $job_id ) );
     }
 
     /**
@@ -173,35 +136,16 @@ class SparkPlus_Admin_Ajax_Handler {
     }
 
     /**
-     * Flush a JSON response to the client and close the HTTP connection,
-     * allowing PHP to continue running without holding the browser open.
-     *
-     * @param array $payload The JSON-encodable payload to send.
+     * Fire a non-blocking loopback request to wp-cron.php so any scheduled
+     * cron events run immediately in a separate PHP process.
      */
-    private function flush_early( array $payload ) {
-        // Discard any buffered output so Content-Length is accurate
-        while ( ob_get_level() > 0 ) {
-            ob_end_clean();
-        }
-
-        $body = wp_json_encode( $payload );
-
-        header( 'Content-Type: application/json; charset=utf-8' );
-        header( 'Connection: close' );
-        header( 'Content-Length: ' . strlen( $body ) );
-        header( 'X-Accel-Buffering: no' ); // Disable nginx proxy buffering
-
-        echo $body; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-
-        if ( function_exists( 'session_write_close' ) ) {
-            session_write_close();
-        }
-
-        flush();
-
-        if ( function_exists( 'fastcgi_finish_request' ) ) {
-            fastcgi_finish_request(); // PHP-FPM: tells nginx the response is complete
-        }
+    private function trigger_cron() {
+        $cron_url = add_query_arg( 'doing_wp_cron', '1', site_url( 'wp-cron.php' ) );
+        wp_remote_post( $cron_url, array(
+            'timeout'   => 0.01,
+            'blocking'  => false,
+            'sslverify' => apply_filters( 'https_local_ssl_verify', false ),
+        ) );
     }
 
     /**
