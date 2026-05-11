@@ -1,10 +1,10 @@
 <?php
 /**
- * Generation Cron Handler
+ * Generation Handler
  *
- * Registers and handles WP-Cron callbacks for background AI generation jobs.
- * Loaded on every request (including wp-cron.php) so cron hooks are always
- * registered — no is_admin() guard here.
+ * Contains the generation work methods (text and image) called directly
+ * by the AJAX handlers after flushing the HTTP response early via
+ * fastcgi_finish_request().
  */
 
 // Exit if accessed directly
@@ -14,14 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class SparkPlus_Generation_Cron {
 
-    public function __construct() {
-        add_action( 'sparkplus_cron_generate_text',  array( $this, 'handle_generate_text' ),  10, 2 );
-        add_action( 'sparkplus_cron_generate_image', array( $this, 'handle_generate_image' ), 10, 3 );
-    }
-
     /**
      * Run text generation for a post and write the result to a transient.
-     * Called by WP-Cron (fresh PHP process) or inline as a fallback.
      *
      * @param int    $post_id Post ID.
      * @param string $job_id  Transient key.
@@ -51,7 +45,6 @@ class SparkPlus_Generation_Cron {
 
     /**
      * Run image generation for a single image field and write the result to a transient.
-     * Called by WP-Cron (fresh PHP process) or inline as a fallback.
      *
      * @param int    $post_id     Post ID.
      * @param int    $field_index Image field index (0-based).

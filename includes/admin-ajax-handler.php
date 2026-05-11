@@ -64,7 +64,8 @@ class SparkPlus_Admin_Ajax_Handler {
 
     /**
      * AJAX handler: generate only text fields for a post.
-     * Schedules a WP-Cron job and returns the job_id immediately.
+     * Flushes the job_id response immediately, then runs generation inline.
+     * fastcgi_finish_request() closes the nginx connection so no 504 occurs.
      */
     public function generate_text() {
         check_ajax_referer( 'sparkplus_nonce', 'nonce' );
@@ -80,15 +81,18 @@ class SparkPlus_Admin_Ajax_Handler {
         $job_id  = 'sparkplus_job_' . $post_id . '_text_' . uniqid();
 
         set_transient( $job_id, array( 'status' => 'pending', 'debug_log' => array() ), 600 );
-        wp_schedule_single_event( time(), 'sparkplus_cron_generate_text', array( $post_id, $job_id ) );
-        $this->trigger_cron();
 
-        wp_send_json_success( array( 'status' => 'processing', 'job_id' => $job_id ) );
+        @set_time_limit( 300 );
+        ignore_user_abort( true );
+        $this->flush_early( array( 'success' => true, 'data' => array( 'status' => 'processing', 'job_id' => $job_id ) ) );
+
+        ( new SparkPlus_Generation_Cron() )->handle_generate_text( $post_id, $job_id );
     }
 
     /**
      * AJAX handler: generate one image field for a post.
-     * Schedules a WP-Cron job and returns the job_id immediately.
+     * Flushes the job_id response immediately, then runs generation inline.
+     * fastcgi_finish_request() closes the nginx connection so no 504 occurs.
      * Expects post_id, field_index (0-based).
      */
     public function generate_image() {
@@ -106,10 +110,12 @@ class SparkPlus_Admin_Ajax_Handler {
         $job_id      = 'sparkplus_job_' . $post_id . '_img' . $field_index . '_' . uniqid();
 
         set_transient( $job_id, array( 'status' => 'pending', 'debug_log' => array() ), 600 );
-        wp_schedule_single_event( time(), 'sparkplus_cron_generate_image', array( $post_id, $field_index, $job_id ) );
-        $this->trigger_cron();
 
-        wp_send_json_success( array( 'status' => 'processing', 'job_id' => $job_id ) );
+        @set_time_limit( 300 );
+        ignore_user_abort( true );
+        $this->flush_early( array( 'success' => true, 'data' => array( 'status' => 'processing', 'job_id' => $job_id ) ) );
+
+        ( new SparkPlus_Generation_Cron() )->handle_generate_image( $post_id, $field_index, $job_id );
     }
 
     /**
@@ -136,16 +142,35 @@ class SparkPlus_Admin_Ajax_Handler {
     }
 
     /**
-     * Fire a non-blocking loopback request to wp-cron.php so any scheduled
-     * cron events run immediately in a separate PHP process.
+     * Flush a JSON response to the client and close the HTTP connection via
+     * fastcgi_finish_request(), allowing PHP to continue running the generation
+     * without holding the browser connection open (prevents 504 timeouts).
+     *
+     * @param array $payload The JSON-encodable payload to send.
      */
-    private function trigger_cron() {
-        $cron_url = add_query_arg( 'doing_wp_cron', '1', site_url( 'wp-cron.php' ) );
-        wp_remote_post( $cron_url, array(
-            'timeout'   => 0.01,
-            'blocking'  => false,
-            'sslverify' => apply_filters( 'https_local_ssl_verify', false ),
-        ) );
+    private function flush_early( array $payload ) {
+        while ( ob_get_level() > 0 ) {
+            ob_end_clean();
+        }
+
+        $body = wp_json_encode( $payload );
+
+        header( 'Content-Type: application/json; charset=utf-8' );
+        header( 'Connection: close' );
+        header( 'Content-Length: ' . strlen( $body ) );
+        header( 'X-Accel-Buffering: no' );
+
+        echo $body; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
+        if ( function_exists( 'session_write_close' ) ) {
+            session_write_close();
+        }
+
+        flush();
+
+        if ( function_exists( 'fastcgi_finish_request' ) ) {
+            fastcgi_finish_request();
+        }
     }
 
     /**

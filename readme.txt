@@ -4,7 +4,7 @@ Tags: ai content, content generation, openai, custom post types, seo
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -108,6 +108,9 @@ Go to **SparkPlus > Settings > Reset**. You can reset all plugin settings (API k
 
 == Changelog ==
 
+= 1.1.3 =
+* Replaced WP-Cron background dispatch with a direct `flush_early` approach: the AJAX handler sends the job ID to the browser immediately via `fastcgi_finish_request()`, then runs the API call inline. This eliminates the server-to-itself loopback HTTP request that WP-Cron required, which was blocked on some hosting environments (including SiteGround).
+
 = 1.1.2 =
 * Added changelog entries for all previous versions.
 * Fixed js/css caching problem by increasing the SPARKPLUS_VERSION constant.
@@ -187,8 +190,10 @@ Go to **SparkPlus > Settings > Reset**. You can reset all plugin settings (API k
 
 == Upgrade Notice ==
 
-= 1.1.1 =
-Moves AI generation into WP-Cron background jobs to resolve server timeout errors on slow API calls. No configuration required.
+= 1.1.3 =
+Fixes generation not starting on hosting environments (including SiteGround) that block server-to-itself HTTP requests. No configuration required.
+
+= 1.1.1 = into WP-Cron background jobs to resolve server timeout errors on slow API calls. No configuration required.
 
 = 1.0.9 =
 Generation requests are now asynchronous. The browser receives a job ID immediately and polls for the result. No configuration required, but custom integrations that rely on synchronous AJAX responses will need to be updated.
