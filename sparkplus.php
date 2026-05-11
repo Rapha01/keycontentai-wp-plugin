@@ -2,7 +2,7 @@
 /**
  * Plugin Name: SparkPlus
  * Description: Creates and populates custom post types with AI-generated content based on user keywords.
- * Version: 1.1.1
+ * Version: 1.1.2
  * Author: olympagency
  * Author URI: https://olympagency.com/
  * License: GPL v2 or later
@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('SPARKPLUS_VERSION', '1.0.2');
+define('SPARKPLUS_VERSION', '1.1.2');
 define('SPARKPLUS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SPARKPLUS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('SPARKPLUS_PLUGIN_BASENAME', plugin_basename(__FILE__));

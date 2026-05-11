@@ -4,7 +4,7 @@ Tags: ai content, content generation, openai, custom post types, seo
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -110,6 +110,7 @@ Go to **SparkPlus > Settings > Reset**. You can reset all plugin settings (API k
 
 = 1.1.2 =
 * Added changelog entries for all previous versions.
+* Fixed js/css caching problem by increasing the SPARKPLUS_VERSION constant.
 
 = 1.1.1 =
 * Moved AI generation work into WP-Cron background jobs to eliminate server-side timeout errors on long API calls.
