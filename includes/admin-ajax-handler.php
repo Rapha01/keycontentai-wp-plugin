@@ -86,7 +86,7 @@ class SparkPlus_Admin_Ajax_Handler {
         ignore_user_abort( true );
         $this->flush_early( array( 'success' => true, 'data' => array( 'status' => 'processing', 'job_id' => $job_id ) ) );
 
-        ( new SparkPlus_Generation_Cron() )->handle_generate_text( $post_id, $job_id );
+        ( new SparkPlus_Generation_Runner() )->handle_generate_text( $post_id, $job_id );
     }
 
     /**
@@ -115,7 +115,7 @@ class SparkPlus_Admin_Ajax_Handler {
         ignore_user_abort( true );
         $this->flush_early( array( 'success' => true, 'data' => array( 'status' => 'processing', 'job_id' => $job_id ) ) );
 
-        ( new SparkPlus_Generation_Cron() )->handle_generate_image( $post_id, $field_index, $job_id );
+        ( new SparkPlus_Generation_Runner() )->handle_generate_image( $post_id, $field_index, $job_id );
     }
 
     /**

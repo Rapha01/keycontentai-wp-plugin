@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class SparkPlus_Generation_Cron {
+class SparkPlus_Generation_Runner {
 
     /**
      * Run text generation for a post and write the result to a transient.

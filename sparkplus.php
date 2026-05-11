@@ -130,8 +130,8 @@ class SparkPlus {
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/keyword-loader.php';
         
         // Load generation handler (always, so hooks are available on all request types)
-        require_once SPARKPLUS_PLUGIN_DIR . 'includes/generation-cron.php';
-        new SparkPlus_Generation_Cron();
+        require_once SPARKPLUS_PLUGIN_DIR . 'includes/generation-runner.php';
+        new SparkPlus_Generation_Runner();
 
         // Load admin-only components
         if (is_admin()) {
