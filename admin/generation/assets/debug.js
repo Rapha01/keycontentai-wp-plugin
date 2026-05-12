@@ -82,7 +82,8 @@
             lastTextPrompt: null,
             lastImagePrompt: null,
             lastTextResponse: null,
-            lastImageResponse: null
+            lastImageResponse: null,
+            lastImageUrl: null,
         };
         
         const emptyState = (message) => 
@@ -130,13 +131,18 @@
                 debugData.lastImagePrompt = data.prompt;
             }
             
-            // Responses
+            // Raw API responses
             if (data.full_api_response) {
                 if (step === 'generate_image') {
                     debugData.lastImageResponse = data.full_api_response;
                 } else if (step === 'generate_text') {
                     debugData.lastTextResponse = data.full_api_response;
                 }
+            }
+
+            // Saved image URL (replaces raw response display)
+            if (step === 'generate_image' && data.attachment_url) {
+                debugData.lastImageUrl = data.attachment_url;
             }
         }
         
@@ -158,8 +164,8 @@
             updateTextResponseTab();
         }
         
-        // Update image response tab if we have one
-        if (debugData.lastImageResponse) {
+        // Update image response tab if we have a URL or raw response
+        if (debugData.lastImageUrl || debugData.lastImageResponse) {
             updateImageResponseTab();
         }
     }
@@ -244,9 +250,24 @@
     
     /**
      * Update "Last Image API Response" tab
+     * Shows the saved image by its WordPress URL, plus the raw JSON below.
      */
     function updateImageResponseTab() {
-        updateTab('image-response', debugData.lastImageResponse, 'sparkplus-debug-response');
+        const $container = $('#sparkplus-debug-tab-image-response');
+        $container.empty();
+
+        if (debugData.lastImageUrl) {
+            $container.append(
+                $('<div class="sparkplus-debug-image-preview">').append(
+                    $('<img>').attr('src', debugData.lastImageUrl)
+                              .css({ maxWidth: '100%', display: 'block', marginBottom: '12px', borderRadius: '4px' })
+                )
+            );
+        }
+
+        if (debugData.lastImageResponse) {
+            $container.append($('<div>').addClass('sparkplus-debug-response').text(debugData.lastImageResponse));
+        }
     }
     
 })(jQuery);

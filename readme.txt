@@ -4,7 +4,7 @@ Tags: ai content, content generation, openai, custom post types, seo
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.3
+Stable tag: 1.1.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -107,6 +107,17 @@ Go to **SparkPlus > Settings > Reset**. You can reset all plugin settings (API k
 5. Settings: API — Configure your OpenAI API key and model preferences.
 
 == Changelog ==
+
+= 1.1.4 =
+* **Architecture: full client-side AI orchestration.** All AI API calls (text and image, for all providers) are now made directly from the browser. PHP no longer proxies any AI request. The server is a pure data layer: it supplies settings, field configs, existing content, and the linking pool on demand, then receives and saves the results the browser sends back.
+* Removed the server-side generation pipeline entirely: `SparkPlus_Generation_Runner` (formerly `Generation_Cron`), `SparkPlus_Prompt_Builder`, `SparkPlus_OpenAI_API_Caller`, `SparkPlus_API_Manager`, and all three provider classes (`SparkPlusOpenAIProvider`, `SparkPlusAnthropicProvider`, `SparkPlusGeminiProvider`) have been deleted from PHP. None of the flush-early, transient polling, cron, or loopback-request infrastructure they relied on exists any longer.
+* The `flush_early` / `fastcgi_finish_request()` approach introduced in 1.1.3 and the WP-Cron background dispatch introduced in 1.1.1 are gone. There is nothing left to time out on the server side.
+* `content-generator.php` / `SparkPlus_Content_Generator` split into three focused files: `generation-helpers-trait.php` (shared field-map and settings helpers), `generation-meta.php` / `SparkPlus_Generation_Meta` (data provider: supplies all generation inputs to the client), and `generation-saver.php` / `SparkPlus_Generation_Saver` (result saver: persists AI output to the database).
+* New JS module `sparkplus-providers.js`: browser-side provider classes (`SparkPlusOpenAIProvider`, `SparkPlusAnthropicProvider`, `SparkPlusGeminiProvider`) and `SparkPlusProviderFactory` mirror the deleted PHP provider layer.
+* New JS module `sparkplus-prompt-builder.js`: browser-side `SparkPlusPromptBuilder` mirrors the deleted PHP prompt builder, constructing text and image prompts entirely in the browser.
+* OpenAI model quirks handled client-side: `gpt-5.5` omits the `temperature` parameter (API only accepts the default); `gpt-5.5-pro` routes to the `/v1/responses` endpoint with the correct `input` / `text.format` shape and its response is parsed from `output[].content[].text`.
+* Debug panel tabs (Last Text Prompt, Last Image Prompt, Last Text API Response, Last Image API Response) now populate correctly: `generation.js` emits `build_text_prompt`, `build_image_prompt`, and `full_api_response` entries at the right points in the client-side flow.
+* Last Image API Response tab displays the saved WordPress media URL as a visual image preview above the raw JSON, using `wp_get_attachment_url()` returned by the save endpoint.
 
 = 1.1.3 =
 * Replaced WP-Cron background dispatch with a direct `flush_early` approach: the AJAX handler sends the job ID to the browser immediately via `fastcgi_finish_request()`, then runs the API call inline. This eliminates the server-to-itself loopback HTTP request that WP-Cron required, which was blocked on some hosting environments (including SiteGround).

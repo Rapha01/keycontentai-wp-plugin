@@ -343,99 +343,53 @@
 
     /**
      * Wrap jQuery.ajax in a Promise for async/await usage.
-     * If the server returns { status: 'processing', job_id: '...' }, automatically
-     * polls check_job_status until the job completes, then resolves with the result.
      */
-    function ajaxPromise(data) {
+    function ajaxPromise(data, timeout = 30000) {
         return new Promise((resolve, reject) => {
             $.ajax({
                 url: sparkplusGeneration.ajaxUrl,
                 type: 'POST',
-                timeout: 30000, // Short — server responds immediately now
+                timeout,
                 data: { ...data, nonce: sparkplusGeneration.nonce },
-                success: function(response) {
-                    if (response.success && response.data?.status === 'processing' && response.data?.job_id) {
-                        // Server is processing async — poll for completion
-                        pollJobStatus(response.data.job_id, resolve, reject);
-                    } else {
-                        resolve(response);
-                    }
-                },
+                success: (response) => resolve(response),
                 error: (xhr, status, error) => reject({ xhr, status, error }),
             });
         });
     }
 
     /**
-     * Poll check_job_status every 2s until the job is complete or errors.
-     * Resolves with a response shaped like a normal wp_send_json_success/error response.
+     * Call a provider AI API directly from the browser using params built client-side.
      *
-     * @param {string}   jobId    Transient key returned by the server
-     * @param {Function} resolve  Promise resolve
-     * @param {Function} reject   Promise reject
-     * @param {number}   attempts Number of polls already made
+     * @param {Object} params  Object with api_url, headers, request_body
+     * @returns {Promise<Object>} Parsed JSON response from the API
+     * @throws {Error} If the request fails or the API returns an error status
      */
-    function pollJobStatus(jobId, resolve, reject, attempts = 0, debugOffset = 0) {
-        const maxAttempts = 180; // 6 minutes at 2s intervals
-
-        if (attempts >= maxAttempts) {
-            reject({ error: 'Job polling timed out after 6 minutes' });
-            return;
+    async function callProviderApi(params) {
+        const resp = await fetch(params.api_url, {
+            method:  'POST',
+            headers: params.headers,
+            body:    JSON.stringify(params.request_body),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            throw new Error(data?.error?.message || `API error ${resp.status}`);
         }
-
-        setTimeout(function() {
-            $.ajax({
-                url: sparkplusGeneration.ajaxUrl,
-                type: 'POST',
-                timeout: 10000,
-                data: {
-                    action: 'sparkplus_check_job_status',
-                    job_id: jobId,
-                    nonce: sparkplusGeneration.nonce,
-                },
-                success: function(response) {
-                    if (!response.success) {
-                        // Job expired or lookup error
-                        reject({ error: response.data?.message || 'Job status check failed' });
-                        return;
-                    }
-
-                    const job = response.data;
-                    const allEntries = job.debug_log || [];
-
-                    // Stream any new debug entries to the panel immediately
-                    const newEntries = allEntries.slice(debugOffset);
-                    newEntries.forEach(entry => addDebugEntry(entry.step, entry.data, false, 'server'));
-                    const nextOffset = debugOffset + newEntries.length;
-
-                    if (job.status === 'complete') {
-                        // Resolve with empty debug_log — entries already streamed above
-                        resolve({ success: true, data: { debug_log: [] } });
-                    } else if (job.status === 'error') {
-                        resolve({ success: false, data: { message: job.message, debug_log: [] } });
-                    } else {
-                        // Still pending — keep polling
-                        pollJobStatus(jobId, resolve, reject, attempts + 1, nextOffset);
-                    }
-                },
-                error: function() {
-                    // Transient network hiccup — retry rather than fail
-                    pollJobStatus(jobId, resolve, reject, attempts + 1, debugOffset);
-                },
-            });
-        }, 2000);
+        return data;
     }
 
     /**
-     * Orchestrate the full generation for a single post:
-     *  1. Fetch metadata (lightweight — returns field lists only)
-     *  2. Generate all text fields in one call (if any)
-     *  3. Generate each image field one-by-one
-     *  4. Stamp generation timestamp
+     * Orchestrate the full generation for a single post, entirely from the browser:
+     *  1. Fetch raw settings/data from server (one AJAX call)
+     *  2. Build prompts client-side via SparkPlusPromptBuilder
+     *  3. Call text provider API directly — no PHP timeout
+     *  4. Save text to post via AJAX
+     *  5. For each image field: build prompt, call image API directly, generate alt text, save
+     *  6. Clear fields marked for clearing
+     *  7. Stamp generation timestamp
      */
     async function generatePost(postId, $row) {
         try {
-            // 1. Fetch field metadata
+            // 1. Fetch raw generation data from server
             const metaResp = await ajaxPromise({ action: 'sparkplus_get_generation_meta', post_id: postId });
             metaResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false, 'server'));
 
@@ -444,37 +398,156 @@
                 return;
             }
 
-            const { text_fields = [], image_fields = [], has_clear_fields = false } = metaResp.data;
+            const {
+                post_settings     = {},
+                cpt_settings      = {},
+                api_keys          = {},
+                text_provider:    textProviderSlug  = 'openai',
+                image_provider:   imageProviderSlug = 'openai',
+                text_fields       = [],
+                image_fields      = [],
+                has_clear_fields  = false,
+                existing_content  = [],
+                linking           = null,
+                wysiwyg_formatting = {},
+            } = metaResp.data;
 
-            // Nothing to do — no generate fields and no clear fields
+            // Nothing to do
             if (text_fields.length === 0 && image_fields.length === 0 && !has_clear_fields) {
                 handleError($row, 'validation', 'No fields selected for generation or clearing', 'client');
                 return;
             }
 
-            // 2. Generate text fields
-            if (text_fields.length > 0) {
-                const textResp = await ajaxPromise({ action: 'sparkplus_generate_text', post_id: postId });
-                textResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false, 'server'));
+            const promptBuilder = new SparkPlusPromptBuilder();
 
-                if (!textResp.success) {
-                    handleError($row, 'generate_text', textResp.data?.message || 'Text generation failed', 'server');
+            // 2. Text generation — browser builds prompt and calls API directly
+            if (text_fields.length > 0) {
+                const textProvider = SparkPlusProviderFactory.getTextProvider(textProviderSlug, api_keys);
+                const textPrompt   = promptBuilder.buildTextPrompt(
+                    cpt_settings, post_settings, text_fields, existing_content, linking, wysiwyg_formatting
+                );
+
+                if (!textPrompt) {
+                    handleError($row, 'build_text_prompt', 'Failed to build text prompt', 'client');
+                    return;
+                }
+
+                addDebugEntry('build_text_prompt', { prompt: textPrompt }, false, 'client');
+
+                addDebugEntry('generate_text', {
+                    message:  'Calling ' + textProviderSlug + ' text API from browser...',
+                    model:    cpt_settings.text_model,
+                    provider: textProviderSlug,
+                }, false, 'client');
+
+                let textData;
+                try {
+                    textData = await callProviderApi(textProvider.buildTextRequest(cpt_settings.text_model, textPrompt));
+                } catch (apiErr) {
+                    handleError($row, 'generate_text', 'Text API error: ' + apiErr.message, 'client');
+                    return;
+                }
+
+                const content = textProvider.parseTextResponse(textData);
+                addDebugEntry('generate_text', { full_api_response: JSON.stringify(textData, null, 2) }, false, 'client');
+                if (!content) {
+                    handleError($row, 'generate_text', 'No text content in API response', 'client');
+                    return;
+                }
+
+                addDebugEntry('generate_text', { message: 'Text received. Saving to post...' }, false, 'client');
+
+                const saveTextResp = await ajaxPromise({
+                    action:       'sparkplus_save_text',
+                    post_id:      postId,
+                    content_json: content,
+                });
+                saveTextResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false, 'server'));
+
+                if (!saveTextResp.success) {
+                    handleError($row, 'save_text', saveTextResp.data?.message || 'Failed to save text', 'server');
                     return;
                 }
             }
 
-            // 3. Generate image fields one at a time
-            for (const img of image_fields) {
-                const imgResp = await ajaxPromise({
-                    action:      'sparkplus_generate_image',
-                    post_id:     postId,
-                    field_index: img.index,
-                });
-                imgResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false, 'server'));
+            // 3. Image generation — browser builds prompts and calls API directly for each image
+            if (image_fields.length > 0) {
+                const imageProvider = SparkPlusProviderFactory.getImageProvider(imageProviderSlug, api_keys);
+                // Text provider is used for alt text generation.
+                const textProvider  = SparkPlusProviderFactory.getTextProvider(textProviderSlug, api_keys);
 
-                if (!imgResp.success) {
-                    handleError($row, 'generate_image', imgResp.data?.message || 'Image generation failed (' + img.label + ')', 'server');
-                    return;
+                for (const img of image_fields) {
+                    const imagePrompt = promptBuilder.buildImagePrompt(
+                        cpt_settings, post_settings, img, existing_content
+                    );
+
+                    addDebugEntry('generate_image', {
+                        message:     'Calling ' + imageProviderSlug + ' image API from browser...',
+                        model:       cpt_settings.image_model,
+                        field_index: img.index,
+                    }, false, 'client');
+
+                    addDebugEntry('build_image_prompt', { prompt: imagePrompt }, false, 'client');
+
+                    let imgData;
+                    try {
+                        imgData = await callProviderApi(imageProvider.buildImageRequest(cpt_settings.image_model, imagePrompt, img));
+                    } catch (apiErr) {
+                        handleError($row, 'generate_image', 'Image API error: ' + apiErr.message, 'client');
+                        return;
+                    }
+
+                    const b64_json = imageProvider.parseImageResponse(imgData);
+                    addDebugEntry('generate_image', { full_api_response: JSON.stringify(imgData, null, 2) }, false, 'client');
+                    if (!b64_json) {
+                        handleError($row, 'generate_image', 'No image data in API response', 'client');
+                        return;
+                    }
+
+                    addDebugEntry('generate_image', { message: 'Image received. Generating alt text...' }, false, 'client');
+
+                    // Generate alt text client-side using the text model (non-fatal).
+                    let alt_text = null;
+                    try {
+                        const altPrompt = promptBuilder.buildAltTextPrompt(imagePrompt);
+                        const altData   = await callProviderApi(textProvider.buildTextRequest(cpt_settings.text_model, altPrompt));
+                        const rawAlt    = textProvider.parseTextResponse(altData);
+                        if (rawAlt) {
+                            try {
+                                const parsed = JSON.parse(rawAlt);
+                                alt_text = parsed?.alt_text || rawAlt;
+                            } catch (_) {
+                                alt_text = rawAlt;
+                            }
+                            alt_text = String(alt_text).trim().replace(/^["']|["']$/g, '');
+                            if (alt_text.length > 125) alt_text = alt_text.slice(0, 122) + '...';
+                            addDebugEntry('generate_alt_text', { message: 'Alt text: ' + alt_text }, false, 'client');
+                        }
+                    } catch (altErr) {
+                        // Non-fatal — log and continue without alt text.
+                        addDebugEntry('generate_alt_text', { message: 'Alt text generation failed: ' + altErr.message }, true, 'client');
+                    }
+
+                    addDebugEntry('generate_image', { message: 'Saving image to media library...' }, false, 'client');
+
+                    // 120s timeout — large base64 payload.
+                    const saveImgResp = await ajaxPromise({
+                        action:      'sparkplus_save_generated_image',
+                        post_id:     postId,
+                        field_index: img.index,
+                        b64_json:    b64_json,
+                        alt_text:    alt_text,
+                    }, 120000);
+                    saveImgResp.data?.debug_log?.forEach(entry => addDebugEntry(entry.step, entry.data, false, 'server'));
+
+                    if (saveImgResp.data?.attachment_url) {
+                        addDebugEntry('generate_image', { attachment_url: saveImgResp.data.attachment_url }, false, 'client');
+                    }
+
+                    if (!saveImgResp.success) {
+                        handleError($row, 'generate_image', saveImgResp.data?.message || 'Failed to save image', 'server');
+                        return;
+                    }
                 }
             }
 
@@ -499,6 +572,7 @@
             handleError($row, 'network', 'Network error: ' + detail, 'client');
         }
     }
+
     
     /**
      * Handle successful post generation

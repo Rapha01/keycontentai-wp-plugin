@@ -2,7 +2,7 @@
 /**
  * Plugin Name: SparkPlus
  * Description: Creates and populates custom post types with AI-generated content based on user keywords.
- * Version: 1.1.3
+ * Version: 1.1.4
  * Author: olympagency
  * Author URI: https://olympagency.com/
  * License: GPL v2 or later
@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('SPARKPLUS_VERSION', '1.1.3');
+define('SPARKPLUS_VERSION', '1.1.4');
 define('SPARKPLUS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SPARKPLUS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('SPARKPLUS_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -119,19 +119,10 @@ class SparkPlus {
     private function load_dependencies() {
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/util.php';
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/sanitizer.php';
-        require_once SPARKPLUS_PLUGIN_DIR . 'includes/prompt-builder.php';
-        // Multi-provider API layer: base → providers → manager
-        require_once SPARKPLUS_PLUGIN_DIR . 'includes/api/class-provider-base.php';
-        require_once SPARKPLUS_PLUGIN_DIR . 'includes/api/providers/class-openai-provider.php';
-        require_once SPARKPLUS_PLUGIN_DIR . 'includes/api/providers/class-anthropic-provider.php';
-        require_once SPARKPLUS_PLUGIN_DIR . 'includes/api/providers/class-gemini-provider.php';
-        require_once SPARKPLUS_PLUGIN_DIR . 'includes/api/class-api-manager.php';
-        require_once SPARKPLUS_PLUGIN_DIR . 'includes/content-generator.php';
+        require_once SPARKPLUS_PLUGIN_DIR . 'includes/generation-helpers-trait.php';
+        require_once SPARKPLUS_PLUGIN_DIR . 'includes/generation-meta.php';
+        require_once SPARKPLUS_PLUGIN_DIR . 'includes/generation-saver.php';
         require_once SPARKPLUS_PLUGIN_DIR . 'includes/keyword-loader.php';
-        
-        // Load generation handler (always, so hooks are available on all request types)
-        require_once SPARKPLUS_PLUGIN_DIR . 'includes/generation-runner.php';
-        new SparkPlus_Generation_Runner();
 
         // Load admin-only components
         if (is_admin()) {
@@ -417,9 +408,25 @@ class SparkPlus {
             );
             
             wp_enqueue_script(
+                'sparkplus-providers',
+                SPARKPLUS_PLUGIN_URL . 'admin/generation/assets/sparkplus-providers.js',
+                array('jquery'),
+                SPARKPLUS_VERSION,
+                true
+            );
+
+            wp_enqueue_script(
+                'sparkplus-prompt-builder',
+                SPARKPLUS_PLUGIN_URL . 'admin/generation/assets/sparkplus-prompt-builder.js',
+                array('sparkplus-providers'),
+                SPARKPLUS_VERSION,
+                true
+            );
+
+            wp_enqueue_script(
                 'sparkplus-generation',
                 SPARKPLUS_PLUGIN_URL . 'admin/generation/assets/generation.js',
-                array('jquery', 'sparkplus-generation-debug'),
+                array('jquery', 'sparkplus-generation-debug', 'sparkplus-providers', 'sparkplus-prompt-builder'),
                 SPARKPLUS_VERSION,
                 true
             );
