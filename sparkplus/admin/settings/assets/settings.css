@@ -1,0 +1,374 @@
+/**
+ * SparkPlus Settings Page Styles
+ */
+
+/* Page Layout */
+.sparkplus-settings-wrap h1 {
+    margin-bottom: 20px;
+}
+
+.sparkplus-nav-tab-wrapper {
+    margin-bottom: 0;
+}
+
+.sparkplus-tab-content {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-top: none;
+    padding: 20px;
+    margin-top: 0;
+}
+
+.sparkplus-tab-panel {
+    animation: sparkplus-fadeIn 0.3s ease-in;
+}
+
+@keyframes sparkplus-fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Form Table */
+.sparkplus-tab-content .form-table {
+    margin-top: 20px;
+}
+
+/* Fields Table Styling */
+.sparkplus-fields-table {
+    border-collapse: collapse;
+    margin-top: 15px;
+    background: #fff;
+}
+
+.sparkplus-fields-table thead th {
+    background: #f6f7f7;
+    border-bottom: 2px solid #c3c4c7;
+    padding: 10px 15px;
+    font-weight: 600;
+    color: #1e1e1e;
+    text-align: left;
+}
+
+.sparkplus-fields-table tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.sparkplus-fields-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.sparkplus-fields-table tbody tr:hover {
+    background: #f9f9f9;
+}
+
+.sparkplus-fields-table tbody td {
+    padding: 15px;
+    vertical-align: middle;
+}
+
+.sparkplus-fields-table textarea {
+    width: 100%;
+    font-size: 13px;
+    resize: vertical;
+    margin: 0;
+}
+
+.sparkplus-fields-table input[type="number"] {
+    margin: 0;
+}
+
+.sparkplus-fields-table code {
+    background: #f0f0f1;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+/* Field Type Badge */
+.sparkplus-field-type {
+    display: inline-block;
+    padding: 3px 8px;
+    background: #f0f0f1;
+    border-radius: 3px;
+    font-size: 12px;
+    color: #2c3338;
+    font-weight: 500;
+}
+
+/* Source Badge */
+.sparkplus-field-source {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sparkplus-source-acf {
+    background: #d4edda;
+    color: #155724;
+}
+
+.sparkplus-source-wp {
+    background: #e7f3ff;
+    color: #0073aa;
+    border: 1px solid #0073aa;
+}
+
+.sparkplus-source-rm {
+    background: #fce8f3;
+    color: #8f1b5e;
+    border: 1px solid #c9326e;
+}
+
+/* Checkbox column styling */
+.sparkplus-field-enable-checkbox,
+.sparkplus-field-clear-checkbox {
+    cursor: pointer;
+    margin: 0 !important;
+    transform: scale(2.5) !important;
+    transform-origin: center !important;
+}
+
+/* Clear checkbox tint */
+.sparkplus-field-clear-checkbox:checked {
+    accent-color: #d63638;
+}
+
+/* Group accordion */
+.sparkplus-group-toggle:hover {
+    background: #eef1f3 !important;
+}
+
+.sparkplus-group-chevron {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #2271b1;
+}
+
+.sparkplus-group-header-row.sparkplus-group-open .sparkplus-group-chevron {
+    transform: rotate(90deg);
+}
+
+/* Group master checkbox indeterminate (dash) state */
+.sparkplus-group-master-checkbox,
+.sparkplus-group-master-clear-checkbox {
+    position: relative;
+}
+
+.sparkplus-group-master-checkbox:indeterminate::before,
+.sparkplus-group-master-clear-checkbox:indeterminate::before {
+    content: '';
+    display: block;
+    width: 10px;
+    height: 2px;
+    background: #2271b1;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.sparkplus-fields-table td p.description {
+    margin: 5px 0 0 0;
+    font-size: 12px;
+}
+/* Mobile Responsive */
+@media screen and (max-width: 782px) {
+    /* Hide table header on mobile */
+    .sparkplus-fields-table thead {
+        display: none;
+    }
+    
+    /* Stack table cells vertically */
+    .sparkplus-fields-table tbody tr {
+        display: block;
+        margin-bottom: 20px;
+        border: 1px solid #c3c4c7;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .sparkplus-fields-table tbody td {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        padding: 10px 15px;
+        border-bottom: 1px solid #e0e0e0;
+        box-sizing: border-box;
+    }
+    
+    .sparkplus-fields-table tbody td:last-child {
+        border-bottom: none;
+    }
+    
+    /* Add labels for mobile using data attributes */
+    .sparkplus-fields-table tbody td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        display: block;
+        margin-bottom: 5px;
+        color: #1e1e1e;
+    }
+    
+    /* Hide label for checkbox columns (Generate + Clear) */
+    .sparkplus-fields-table tbody td:first-child:before,
+    .sparkplus-fields-table tbody td:nth-child(2):before {
+        display: none;
+    }
+    
+    /* Hide label for field name column (third column) - field name is already prominent */
+    .sparkplus-fields-table tbody td:nth-child(3):before {
+        display: none;
+    }
+    
+    /* Center checkbox on mobile with proper spacing */
+    .sparkplus-fields-table tbody td:first-child,
+    .sparkplus-fields-table tbody td:nth-child(2) {
+        text-align: center;
+        background: #f6f7f7;
+        padding: 20px 15px;
+    }
+    
+    /* Add extra padding to field name cell */
+    .sparkplus-fields-table tbody td:nth-child(3) {
+        padding: 15px;
+    }
+    
+    /* Adjust textarea and inputs for mobile */
+    .sparkplus-fields-table textarea {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .sparkplus-fields-table input[type="number"],
+    .sparkplus-fields-table select {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .sparkplus-fields-table select {
+        width: 100% !important;
+    }
+    
+    /* Scale down checkbox slightly on mobile */
+    .sparkplus-field-enable-checkbox {
+        transform: scale(2) !important;
+    }
+}
+/* AJAX Save Status Message */
+.sparkplus-save-status {
+    margin-left: 12px;
+    font-weight: 500;
+    font-style: italic;
+    display: inline-block;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.sparkplus-save-status.success {
+    color: #00a32a;
+}
+
+.sparkplus-save-status.error {
+    color: #d63638;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Reset Modal */
+.sparkplus-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sparkplus-modal {
+    background: #fff;
+    border-radius: 8px;
+    padding: 30px;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.2s ease-out;
+}
+
+.sparkplus-modal h3 {
+    margin: 0 0 15px;
+    font-size: 18px;
+}
+
+.sparkplus-modal p {
+    margin: 0 0 15px;
+    color: #50575e;
+    line-height: 1.6;
+}
+
+.sparkplus-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.sparkplus-button-danger {
+    background: #d63638 !important;
+    border-color: #d63638 !important;
+    color: #fff !important;
+}
+
+.sparkplus-button-danger:hover {
+    background: #b32d2e !important;
+    border-color: #b32d2e !important;
+}
+
+.sparkplus-button-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Post-object linking pool warning */
+.sparkplus-post-object-warning {
+    margin: 6px 0 0;
+    padding: 5px 8px;
+    background: #fff8e5;
+    border-left: 3px solid #dba617;
+    border-radius: 2px;
+    font-size: 12px;
+    color: #6e4e00;
+}
+
+.sparkplus-post-object-warning .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    vertical-align: text-bottom;
+    margin-right: 3px;
+    color: #dba617;
+}

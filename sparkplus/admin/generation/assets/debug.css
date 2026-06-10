@@ -1,0 +1,197 @@
+/**
+ * SparkPlus Generation Debug Styles
+ */
+
+/* Debug Container */
+.sparkplus-generation-debug-container {
+    margin-top: 20px;
+}
+
+.sparkplus-generation-debug-container .card {
+    padding: 0;
+    margin: 0;
+    max-width: 100%;
+}
+
+.sparkplus-generation-debug-container h2 {
+    margin: 0;
+    padding: 15px 20px;
+    border-bottom: 1px solid #c3c4c7;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Debug Tabs */
+.sparkplus-debug-tabs {
+    display: flex;
+    background: #f6f7f7;
+    border-bottom: 1px solid #c3c4c7;
+    margin: 0;
+    padding: 0 20px;
+}
+
+.sparkplus-debug-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #646970;
+    transition: all 0.2s ease;
+}
+
+.sparkplus-debug-tab:hover {
+    color: #135e96;
+}
+
+.sparkplus-debug-tab.active {
+    color: #135e96;
+    border-bottom-color: #135e96;
+    font-weight: 600;
+}
+
+/* Debug Content */
+.sparkplus-debug-content {
+    position: relative;
+}
+
+.sparkplus-debug-tab-content {
+    display: none;
+    padding: 20px;
+    min-height: 200px;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.sparkplus-debug-tab-content.active {
+    display: block;
+}
+
+.sparkplus-generation-debug-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #646970;
+}
+
+.sparkplus-generation-debug-empty p {
+    margin: 10px 0 0 0;
+    font-size: 14px;
+}
+
+/* Debug Entry Styles */
+.sparkplus-debug-entry {
+    background: #f6f7f7;
+    border-left: 3px solid #135e96;
+    padding: 12px;
+    margin-bottom: 12px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+}
+
+.sparkplus-debug-entry-header {
+    font-weight: 600;
+    color: #135e96;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sparkplus-debug-timestamp {
+    font-size: 11px;
+    color: #646970;
+    font-weight: normal;
+}
+
+/* Source badges (Client / Server) */
+.sparkplus-debug-source {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-right: 6px;
+    flex-shrink: 0;
+}
+
+.sparkplus-debug-source-server {
+    background: #e7f5fe;
+    color: #135e96;
+}
+
+.sparkplus-debug-source-client {
+    background: #fef0e7;
+    color: #9a4e0e;
+}
+
+.sparkplus-debug-entry.error .sparkplus-debug-source {
+    background: #fce8e8;
+    color: #d63638;
+}
+
+.sparkplus-debug-entry-content {
+    color: #1e1e1e;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background: #fff;
+    padding: 10px;
+    border-radius: 3px;
+}
+
+.sparkplus-debug-entry.error {
+    border-left-color: #d63638;
+}
+
+.sparkplus-debug-entry.error .sparkplus-debug-entry-header {
+    color: #d63638;
+}
+
+.sparkplus-debug-prompt,
+.sparkplus-debug-response {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 15px;
+    border-radius: 3px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-x: auto;
+}
+
+/* Markdown-rendered elements inside dark prompt/response panels */
+.sparkplus-debug-prompt h1,
+.sparkplus-debug-prompt h2,
+.sparkplus-debug-prompt h3,
+.sparkplus-debug-prompt h4 {
+    color: #ffffff;
+    margin: 1em 0 0.3em;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    white-space: normal;
+}
+
+.sparkplus-debug-prompt h1 { font-size: 17px; border-bottom: 1px solid #555; padding-bottom: 4px; }
+.sparkplus-debug-prompt h2 { font-size: 13px; color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 3px; }
+.sparkplus-debug-prompt h3,
+.sparkplus-debug-prompt h4 { font-size: 12px; color: #b5cea8; }
+
+.sparkplus-debug-prompt strong { color: #ffd700; font-weight: 700; }
+.sparkplus-debug-prompt em { color: #ce9178; }
+.sparkplus-debug-prompt code { background: #2d2d2d; color: #ce9178; padding: 1px 4px; border-radius: 2px; }
+
+.sparkplus-debug-prompt ul,
+.sparkplus-debug-prompt ol {
+    margin: 0.4em 0 0.4em 1.4em;
+    padding: 0;
+    white-space: normal;
+}
+
+.sparkplus-debug-prompt li { margin-bottom: 2px; }
+
+.sparkplus-debug-prompt p {
+    margin: 0.4em 0;
+    white-space: normal;
+}

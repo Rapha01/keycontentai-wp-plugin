@@ -1,0 +1,199 @@
+/**
+ * SparkPlus Load Keywords Page Styles
+ */
+
+.sparkplus-loadkeywords-layout {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    margin-left: 0;
+    margin-right: 0;
+    align-items: stretch;
+    width: 100%;
+}
+
+.sparkplus-loadkeywords-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.sparkplus-loadkeywords-left .card {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box;
+}
+
+.sparkplus-loadkeywords-left .card h2 {
+    margin-top: 0;
+    color: #2271b1;
+    font-size: 18px;
+    border-bottom: 2px solid #f0f0f1;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.sparkplus-textarea-container {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.sparkplus-textarea-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.sparkplus-textarea-label {
+    font-weight: 600;
+    font-size: 13px;
+    color: #1d2327;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.sparkplus-loadkeywords-keywords-textarea {
+    width: 100%;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 12px;
+    border: 2px solid #dcdcde;
+    border-radius: 4px;
+    resize: vertical;
+    min-height: 280px;
+    margin-top: 10px;
+}
+
+.sparkplus-loadkeywords-keywords-textarea:focus {
+    border-color: #2271b1;
+    outline: none;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+.sparkplus-loadkeywords-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.sparkplus-loadkeywords-stats {
+    margin-top: 6px;
+    padding: 8px 12px;
+    background: #f6f7f7;
+    border-left: 3px solid #2271b1;
+    font-size: 13px;
+    color: #50575e;
+}
+
+.sparkplus-loadkeywords-stats span {
+    font-weight: 600;
+    color: #2271b1;
+}
+
+.sparkplus-context-option,
+.sparkplus-publish-option {
+    margin-top: 10px;
+    padding: 6px 10px;
+    background: #f6f7f7;
+    border-left: 3px solid #2271b1;
+    border-radius: 3px;
+}
+
+/* Debug Container */
+.sparkplus-loadkeywords-debug-container {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    animation: sparkplus-loadkeywords-slideDown 0.3s ease-out;
+}
+
+.sparkplus-loadkeywords-debug-container .card {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+}
+
+.sparkplus-loadkeywords-debug-output {
+    background: #f9f9f9;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    padding: 15px;
+    max-height: 500px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+@keyframes sparkplus-loadkeywords-slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.sparkplus-loadkeywords-debug-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #666;
+    text-align: center;
+}
+
+.sparkplus-loadkeywords-debug-empty p {
+    margin: 10px 0 0 0;
+}
+
+.sparkplus-loadkeywords-debug-entry {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #fff;
+    border-left: 3px solid #2271b1;
+    border-radius: 3px;
+    animation: sparkplus-loadkeywords-slideIn 0.3s ease-out;
+}
+
+.sparkplus-loadkeywords-debug-entry-header {
+    font-weight: 600;
+    color: #2271b1;
+    margin-bottom: 5px;
+}
+
+.sparkplus-loadkeywords-debug-entry-content {
+    color: #50575e;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.sparkplus-loadkeywords-debug-timestamp {
+    color: #999;
+    font-size: 11px;
+    margin-left: 10px;
+}
+
+@media (max-width: 1400px) {
+    .sparkplus-loadkeywords-layout {
+        flex-direction: column;
+    }
+    
+    .sparkplus-loadkeywords-left {
+        flex: 1 1 auto;
+        max-width: 100%;
+        min-width: 100%;
+        width: 100%;
+    }
+}
+

@@ -1,0 +1,471 @@
+<?php
+/**
+ * SparkPlus Core
+ *
+ * The SparkPlus product (AI content generation): admin menu, asset enqueuing,
+ * post-meta registration, and dependency loading. Bootstrapped from the plugin's
+ * main file via sparkplus_init() on 'plugins_loaded'.
+ *
+ * This module is self-contained and has no knowledge of the Olymp Tools
+ * side-features (see /olymp-tools), which are loaded independently.
+ */
+
+// Exit if accessed directly
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+/*
+ * ─── Plugin Settings Reference ─────────────────────────────────────
+ *
+ * All settings are saved via AJAX (see SparkPlus_Admin_Ajax_Handler::save_settings()).
+ * Sanitization is handled in that method and in SparkPlus_Sanitizer.
+ *
+ * API Settings (tab: api-settings)
+ *   sparkplus_openai_api_key    string   OpenAI API key
+ *   sparkplus_text_model        string   Text generation model (default: 'gpt-5.2')
+ *   sparkplus_image_model       string   Image generation model (default: 'gpt-image-1.5')
+ *
+ * General Context (tab: general-context)
+ *   sparkplus_addressing        string   Formal/informal tone (default: 'formal')
+ *   sparkplus_company_name      string   Company or brand name
+ *   sparkplus_industry          string   Business industry/sector
+ *   sparkplus_target_group      string   Target audience description
+ *   sparkplus_usp               text     Unique selling proposition
+ *   sparkplus_advantages        text     Product advantages
+ *   sparkplus_buying_reasons    text     Reasons for buying
+ *   sparkplus_additional_context_text  text    Additional context for text generation
+ *   sparkplus_additional_context_image text    Additional context for image generation
+ *   sparkplus_wysiwyg_formatting array   Allowed HTML elements (paragraphs, bold, italic, headings, lists)
+ *
+ * CPT Settings (tab: cpt)
+ *   sparkplus_selected_post_type string  Currently selected post type (default: 'post')
+ *   sparkplus_cpt_configs        json    Per-post-type field configs, additional context, and settings
+ *                                        Structure: {
+ *                                          [post_type]: {
+ *                                            fields: {...},
+ *                                            additional_context_text: string,
+ *                                            additional_context_image: string,
+ *                                            include_existing_content: bool (default: true)
+ *                                          }
+ *                                        }
+ *
+ * Internal Linking (tab: internal-linking)
+ *   sparkplus_linking_enable    bool     Enable linking in prompts (default: false)
+ *   sparkplus_linking_wysiwyg   bool     Enable automatic links in WYSIWYG content (default: false)
+ *   sparkplus_linking_pool      json     Pool of available links (post_types, single_items, custom_links)
+ *
+ * Reset (tab: reset)
+ *   Deletes all options matching sparkplus_% and all post meta matching sparkplus_%
+ *   See SparkPlus_Admin_Ajax_Handler::reset_settings()
+ * ───────────────────────────────────────────────────────────────────
+ */
+
+/**
+ * Main SparkPlus Class
+ */
+class SparkPlus {
+
+    /**
+     * Instance of this class
+     */
+    private static $instance = null;
+
+    /**
+     * Get the singleton instance
+     */
+    public static function get_instance() {
+        if (null === self::$instance) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    /**
+     * Constructor
+     */
+    private function __construct() {
+        $this->init();
+    }
+
+    /**
+     * Initialize the plugin
+     */
+    private function init() {
+        // Load dependencies
+        $this->load_dependencies();
+
+        // Register post meta fields
+        add_action('init', array($this, 'register_post_meta'));
+
+        // Initialize admin
+        if (is_admin()) {
+            add_action('admin_menu', array($this, 'add_admin_menu'));
+            add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
+        }
+    }
+
+    /**
+     * Load plugin dependencies
+     */
+    private function load_dependencies() {
+        require_once SPARKPLUS_PLUGIN_DIR . 'sparkplus/includes/util.php';
+        require_once SPARKPLUS_PLUGIN_DIR . 'sparkplus/includes/sanitizer.php';
+        require_once SPARKPLUS_PLUGIN_DIR . 'sparkplus/includes/generation-helpers-trait.php';
+        require_once SPARKPLUS_PLUGIN_DIR . 'sparkplus/includes/generation-meta.php';
+        require_once SPARKPLUS_PLUGIN_DIR . 'sparkplus/includes/generation-saver.php';
+        require_once SPARKPLUS_PLUGIN_DIR . 'sparkplus/includes/keyword-loader.php';
+
+        // Load admin-only components
+        if (is_admin()) {
+            require_once SPARKPLUS_PLUGIN_DIR . 'sparkplus/admin/edit-meta-box.php';
+            require_once SPARKPLUS_PLUGIN_DIR . 'sparkplus/includes/admin-ajax-handler.php';
+            new SparkPlus_Admin_Ajax_Handler();
+        }
+    }
+
+    /**
+     * Add admin menu
+     */
+    public function add_admin_menu() {
+        // Add top-level menu
+        add_menu_page(
+            __('SparkPlus', 'sparkplus'),
+            __('SparkPlus', 'sparkplus'),
+            'manage_options',
+            'sparkplus-load-keywords',
+            array($this, 'render_load_keywords_page'),
+            'dashicons-edit',
+            60
+        );
+
+        // Add submenu items
+        add_submenu_page(
+            'sparkplus-load-keywords',
+            __('Load Keywords', 'sparkplus'),
+            __('Load Keywords', 'sparkplus'),
+            'manage_options',
+            'sparkplus-load-keywords',
+            array($this, 'render_load_keywords_page')
+        );
+
+        add_submenu_page(
+            'sparkplus-load-keywords',
+            __('Generation', 'sparkplus'),
+            __('Generation', 'sparkplus'),
+            'manage_options',
+            'sparkplus-generation',
+            array($this, 'render_generation_page')
+        );
+
+        add_submenu_page(
+            'sparkplus-load-keywords',
+            __('Settings', 'sparkplus'),
+            __('Settings', 'sparkplus'),
+            'manage_options',
+            'sparkplus-settings',
+            array($this, 'render_settings_page')
+        );
+    }
+
+    /**
+     * Get CPT configs (reads from JSON format)
+     */
+    public function get_cpt_configs() {
+        $json = get_option('sparkplus_cpt_configs', '');
+
+        if (empty($json)) {
+            return array();
+        }
+
+        $data = json_decode($json, true);
+        return is_array($data) ? $data : array();
+    }
+
+    /**
+     * Register post meta fields for content generation
+     * Registers for all post types that have been configured in the plugin
+     */
+    public function register_post_meta() {
+        // Get all configured post types from CPT configs
+        $cpt_configs = $this->get_cpt_configs();
+        $post_types_to_register = array();
+
+        // Add all post types that have configs
+        if (!empty($cpt_configs)) {
+            $post_types_to_register = array_keys($cpt_configs);
+        }
+
+        // Always include the currently selected post type
+        $selected_post_type = get_option('sparkplus_selected_post_type', 'post');
+        if (!in_array($selected_post_type, $post_types_to_register)) {
+            $post_types_to_register[] = $selected_post_type;
+        }
+
+        // If no post types yet, at least register for 'post'
+        if (empty($post_types_to_register)) {
+            $post_types_to_register = array('post');
+        }
+
+        // Register meta fields for all relevant post types
+        foreach ($post_types_to_register as $post_type) {
+            // Register additional context field (per-post specific context)
+            register_post_meta($post_type, 'sparkplus_additional_context', array(
+                'type' => 'string',
+                'description' => 'Post-specific additional context for AI content generation',
+                'single' => true,
+                'show_in_rest' => true,
+                'sanitize_callback' => 'sanitize_textarea_field',
+                'auth_callback' => function() {
+                    return current_user_can('edit_posts');
+                }
+            ));
+
+            // Register last generation timestamp field
+            register_post_meta($post_type, 'sparkplus_last_generation', array(
+                'type' => 'string',
+                'description' => 'Timestamp of last AI content generation',
+                'single' => true,
+                'show_in_rest' => true,
+                'sanitize_callback' => 'sanitize_text_field',
+                'auth_callback' => function() {
+                    return current_user_can('edit_posts');
+                }
+            ));
+
+            // Register keyword field (the keyword used for generation)
+            register_post_meta($post_type, 'sparkplus_keyword', array(
+                'type' => 'string',
+                'description' => 'Keyword used for AI content generation',
+                'single' => true,
+                'show_in_rest' => true,
+                'sanitize_callback' => 'sanitize_text_field',
+                'auth_callback' => function() {
+                    return current_user_can('edit_posts');
+                }
+            ));
+        }
+    }
+
+    /**
+     * Render Settings page with tabs
+     */
+    public function render_settings_page() {
+        // Check user capabilities
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        include SPARKPLUS_PLUGIN_DIR . 'sparkplus/admin/settings/index.php';
+    }
+
+    /**
+     * Render Generation page
+     */
+    public function render_generation_page() {
+        // Check user capabilities
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        include SPARKPLUS_PLUGIN_DIR . 'sparkplus/admin/generation/index.php';
+    }
+
+    /**
+     * Render Load Keywords page
+     */
+    public function render_load_keywords_page() {
+        // Check user capabilities
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        include SPARKPLUS_PLUGIN_DIR . 'sparkplus/admin/load-keywords/index.php';
+    }
+
+    /**
+     * Enqueue admin assets
+     */
+    public function enqueue_admin_assets($hook) {
+        // Only load on our plugin pages or post edit screens
+        if ($hook !== 'toplevel_page_sparkplus-load-keywords'
+            && $hook !== 'sparkplus_page_sparkplus-generation'
+            && $hook !== 'sparkplus_page_sparkplus-load-keywords'
+            && $hook !== 'sparkplus_page_sparkplus-settings'
+            && $hook !== 'post.php'
+            && $hook !== 'post-new.php') {
+            return;
+        }
+
+        // Meta box assets (post edit screens)
+        if ($hook === 'post.php' || $hook === 'post-new.php') {
+            wp_enqueue_style(
+                'sparkplus-meta-box',
+                SPARKPLUS_PLUGIN_URL . 'sparkplus/admin/assets/edit-meta-box.css',
+                array(),
+                SPARKPLUS_VERSION
+            );
+        }
+
+        // Settings page assets
+        if ($hook === 'sparkplus_page_sparkplus-settings') {
+            wp_enqueue_style(
+                'sparkplus-settings',
+                SPARKPLUS_PLUGIN_URL . 'sparkplus/admin/settings/assets/settings.css',
+                array(),
+                SPARKPLUS_VERSION
+            );
+
+            wp_enqueue_style(
+                'sparkplus-internal-linking',
+                SPARKPLUS_PLUGIN_URL . 'sparkplus/admin/settings/assets/internal-linking.css',
+                array('sparkplus-settings'),
+                SPARKPLUS_VERSION
+            );
+
+            wp_enqueue_media();
+
+            wp_enqueue_script(
+                'sparkplus-settings',
+                SPARKPLUS_PLUGIN_URL . 'sparkplus/admin/settings/assets/settings.js',
+                array('jquery'),
+                SPARKPLUS_VERSION,
+                true
+            );
+
+            wp_enqueue_script(
+                'sparkplus-internal-linking',
+                SPARKPLUS_PLUGIN_URL . 'sparkplus/admin/settings/assets/internal-linking.js',
+                array('jquery', 'sparkplus-settings'),
+                SPARKPLUS_VERSION,
+                true
+            );
+
+            // Localize script for AJAX
+            wp_localize_script('sparkplus-settings', 'sparkplusSettings', array(
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce'   => wp_create_nonce('sparkplus_settings_nonce'),
+                'saving'  => __('Saving...', 'sparkplus'),
+                'saved'   => __('Saved!', 'sparkplus'),
+                'error'   => __('Error saving settings', 'sparkplus'),
+            ));
+
+            // Pass linking pool data to internal-linking.js via inline script
+            $sp_linking_enable  = (bool) get_option('sparkplus_linking_enable', false);
+            $sp_linking_wysiwyg = (bool) get_option('sparkplus_linking_wysiwyg', false);
+            $sp_linking_pool    = array('post_types' => array(), 'single_items' => array(), 'custom_links' => array());
+            $sp_linking_json    = get_option('sparkplus_linking_pool', '');
+            if (!empty($sp_linking_json)) {
+                $sp_saved = json_decode($sp_linking_json, true);
+                if (is_array($sp_saved)) {
+                    $sp_linking_pool = array_merge($sp_linking_pool, $sp_saved);
+                }
+            }
+            $sp_inline  = 'var sparkplusInitialLinkingPool = ' . wp_json_encode($sp_linking_pool) . ';';
+            $sp_inline .= 'var sparkplusLinkingEnable = ' . ($sp_linking_enable ? 'true' : 'false') . ';';
+            $sp_inline .= 'var sparkplusLinkingWysiwyg = ' . ($sp_linking_wysiwyg ? 'true' : 'false') . ';';
+            wp_add_inline_script('sparkplus-internal-linking', $sp_inline, 'before');
+        }
+
+        // Generation page assets
+        if ($hook === 'sparkplus_page_sparkplus-generation') {
+            wp_enqueue_style(
+                'sparkplus-generation',
+                SPARKPLUS_PLUGIN_URL . 'sparkplus/admin/generation/assets/generation.css',
+                array(),
+                SPARKPLUS_VERSION
+            );
+
+            wp_enqueue_style(
+                'sparkplus-generation-debug',
+                SPARKPLUS_PLUGIN_URL . 'sparkplus/admin/generation/assets/debug.css',
+                array('sparkplus-generation'),
+                SPARKPLUS_VERSION
+            );
+
+            wp_enqueue_script(
+                'marked',
+                SPARKPLUS_PLUGIN_URL . 'sparkplus/assets/js/marked.min.js',
+                array(),
+                '15.0.12',
+                true
+            );
+
+            wp_enqueue_script(
+                'sparkplus-generation-debug',
+                SPARKPLUS_PLUGIN_URL . 'sparkplus/admin/generation/assets/debug.js',
+                array('jquery', 'marked'),
+                SPARKPLUS_VERSION,
+                true
+            );
+
+            wp_enqueue_script(
+                'sparkplus-providers',
+                SPARKPLUS_PLUGIN_URL . 'sparkplus/admin/generation/assets/sparkplus-providers.js',
+                array('jquery'),
+                SPARKPLUS_VERSION,
+                true
+            );
+
+            wp_enqueue_script(
+                'sparkplus-prompt-builder',
+                SPARKPLUS_PLUGIN_URL . 'sparkplus/admin/generation/assets/sparkplus-prompt-builder.js',
+                array('sparkplus-providers'),
+                SPARKPLUS_VERSION,
+                true
+            );
+
+            wp_enqueue_script(
+                'sparkplus-generation',
+                SPARKPLUS_PLUGIN_URL . 'sparkplus/admin/generation/assets/generation.js',
+                array('jquery', 'sparkplus-generation-debug', 'sparkplus-providers', 'sparkplus-prompt-builder'),
+                SPARKPLUS_VERSION,
+                true
+            );
+
+            // Localize script for AJAX
+            wp_localize_script('sparkplus-generation', 'sparkplusGeneration', array(
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('sparkplus_nonce'),
+                'deleting' => __('Deleting...', 'sparkplus'),
+                'deleteConfirm' => __('Delete', 'sparkplus')
+            ));
+        }
+
+        // Load Keywords page assets
+        if ($hook === 'toplevel_page_sparkplus-load-keywords' || $hook === 'sparkplus_page_sparkplus-load-keywords') {
+            wp_enqueue_style(
+                'sparkplus-load-keywords',
+                SPARKPLUS_PLUGIN_URL . 'sparkplus/admin/load-keywords/assets/load-keywords.css',
+                array(),
+                SPARKPLUS_VERSION
+            );
+
+            wp_enqueue_script(
+                'sparkplus-load-keywords',
+                SPARKPLUS_PLUGIN_URL . 'sparkplus/admin/load-keywords/assets/load-keywords.js',
+                array('jquery'),
+                SPARKPLUS_VERSION,
+                true
+            );
+
+            // Localize script for AJAX
+            wp_localize_script('sparkplus-load-keywords', 'sparkplusLoadKeywords', array(
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('sparkplus_nonce'),
+                'confirmClear' => __('Are you sure you want to clear all keywords?', 'sparkplus'),
+                'confirmStop' => __('Are you sure you want to stop the process?', 'sparkplus'),
+                'noKeywords' => __('Please enter at least one keyword.', 'sparkplus')
+            ));
+        }
+    }
+}
+
+/**
+ * Initialize the SparkPlus core. Hooked on 'plugins_loaded' from the main file.
+ */
+function sparkplus_init() {
+    global $sparkplus;
+    $sparkplus = SparkPlus::get_instance();
+    return $sparkplus;
+}
