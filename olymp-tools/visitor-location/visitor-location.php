@@ -60,7 +60,7 @@ class Olymp_Tool_Visitor_Location implements Olymp_Tool {
     /** Public AJAX action + front-end script handle + asset cache-buster. */
     const AJAX_ACTION   = 'olymp_visitor_location';
     const SCRIPT_HANDLE = 'olymp-visitor-location';
-    const VERSION       = '1.0.0';
+    const VERSION       = '1.0.1';
 
     /**
      * Fields a shortcode may request (also the JSON keys returned to the client).
@@ -217,13 +217,27 @@ class Olymp_Tool_Visitor_Location implements Olymp_Tool {
     // ── AJAX lookup ─────────────────────────────────────────────────────────────
 
     /**
-     * Public endpoint. Resolves the location of the CALLER's IP only — it never
-     * accepts an IP from the request, so it cannot be used as an open geolocation
-     * proxy. No nonce: it is a read-only, self-only lookup, and requiring one would
-     * break on long-cached pages where the printed nonce has expired.
+     * Public endpoint. Resolves the location of the CALLER's IP only, so it cannot
+     * be used as an open geolocation proxy. No nonce: it is a read-only, self-only
+     * lookup, and requiring one would break on long-cached pages where the printed
+     * nonce has expired.
+     *
+     * Exception: a logged-in admin may pass ?test_ip= to force a specific address —
+     * to exercise the lookup (and the lazy DB download it triggers) from a local
+     * environment, where the real client IP is private and would short-circuit
+     * below. The override is capability-gated, so anonymous callers still cannot
+     * geolocate an arbitrary IP.
      */
     public function handle_lookup() {
         $ip = $this->get_client_ip();
+
+        // Dev/test override — admins only (see method docblock).
+        if ( isset( $_GET['test_ip'] ) && current_user_can( 'manage_options' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- capability-checked, read-only; the only side effect is an idempotent background DB download.
+            $candidate = sanitize_text_field( wp_unslash( $_GET['test_ip'] ) );
+            if ( filter_var( $candidate, FILTER_VALIDATE_IP ) ) {
+                $ip = $candidate;
+            }
+        }
 
         if ( '' === $ip || ! $this->is_public_ip( $ip ) ) {
             // Local/dev/invalid IP — nothing to look up; the client keeps its defaults.
@@ -265,11 +279,19 @@ class Olymp_Tool_Visitor_Location implements Olymp_Tool {
             return $fields; // IP not present in the database
         }
 
+        $country_code = isset( $record['country']['iso_code'] ) ? (string) $record['country']['iso_code'] : '';
+
+        // City & region: resolve the DB name, then apply a manual translation
+        // (DB-IP localizes only country names — see translate_name()).
         $city                   = isset( $record['city']['names'] ) ? $this->localized_name( $record['city']['names'] ) : '';
-        $fields['city']         = $this->clean_city( $city );
-        $fields['region']       = isset( $record['subdivisions'][0]['names'] ) ? $this->localized_name( $record['subdivisions'][0]['names'] ) : '';
+        $city                   = $this->clean_city( $city );
+        $fields['city']         = $this->translate_name( $city, $country_code );
+
+        $region                 = isset( $record['subdivisions'][0]['names'] ) ? $this->localized_name( $record['subdivisions'][0]['names'] ) : '';
+        $fields['region']       = $this->translate_name( $region, $country_code );
+
         $fields['country']      = isset( $record['country']['names'] ) ? $this->localized_name( $record['country']['names'] ) : '';
-        $fields['country_code'] = isset( $record['country']['iso_code'] ) ? (string) $record['country']['iso_code'] : '';
+        $fields['country_code'] = $country_code;
 
         // Last resort: show the ISO code if the DB has no localized country name.
         if ( '' === $fields['country'] && '' !== $fields['country_code'] ) {
@@ -329,6 +351,51 @@ class Olymp_Tool_Visitor_Location implements Olymp_Tool {
      */
     private function clean_city( $city ) {
         return trim( preg_replace( '/\s*\([^)]*\)\s*$/u', '', (string) $city ) );
+    }
+
+    /**
+     * Apply a manual name translation from data/translations.php, if one exists for
+     * this (name, country, target language). DB-IP City Lite only localizes country
+     * names, so city/region names arrive in English; this fills the gap. Scoped by
+     * country code, so a same-named place elsewhere (e.g. Vienna, USA) is left as-is.
+     *
+     * @param string $name         Name as resolved from the DB (city already cleaned).
+     * @param string $country_code ISO 3166-1 alpha-2 country code of the visitor.
+     * @return string Translated name, or the input unchanged.
+     */
+    private function translate_name( $name, $country_code ) {
+        if ( '' === $name || '' === $country_code ) {
+            return $name;
+        }
+        $lang = $this->target_lang();
+        $map  = $this->translations();
+        if ( isset( $map[ $country_code ][ $lang ][ $name ] ) ) {
+            return (string) $map[ $country_code ][ $lang ][ $name ];
+        }
+        return $name;
+    }
+
+    /**
+     * Output language: the site locale's 2-letter code — the same primary locale
+     * localized_name() prefers (e.g. 'de' for a German site).
+     */
+    private function target_lang() {
+        $locales = $this->name_locales();
+        return ! empty( $locales[0] ) ? $locales[0] : 'en';
+    }
+
+    /**
+     * Load and cache the manual translation table (data/translations.php).
+     *
+     * @return array [ country_code => [ lang => [ english_name => translation ] ] ]
+     */
+    private function translations() {
+        static $cache = null;
+        if ( null === $cache ) {
+            $file  = __DIR__ . '/data/translations.php';
+            $cache = is_readable( $file ) ? (array) include $file : array();
+        }
+        return $cache;
     }
 
     // ── IP detection ────────────────────────────────────────────────────────────
