@@ -201,6 +201,7 @@ trait SparkPlus_Generation_Helpers {
                             'output_resolution'   => isset( $sub_user['output_resolution'] )   ? $sub_user['output_resolution']         : 'medium',
                             'webp_quality'        => isset( $sub_user['webp_quality'] )        ? intval( $sub_user['webp_quality'] )    : 80,
                             'reference_image_url' => isset( $sub_user['reference_image_url'] ) ? $sub_user['reference_image_url']       : '',
+                            'related_field'       => isset( $sub_user['related_field'] )       ? $sub_user['related_field']             : '',
                             'enabled'             => true,
                         ) );
                     }
@@ -215,6 +216,7 @@ trait SparkPlus_Generation_Helpers {
                         'output_resolution'   => isset( $user_settings[ $field_key ]['output_resolution'] )   ? $user_settings[ $field_key ]['output_resolution']     : 'medium',
                         'webp_quality'        => isset( $user_settings[ $field_key ]['webp_quality'] )        ? intval( $user_settings[ $field_key ]['webp_quality'] ) : 80,
                         'reference_image_url' => isset( $user_settings[ $field_key ]['reference_image_url'] ) ? $user_settings[ $field_key ]['reference_image_url']   : '',
+                        'related_field'       => isset( $user_settings[ $field_key ]['related_field'] )       ? $user_settings[ $field_key ]['related_field']         : '',
                         'enabled'             => true,
                     ) );
                 }

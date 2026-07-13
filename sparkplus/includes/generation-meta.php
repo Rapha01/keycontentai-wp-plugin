@@ -56,6 +56,19 @@ class SparkPlus_Generation_Meta {
                     $field['reference_image'] = $this->get_reference_image_data( $ref_url );
                     unset( $field['reference_image_url'] );
                     $field['index'] = $image_index++;
+
+                    // Resolve the linked text field's label + current value. The client
+                    // refreshes the value with freshly-generated text (which is saved
+                    // before images) before building the image prompt.
+                    $related_key = isset( $field['related_field'] ) ? trim( $field['related_field'] ) : '';
+                    if ( $related_key !== '' ) {
+                        $related = $this->get_related_field_data( $post_id, $post->post_type, $related_key );
+                        if ( $related ) {
+                            $field['related_label'] = $related['label'];
+                            $field['related_value'] = $related['value'];
+                        }
+                    }
+
                     $image_fields[] = $field;
                 } else {
                     $text_fields[] = $field;
@@ -272,6 +285,82 @@ class SparkPlus_Generation_Meta {
             'wysiwyg' => (bool) get_option( 'sparkplus_linking_wysiwyg', false ),
             'pool'    => $pool,
         );
+    }
+
+    /**
+     * Resolve a linked text field's label and current saved value for a post.
+     * Handles WordPress core fields, ACF fields, ACF group sub-fields ("group::sub"),
+     * RankMath meta, and the URL slug. Returns null for an empty key.
+     *
+     * The returned value is what is currently stored in the database; the client
+     * overrides it with freshly-generated text when the linked field is generated
+     * in the same run (text is generated and saved before any image).
+     *
+     * @param int    $post_id
+     * @param string $post_type
+     * @param string $related_key Field key, or "group_key::sub_key" for group sub-fields.
+     * @return array|null { label, value } or null.
+     */
+    private function get_related_field_data( $post_id, $post_type, $related_key ) {
+        if ( empty( $related_key ) ) {
+            return null;
+        }
+
+        $include_rankmath = (bool) get_option( 'sparkplus_seo_rankmath_enable', false );
+        $include_slug     = (bool) get_option( 'sparkplus_seo_slug_enable', false );
+        $all_fields       = $this->build_all_fields_map( $post_type, $include_rankmath, $include_slug );
+        $post             = get_post( $post_id );
+
+        // Group sub-field: "group_key::sub_key"
+        if ( strpos( $related_key, '::' ) !== false ) {
+            list( $group_key, $sub_key ) = array_pad( explode( '::', $related_key, 2 ), 2, '' );
+
+            $label = $sub_key;
+            if ( isset( $all_fields[ $group_key ]['sub_fields'][ $sub_key ] ) ) {
+                $label = $all_fields[ $group_key ]['label'] . ' › ' . $all_fields[ $group_key ]['sub_fields'][ $sub_key ]['label'];
+            }
+
+            $value = '';
+            if ( function_exists( 'get_field' ) ) {
+                $group_value = get_field( $group_key, $post_id );
+                if ( is_array( $group_value ) && isset( $group_value[ $sub_key ] ) ) {
+                    $value = wp_strip_all_tags( (string) $group_value[ $sub_key ] );
+                }
+            }
+
+            return array( 'label' => $label, 'value' => $value );
+        }
+
+        // Top-level field
+        $label = isset( $all_fields[ $related_key ]['label'] ) ? $all_fields[ $related_key ]['label'] : $related_key;
+        $value = '';
+
+        switch ( $related_key ) {
+            case 'post_title':
+                $value = $post ? $post->post_title : '';
+                break;
+            case 'post_excerpt':
+                $value = $post ? $post->post_excerpt : '';
+                break;
+            case 'post_content':
+                $value = $post ? wp_strip_all_tags( $post->post_content ) : '';
+                break;
+            case 'post_slug':
+                $value = $post ? $post->post_name : '';
+                break;
+            case 'rank_math_title':
+            case 'rank_math_description':
+                $value = (string) get_post_meta( $post_id, $related_key, true );
+                break;
+            default:
+                if ( function_exists( 'get_field' ) ) {
+                    $acf_value = get_field( $related_key, $post_id );
+                    $value     = is_scalar( $acf_value ) ? wp_strip_all_tags( (string) $acf_value ) : '';
+                }
+                break;
+        }
+
+        return array( 'label' => $label, 'value' => (string) $value );
     }
 
     /**

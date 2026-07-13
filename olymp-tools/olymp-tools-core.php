@@ -61,7 +61,7 @@ class Olymp_Tools {
     const MENU_TITLE = 'Olymp Tools'; // Brand label — change here to rename the menu.
     const CAPABILITY = 'manage_options';
     const NONCE      = 'olymp_tools_nonce';
-    const VERSION    = '1.0.1';        // Asset cache-busting version for the framework.
+    const VERSION    = '1.0.2';        // Asset cache-busting version for the framework.
 
     /** @var Olymp_Tool[] Keyed by tool id. */
     private $tools = array();
@@ -238,9 +238,11 @@ function olymp_tools_init() {
     global $olymp_tools;
 
     require_once __DIR__ . '/google-reviews/google-reviews.php';
+    require_once __DIR__ . '/visitor-location/visitor-location.php';
 
     $olymp_tools = new Olymp_Tools();
     $olymp_tools->register( new Olymp_Tool_Google_Reviews() );
+    $olymp_tools->register( new Olymp_Tool_Visitor_Location() );
     $olymp_tools->init();
 
     return $olymp_tools;

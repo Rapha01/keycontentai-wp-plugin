@@ -99,6 +99,7 @@ class SparkPlus_Sanitizer {
                                     'output_resolution'   => isset($sub_data['output_resolution'])   ? sanitize_text_field($sub_data['output_resolution'])   : 'medium',
                                     'webp_quality'        => isset($sub_data['webp_quality']) ? max(1, min(100, absint($sub_data['webp_quality']))) : 80,
                                     'reference_image_url' => isset($sub_data['reference_image_url']) ? esc_url_raw($sub_data['reference_image_url']) : '',
+                                    'related_field'       => isset($sub_data['related_field']) ? sanitize_text_field($sub_data['related_field']) : '',
                                 );
                             }
                         }
@@ -114,6 +115,7 @@ class SparkPlus_Sanitizer {
                             'output_resolution'   => isset($field_data['output_resolution'])   ? sanitize_text_field($field_data['output_resolution'])   : 'medium',
                             'webp_quality'        => isset($field_data['webp_quality']) ? max(1, min(100, absint($field_data['webp_quality']))) : 80,
                             'reference_image_url' => isset($field_data['reference_image_url']) ? esc_url_raw($field_data['reference_image_url']) : '',
+                            'related_field'       => isset($field_data['related_field']) ? sanitize_text_field($field_data['related_field']) : '',
                         );
                     }
                 }

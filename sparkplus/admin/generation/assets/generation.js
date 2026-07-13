@@ -378,6 +378,30 @@
     }
 
     /**
+     * Resolve the current value of a text field an image is linked to. Prefers the
+     * value generated in THIS run (text is generated and saved before images);
+     * otherwise falls back to the server-provided value (existing/manual content).
+     *
+     * @param {string} relatedKey Field key, or "group::sub" for ACF group sub-fields.
+     * @param {Object} generated  Parsed JSON of the text generated this run.
+     * @param {string} fallback   Server-provided value (existing/manual).
+     * @returns {string}
+     */
+    function relatedFieldValue(relatedKey, generated, fallback) {
+        if (!relatedKey) return fallback || '';
+        let v;
+        if (relatedKey.indexOf('::') !== -1) {
+            const parts = relatedKey.split('::');
+            v = (generated && generated[parts[0]]) ? generated[parts[0]][parts[1]] : undefined;
+        } else {
+            v = generated ? generated[relatedKey] : undefined;
+        }
+        if (v === undefined || v === null || v === '') return fallback || '';
+        // Strip any HTML (wysiwyg fields) for clean prompt context.
+        return String(v).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    /**
      * Orchestrate the full generation for a single post, entirely from the browser:
      *  1. Fetch raw settings/data from server (one AJAX call)
      *  2. Build prompts client-side via SparkPlusPromptBuilder
@@ -419,6 +443,10 @@
             }
 
             const promptBuilder = new SparkPlusPromptBuilder();
+
+            // Parsed text generated in this run; used to refresh the value of any
+            // text field an image is linked to before building its image prompt.
+            let generatedTextContent = {};
 
             // 2. Text generation — browser builds prompt and calls API directly
             if (text_fields.length > 0) {
@@ -468,6 +496,10 @@
                     handleError($row, 'save_text', saveTextResp.data?.message || 'Failed to save text', 'server');
                     return;
                 }
+
+                // Keep the freshly-generated text so an image linked to a text field
+                // uses its NEW value (it was just saved above, before any image runs).
+                try { generatedTextContent = JSON.parse(content) || {}; } catch (_) { generatedTextContent = {}; }
             }
 
             // 3. Image generation — browser builds prompts and calls API directly for each image
@@ -477,6 +509,12 @@
                 const textProvider  = SparkPlusProviderFactory.getTextProvider(textProviderSlug, api_keys);
 
                 for (const img of image_fields) {
+                    // Refresh the linked field's value with this run's generated text
+                    // (falls back to the server-provided existing/manual value).
+                    if (img.related_field) {
+                        img.related_value = relatedFieldValue(img.related_field, generatedTextContent, img.related_value);
+                    }
+
                     const imagePrompt = promptBuilder.buildImagePrompt(
                         cpt_settings, post_settings, img, existing_content
                     );

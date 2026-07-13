@@ -151,6 +151,78 @@ if (!empty($selected_post_type)) {
         );
     }
 }
+
+// Build the list of text-type fields an image field can be related to.
+// (UI only for now — the selection is not yet saved or used in prompts.)
+$sparkplus_connectable_text_types = array( 'text', 'textarea', 'wysiwyg' );
+$sparkplus_connectable_fields     = array();
+foreach ( $custom_fields as $sparkplus_cf ) {
+    if ( $sparkplus_cf['type'] === 'group' ) {
+        if ( ! empty( $sparkplus_cf['sub_fields'] ) ) {
+            foreach ( $sparkplus_cf['sub_fields'] as $sparkplus_sf ) {
+                if ( in_array( $sparkplus_sf['type'], $sparkplus_connectable_text_types, true ) ) {
+                    $sparkplus_connectable_fields[] = array(
+                        'value' => $sparkplus_cf['key'] . '::' . $sparkplus_sf['key'],
+                        'label' => $sparkplus_cf['label'] . ' › ' . $sparkplus_sf['label'],
+                    );
+                }
+            }
+        }
+    } elseif ( in_array( $sparkplus_cf['type'], $sparkplus_connectable_text_types, true ) ) {
+        $sparkplus_connectable_fields[] = array(
+            'value' => $sparkplus_cf['key'],
+            'label' => $sparkplus_cf['label'],
+        );
+    }
+}
+
+/**
+ * Render the image-field "prompt context" controls: the reference-image picker
+ * and the "Relate to text field" selector side by side (they wrap/stack on
+ * narrow screens). Placed in the Description/Prompt column.
+ *
+ * @param string $name_base Full field name prefix (e.g. sparkplus_cpt_configs[post][fields][img]).
+ * @param string $ref_url   Current reference-image URL.
+ * @param string $rel_field Currently selected related-field value.
+ */
+$sparkplus_render_image_extras = function ( $name_base, $ref_url, $rel_field ) use ( $sparkplus_connectable_fields ) {
+    $has_relation = ! empty( $sparkplus_connectable_fields );
+    ?>
+    <div class="sparkplus-image-extras">
+        <div class="sparkplus-image-extras-row">
+            <div class="sparkplus-image-extra sparkplus-ref-image-wrap">
+                <label class="sparkplus-image-extra-label">
+                    <?php esc_html_e( 'Reference Image', 'sparkplus' ); ?>
+                    <span class="dashicons dashicons-editor-help" title="<?php esc_attr_e( 'Attach a reference image (e.g. a logo) to include as visual context alongside the prompt. Only works with Gemini image generation models.', 'sparkplus' ); ?>"></span>
+                </label>
+                <div class="sparkplus-ref-image-controls">
+                    <input type="hidden" name="<?php echo esc_attr( $name_base ); ?>[reference_image_url]" value="<?php echo esc_attr( $ref_url ); ?>" class="sparkplus-ref-image-url" />
+                    <span class="sparkplus-ref-image-name"><?php echo $ref_url ? esc_html( basename( $ref_url ) ) : esc_html__( 'No image selected', 'sparkplus' ); ?></span>
+                    <button type="button" class="button button-small sparkplus-ref-image-btn"><?php esc_html_e( 'Select', 'sparkplus' ); ?></button>
+                    <button type="button" class="button button-small sparkplus-ref-image-clear" style="<?php echo $ref_url ? '' : 'display:none;'; ?>" title="<?php esc_attr_e( 'Remove reference image', 'sparkplus' ); ?>">&#215;</button>
+                </div>
+            </div>
+
+            <?php if ( $has_relation ) : ?>
+            <div class="sparkplus-image-extra sparkplus-image-relation">
+                <label class="sparkplus-image-extra-label">
+                    <?php esc_html_e( 'Relate to text field', 'sparkplus' ); ?>
+                    <span class="dashicons dashicons-editor-help" title="<?php esc_attr_e( "Link this image to one of the post's text fields so it is generated to correlate with that text.", 'sparkplus' ); ?>"></span>
+                </label>
+                <select name="<?php echo esc_attr( $name_base ); ?>[related_field]" class="sparkplus-image-relation-field">
+                    <option value=""><?php esc_html_e( '— None —', 'sparkplus' ); ?></option>
+                    <?php foreach ( $sparkplus_connectable_fields as $sparkplus_opt ) : ?>
+                        <option value="<?php echo esc_attr( $sparkplus_opt['value'] ); ?>" <?php selected( $rel_field, $sparkplus_opt['value'] ); ?>>
+                            <?php echo esc_html( $sparkplus_opt['label'] ); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php
+};
 ?>
 
 <div class="sparkplus-tab-panel">
@@ -327,15 +399,13 @@ if (!empty($selected_post_type)) {
                                             </p>
                                         <?php endif; ?>
                                         <?php if ($sub_is_image) : ?>
-                                        <div style="margin-top: 6px;">
-                                            <label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;margin-bottom:3px;color:#666;"><?php esc_html_e('Reference Image', 'sparkplus'); ?> <span class="dashicons dashicons-editor-help" style="font-size:13px;width:13px;height:13px;cursor:help;color:#72aee6;" title="<?php esc_attr_e('Attach a reference image (e.g. a logo) to include as visual context alongside the prompt. Only works with Gemini image generation models.', 'sparkplus'); ?>"></span></label>
-                                            <div style="display:flex;align-items:center;gap:6px;">
-                                                <input type="hidden" name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][sub_fields][<?php echo esc_attr($sub_field['key']); ?>][reference_image_url]" value="<?php echo esc_attr($sub_reference_image_url); ?>" class="sparkplus-ref-image-url" />
-                                                <span class="sparkplus-ref-image-name" style="font-size:11px;color:#666;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo $sub_reference_image_url ? esc_html(basename($sub_reference_image_url)) : esc_html__('No image selected', 'sparkplus'); ?></span>
-                                                <button type="button" class="button button-small sparkplus-ref-image-btn"><?php esc_html_e('Select', 'sparkplus'); ?></button>
-                                                <button type="button" class="button button-small sparkplus-ref-image-clear" style="<?php echo $sub_reference_image_url ? '' : 'display:none;'; ?>color:#a00;" title="<?php esc_attr_e('Remove reference image', 'sparkplus'); ?>">&#215;</button>
-                                            </div>
-                                        </div>
+                                        <?php
+                                        $sparkplus_render_image_extras(
+                                            'sparkplus_cpt_configs[' . $selected_post_type . '][fields][' . $field['key'] . '][sub_fields][' . $sub_field['key'] . ']',
+                                            $sub_reference_image_url,
+                                            isset( $sub_cfg['related_field'] ) ? $sub_cfg['related_field'] : ''
+                                        );
+                                        ?>
                                         <?php endif; ?>
                                     </td>
                                     <td data-label="<?php esc_attr_e('Text/Image Options', 'sparkplus'); ?>">
@@ -466,15 +536,13 @@ if (!empty($selected_post_type)) {
                                     </p>
                                 <?php endif; ?>
                                 <?php if ($is_image_field) : ?>
-                                <div style="margin-top: 6px;">
-                                    <label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;margin-bottom:3px;color:#666;"><?php esc_html_e('Reference Image', 'sparkplus'); ?> <span class="dashicons dashicons-editor-help" style="font-size:13px;width:13px;height:13px;cursor:help;color:#72aee6;" title="<?php esc_attr_e('Attach a reference image (e.g. a logo) to include as visual context alongside the prompt. Only works with Gemini image generation models.', 'sparkplus'); ?>"></span></label>
-                                    <div style="display:flex;align-items:center;gap:6px;">
-                                        <input type="hidden" name="sparkplus_cpt_configs[<?php echo esc_attr($selected_post_type); ?>][fields][<?php echo esc_attr($field['key']); ?>][reference_image_url]" value="<?php echo esc_attr($current_reference_image_url); ?>" class="sparkplus-ref-image-url" />
-                                        <span class="sparkplus-ref-image-name" style="font-size:11px;color:#666;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo $current_reference_image_url ? esc_html(basename($current_reference_image_url)) : esc_html__('No image selected', 'sparkplus'); ?></span>
-                                        <button type="button" class="button button-small sparkplus-ref-image-btn"><?php esc_html_e('Select', 'sparkplus'); ?></button>
-                                        <button type="button" class="button button-small sparkplus-ref-image-clear" style="<?php echo $current_reference_image_url ? '' : 'display:none;'; ?>color:#a00;" title="<?php esc_attr_e('Remove reference image', 'sparkplus'); ?>">&#215;</button>
-                                    </div>
-                                </div>
+                                <?php
+                                $sparkplus_render_image_extras(
+                                    'sparkplus_cpt_configs[' . $selected_post_type . '][fields][' . $field['key'] . ']',
+                                    $current_reference_image_url,
+                                    isset( $current_field_configs[ $field['key'] ]['related_field'] ) ? $current_field_configs[ $field['key'] ]['related_field'] : ''
+                                );
+                                ?>
                                 <?php endif; ?>
                             </td>
                             <td data-label="<?php esc_attr_e('WordCount/Dimensions', 'sparkplus'); ?>">

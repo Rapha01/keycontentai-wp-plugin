@@ -90,6 +90,7 @@ class SparkPlusPromptBuilder {
 
         const parts = [
             this._buildImageFieldSection(imageField, cptSettings, keyword),
+            this._buildRelatedFieldSection(imageField),
             this._buildTopicSection(postSettings),
             this._buildGeneralContext(cptSettings, 'image'),
             this._buildTargetAudienceSection(cptSettings),
@@ -501,6 +502,32 @@ class SparkPlusPromptBuilder {
     }
 
     // ── Image-Specific Sections ───────────────────────────────────────────────
+
+    /**
+     * Build the linked-field section: the connected text field's value plus fixed
+     * instructions telling the image model how to use it. Returns '' when the image
+     * has no linked-field value.
+     *
+     * @param {Object} field Image field config (may carry related_label/related_value).
+     * @returns {string}
+     */
+    _buildRelatedFieldSection(field) {
+        if (!field || !field.related_value) return '';
+        const label = field.related_label || 'a related text field';
+        let text = String(field.related_value);
+        if (text.length > 1500) text = text.slice(0, 1500) + '…';
+        return [
+            '# Linked Field Content',
+            `This image is linked to the "${label}" field of this post. Use the text below as the primary basis for the image so the visual directly reflects and reinforces it:`,
+            '',
+            text,
+            '',
+            'How to use this text:',
+            '- Depict the key subject, scene, objects, setting, and mood it describes.',
+            '- The image must be consistent with this text and must not contradict it.',
+            '- This is content guidance, not text to render on the image (do not write these words into the image unless explicitly asked).',
+        ].join('\n');
+    }
 
     _buildImageFieldSection(field, cptSettings, keyword) {
         const parts = [

@@ -372,3 +372,61 @@
     margin-right: 3px;
     color: #dba617;
 }
+
+/* ─── Image field: reference image + relate-to-field side by side ─── */
+.sparkplus-image-extras {
+    margin-top: 8px;
+}
+
+.sparkplus-image-extras-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.sparkplus-image-extras-row .sparkplus-image-extra {
+    flex: 1 1 200px; /* side by side on wide cells; stacks when narrow */
+    min-width: 0;
+}
+
+.sparkplus-image-extra-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    margin-bottom: 3px;
+    color: #666;
+}
+
+.sparkplus-image-extra-label .dashicons {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+    cursor: help;
+    color: #72aee6;
+}
+
+.sparkplus-ref-image-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sparkplus-ref-image-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 11px;
+    color: #666;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sparkplus-ref-image-clear {
+    color: #a00;
+}
+
+.sparkplus-image-relation-field {
+    width: 100%;
+}
