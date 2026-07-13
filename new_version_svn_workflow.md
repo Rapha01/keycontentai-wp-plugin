@@ -7,6 +7,7 @@ Example: `1.2.3`
 
 Before touching SVN, update in your **local plugin**:
 - Main plugin header: `Version: 1.2.3`
+- Main plugin global SPARKPLUS_VERSION
 - `readme.txt`: set `Stable tag: 1.2.3` (recommended) and update `Changelog`
 
 ## 1) Update your SVN working copy

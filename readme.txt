@@ -4,22 +4,22 @@ Tags: ai content, content generation, openai, custom post types, seo
 Requires at least: 5.8
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.6
+Stable tag: 1.1.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-AI content generation for any WordPress post type — text and images via OpenAI, Anthropic, or Gemini, plus a bundled set of Olymp marketing tools.
+AI content generation for any WordPress post type — text and images via OpenAI or Google Gemini, plus a bundled set of Olymp marketing tools.
 
 == Description ==
 
-SparkPlus lets you generate AI-powered content for any WordPress post type — including custom post types and Advanced Custom Fields (ACF). Simply provide keywords and context, and SparkPlus creates professionally written, SEO-optimized content with matching images in seconds. Pick your preferred AI engine per model — OpenAI, Anthropic Claude, or Google Gemini.
+SparkPlus lets you generate AI-powered content for any WordPress post type — including custom post types and Advanced Custom Fields (ACF). Simply provide keywords and context, and SparkPlus creates professionally written, SEO-optimized content with matching images in seconds. Pick your preferred AI engine per model — OpenAI or Google Gemini.
 
 The plugin also bundles **Olymp Tools**: a small collection of standalone marketing side-features (currently Google Reviews and Visitor Location) that live under their own admin menu and work completely independently of the AI content generator. Use as much or as little as you need.
 
 **Key Features:**
 
 * **Bulk keyword loading** — Enter one keyword per line to batch-create posts instantly. Duplicate detection prevents accidental duplicates.
-* **AI text generation** — Generate post titles, content, excerpts, and any ACF text/textarea/WYSIWYG field using the latest OpenAI, Anthropic Claude, and Google Gemini models.
+* **AI text generation** — Generate post titles, content, excerpts, and any ACF text/textarea/WYSIWYG field using the latest OpenAI and Google Gemini models.
 * **AI image generation** — Automatically generate featured images and ACF image fields. Images are converted to WebP for optimal performance.
 * **Multi-provider support** — Choose a different provider and model for text and for images. All AI calls are made directly from your browser to the provider, so no long-running server requests can time out.
 * **Custom post type support** — Works with all public post types including built-in posts, pages, and any registered CPTs.
@@ -37,7 +37,7 @@ The plugin also bundles **Olymp Tools**: a small collection of standalone market
 
 **Settings & Configuration:**
 
-* **API Settings** — Enter an API key per provider (OpenAI, Anthropic, Google Gemini) and choose your text and image models.
+* **API Settings** — Enter an API key per provider (OpenAI, Google Gemini) and choose your text and image models.
 * **General Context** — Define your company name, industry, target audience, USP, product advantages, and buying reasons to shape all generated content.
 * **CPT Configuration** — Per-post-type field mapping with individual enable/disable toggles, custom descriptions/prompts, word counts, image size/quality settings, reference images, and image-to-text relations.
 * **SEO** — Enable RankMath meta title/description generation and keyword-rich URL slugs.
@@ -47,7 +47,6 @@ The plugin also bundles **Olymp Tools**: a small collection of standalone market
 **Supported AI Models:**
 
 * OpenAI (text): gpt-5.5, gpt-5.5-pro, gpt-5.4, gpt-5.2, gpt-5.1, gpt-5-mini, gpt-5-nano
-* Anthropic Claude (text): Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 3.5
 * Google Gemini (text): Gemini 3.1 Pro, Gemini 3 Flash, Gemini 3.1 Flash Lite, Gemini 2.5 Pro / Flash / Flash Lite
 * OpenAI (image): gpt-image-2, gpt-image-1.5, gpt-image-1, gpt-image-1-mini
 * Google Gemini (image): Gemini 3.1 Flash Image, Gemini 3 Pro Image, Gemini 2.5 Flash Image
@@ -79,7 +78,6 @@ SparkPlus and its bundled Olymp Tools connect to the following external services
 When you trigger content generation, your request — including keywords, configured context (company name, industry, target audience, etc.), and field descriptions — is sent directly from your browser to the AI provider you selected for that model. You choose the provider per model and supply your own API key; usage is billed by that provider. Only the provider(s) you configure are ever contacted.
 
 * **OpenAI, L.L.C.** — Endpoint: [https://api.openai.com](https://api.openai.com) · Terms: [https://openai.com/policies/terms-of-use](https://openai.com/policies/terms-of-use) · Privacy: [https://openai.com/policies/privacy-policy](https://openai.com/policies/privacy-policy) · Keys: [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-* **Anthropic (Claude)** — Endpoint: [https://api.anthropic.com](https://api.anthropic.com) · Terms: [https://www.anthropic.com/legal/consumer-terms](https://www.anthropic.com/legal/consumer-terms) · Privacy: [https://www.anthropic.com/legal/privacy](https://www.anthropic.com/legal/privacy) · Keys: [https://console.anthropic.com/](https://console.anthropic.com/)
 * **Google Gemini** — Endpoint: [https://generativelanguage.googleapis.com](https://generativelanguage.googleapis.com) · Terms: [https://ai.google.dev/gemini-api/terms](https://ai.google.dev/gemini-api/terms) · Privacy: [https://policies.google.com/privacy](https://policies.google.com/privacy) · Keys: [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
 
 **Google Reviews tool (Olymp Tools)**
@@ -105,7 +103,7 @@ No data is sent to any of these services except as described above, and only whe
 
 1. Upload the `sparkplus` folder to the `/wp-content/plugins/` directory, or install directly through the WordPress plugin screen.
 2. Activate the plugin through the **Plugins** menu in WordPress.
-3. Navigate to **SparkPlus > Settings > API Settings** and enter an API key for at least one supported provider (OpenAI, Anthropic Claude, or Google Gemini).
+3. Navigate to **SparkPlus > Settings > API Settings** and enter an API key for at least one supported provider (OpenAI or Google Gemini).
 4. Configure your brand context under **SparkPlus > Settings > General Context**.
 5. Select your desired post type and configure fields under **SparkPlus > Settings > CPT**.
 6. Go to **SparkPlus > Load Keywords** to create posts from keywords, then use **SparkPlus > Generation** to generate AI content.
@@ -114,7 +112,7 @@ No data is sent to any of these services except as described above, and only whe
 
 = Do I need an API key? =
 
-Yes. SparkPlus needs your own API key for at least one supported AI provider — OpenAI, Anthropic Claude, or Google Gemini — to generate content. For OpenAI you can get one at [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys). Each provider bills API usage based on the model and volume, and you only pay the provider(s) you actually use.
+Yes. SparkPlus needs your own API key for at least one supported AI provider — OpenAI or Google Gemini — to generate content. For OpenAI you can get one at [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys). Each provider bills API usage based on the model and volume, and you only pay the provider(s) you actually use.
 
 = Which post types are supported? =
 
@@ -146,7 +144,7 @@ Go to **SparkPlus > Settings > Reset**. You can reset all plugin settings (API k
 
 = Can I use a provider other than OpenAI? =
 
-Yes. SparkPlus supports OpenAI, Anthropic Claude, and Google Gemini. Add the API key for each provider you want to use under **SparkPlus > Settings > API Settings**, then pick the text and image model you prefer. You only need a key for the provider(s) you actually use.
+Yes. SparkPlus supports OpenAI and Google Gemini. Add the API key for the provider you want to use under **SparkPlus > Settings > API Settings**, then pick the text and image model you prefer. You only need a key for the provider(s) you actually use.
 
 = What are Olymp Tools? =
 
@@ -169,6 +167,10 @@ Yes. Visitor Location resolves the visitor's city/region/country entirely on you
 5. Settings: API — Configure your OpenAI API key and model preferences.
 
 == Changelog ==
+
+= 1.1.7 =
+* **Visitor Location: reliable database download without WP-Cron.** The DB-IP database no longer relies on a WP-Cron background job — which silently never ran on hosts that block loopback / server-to-self requests, so the database never downloaded there. The first-visitor lookup now downloads the database in the background of its own AJAX request (via `fastcgi_finish_request()`, so the visitor never waits), and the "Refresh database now" button downloads synchronously and reports success or the exact error immediately. Both paths share a single download routine.
+* Fixed the download getting permanently stuck: once a background job had been queued but never fired, the manual refresh could no longer recover it.
 
 = 1.1.6 =
 * **New Olymp Tool: Visitor Location.** Show the current visitor's location in your content via shortcodes — `[olymp_visitor_city]`, `[olymp_visitor_region]`, `[olymp_visitor_country]`, `[olymp_visitor_country_code]`, and the combined `[olymp_visitor_location field="city,country" separator=", "]` — for location-personalised marketing copy. Each shortcode takes a `default` fallback.
@@ -274,6 +276,9 @@ Yes. Visitor Location resolves the visitor's city/region/country entirely on you
 * Full settings management with reset capability.
 
 == Upgrade Notice ==
+
+= 1.1.7 =
+Fixes the Visitor Location database not downloading on hosts where WP-Cron / loopback requests are blocked. No configuration required.
 
 = 1.1.6 =
 Adds the Visitor Location Olymp Tool (local, GDPR-friendly geolocation shortcodes) and lets image fields be generated to match a linked text field. No configuration required.

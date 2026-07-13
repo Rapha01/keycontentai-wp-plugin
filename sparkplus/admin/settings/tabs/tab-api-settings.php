@@ -27,6 +27,11 @@ $image_model_deprecated = sparkplus_get_model_provider( $image_model, 'image' ) 
 
 $text_by_provider  = array_diff_key( $supported_models['text']['by_provider'],  array( 'anthropic' => true ) );
 $image_by_provider = array_diff_key( $supported_models['image']['by_provider'], array( 'anthropic' => true ) );
+
+// Anthropic Claude support is built but not yet released — its models are filtered
+// out of the dropdowns above. Keep the API key field hidden until Claude ships;
+// flip this to true (and drop the array_diff_key exclusions) to re-enable it.
+$anthropic_enabled = false;
 ?>
 
 <div class="sparkplus-tab-panel">
@@ -88,7 +93,8 @@ $image_by_provider = array_diff_key( $supported_models['image']['by_provider'], 
                     </td>
                 </tr>
 
-                <!-- ── Anthropic ───────────────────────────────────────── -->
+                <!-- ── Anthropic (built but not yet released — hidden) ──── -->
+                <?php if ( $anthropic_enabled ) : ?>
                 <tr>
                     <th scope="row" colspan="2">
                         <h3 style="margin: 0.5em 0 0.25em;"><?php esc_html_e( 'Anthropic Claude', 'sparkplus' ); ?></h3>
@@ -115,6 +121,7 @@ $image_by_provider = array_diff_key( $supported_models['image']['by_provider'], 
                         </p>
                     </td>
                 </tr>
+                <?php endif; ?>
 
                 <!-- ── Google Gemini ───────────────────────────────────── -->
                 <tr>
@@ -203,7 +210,7 @@ $image_by_provider = array_diff_key( $supported_models['image']['by_provider'], 
                             <?php endforeach; ?>
                         </select>
                         <p class="description">
-                            <?php esc_html_e( 'Select the model for image generation. Only OpenAI image models are currently supported.', 'sparkplus' ); ?>
+                            <?php esc_html_e( 'Select the model for image generation. Make sure the corresponding API key above is configured.', 'sparkplus' ); ?>
                         </p>
                     </td>
                 </tr>

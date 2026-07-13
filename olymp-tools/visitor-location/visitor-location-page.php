@@ -93,7 +93,7 @@ $shortcodes = array(
             <?php
             printf(
                 /* translators: %d: number of days */
-                esc_html__( 'The database refreshes automatically about every %d days. Use this to force an immediate update.', 'sparkplus' ),
+                esc_html__( 'The database refreshes automatically about every %d days. Use this to force an immediate update — it downloads a ~60 MB database, so it can take up to a minute.', 'sparkplus' ),
                 (int) $refresh_days
             );
             ?>

@@ -48,9 +48,6 @@ class Olymp_Tool_Visitor_Location implements Olymp_Tool {
     /** Single-flight lock; doubles as the failure back-off window. */
     const FLAG_DOWNLOADING = 'olymp_tools_vloc_downloading';
 
-    /** WP-Cron hook for the background download. */
-    const CRON_HOOK = 'olymp_tools_vloc_download';
-
     /** Serve a DB for this long before a background refresh is attempted. */
     const REFRESH_INTERVAL = 30 * DAY_IN_SECONDS;
 
@@ -94,12 +91,11 @@ class Olymp_Tool_Visitor_Location implements Olymp_Tool {
         // Combined shortcode with conditional separator handling.
         add_shortcode( 'olymp_visitor_location', array( $this, 'shortcode_location' ) );
 
-        // Public AJAX lookup (visitors are not logged in → nopriv too).
+        // Public AJAX lookup (visitors are not logged in → nopriv too). This same
+        // request also drives the lazy DB download in the background (see
+        // handle_lookup()), so no WP-Cron or server-to-self loopback is involved.
         add_action( 'wp_ajax_' . self::AJAX_ACTION, array( $this, 'handle_lookup' ) );
         add_action( 'wp_ajax_nopriv_' . self::AJAX_ACTION, array( $this, 'handle_lookup' ) );
-
-        // Background DB download, run by WP-Cron.
-        add_action( self::CRON_HOOK, array( $this, 'download_database' ) );
     }
 
     public function render_page() {
@@ -134,13 +130,28 @@ class Olymp_Tool_Visitor_Location implements Olymp_Tool {
     /**
      * The tool's admin form has a single control: "refresh the database now".
      * There are no persisted settings.
+     *
+     * Forces a fresh download through the very same path the first-visitor lookup
+     * uses (run_locked_download() → download_database()), so the download logic
+     * lives in exactly one place. It runs synchronously here — the admin waits a
+     * few seconds but gets a definitive result — and works on hosts where WP-Cron
+     * or loopback requests are blocked.
      */
     public function save( $post ) {
-        update_option( self::OPT_LAST_UPDATED, 0 );  // mark stale
-        delete_transient( self::FLAG_DOWNLOADING );  // clear any back-off so the refresh runs now
-        $this->maybe_schedule_download();
+        // Clear any back-off lock so a manual refresh always proceeds immediately.
+        delete_transient( self::FLAG_DOWNLOADING );
 
-        return array( 'message' => __( 'Database refresh started. Reload this page in a moment to see the updated status.', 'sparkplus' ) );
+        $result = $this->run_locked_download();
+
+        if ( is_wp_error( $result ) ) {
+            return array( 'message' => sprintf(
+                /* translators: %s: error message */
+                __( 'Download failed: %s', 'sparkplus' ),
+                $result->get_error_message()
+            ) );
+        }
+
+        return array( 'message' => __( 'Database downloaded and installed successfully.', 'sparkplus' ) );
     }
 
     // ── Shortcodes ──────────────────────────────────────────────────────────────
@@ -239,18 +250,32 @@ class Olymp_Tool_Visitor_Location implements Olymp_Tool {
             }
         }
 
-        if ( '' === $ip || ! $this->is_public_ip( $ip ) ) {
-            // Local/dev/invalid IP — nothing to look up; the client keeps its defaults.
-            wp_send_json_success( $this->empty_fields() );
+        // Local/dev/invalid IP → empty fields; the client just keeps its defaults.
+        $fields = ( '' === $ip || ! $this->is_public_ip( $ip ) )
+            ? $this->empty_fields()
+            : $this->lookup( $ip );
+
+        // Decide before we detach whether the DB needs (re)downloading.
+        $needs_download = ! file_exists( $this->db_path() ) || $this->is_db_stale();
+
+        // Send the location to the visitor and close the connection — they never
+        // wait for the download. Then, if needed, download the DB in the background
+        // of this same request: the visitor's own request drives it, so no WP-Cron
+        // or server-to-self loopback is required. Only the first visitor to find
+        // the DB missing/stale (and win the single-flight lock) actually downloads.
+        $this->send_json_and_close( array( 'success' => true, 'data' => $fields ) );
+
+        if ( $needs_download ) {
+            $this->run_locked_download();
         }
 
-        wp_send_json_success( $this->lookup( $ip ) );
+        exit;
     }
 
     /**
-     * Resolve { city, region, country, country_code } for an IP.
-     * Missing DB → schedule a download and return empty fields. Stale DB →
-     * schedule a background refresh but still serve the current data.
+     * Resolve { city, region, country, country_code } for an IP — a pure read with
+     * no side effects. A missing (or unreadable) database yields empty fields;
+     * deciding whether to (re)download is the caller's job (see handle_lookup()).
      *
      * @return array<string,string>
      */
@@ -259,11 +284,7 @@ class Olymp_Tool_Visitor_Location implements Olymp_Tool {
         $path   = $this->db_path();
 
         if ( ! file_exists( $path ) ) {
-            $this->maybe_schedule_download();
-            return $fields;
-        }
-        if ( $this->is_db_stale() ) {
-            $this->maybe_schedule_download(); // refresh in the background; keep using the current DB
+            return $fields; // no DB yet — the caller triggers the download
         }
 
         try {
@@ -440,22 +461,63 @@ class Olymp_Tool_Visitor_Location implements Olymp_Tool {
         );
     }
 
-    // ── Database download (WP-Cron) ─────────────────────────────────────────────
+    // ── Database download ───────────────────────────────────────────────────────
 
     /**
-     * Single-flight scheduler: the first caller that sees a missing/stale DB
-     * schedules the download; concurrent callers are short-circuited by the flag,
-     * which also serves as the failure back-off (no retry until it expires).
+     * Acquire the single-flight lock and download the database. Both the admin
+     * "Refresh" button and the first-visitor lookup call this, so the download is
+     * driven from exactly one place — no duplicated logic, no WP-Cron.
+     *
+     * The lock (a transient) stops concurrent visitors from stampeding the download
+     * and doubles as a failure back-off window; download_database() releases it on
+     * success and holds it (until it expires) on failure.
+     *
+     * @return true|WP_Error|null true / WP_Error from the attempt, or null when
+     *                            another download already holds the lock.
      */
-    private function maybe_schedule_download() {
+    private function run_locked_download() {
         if ( get_transient( self::FLAG_DOWNLOADING ) ) {
-            return; // in-flight or backing off after a failure
-        }
-        if ( wp_next_scheduled( self::CRON_HOOK ) ) {
-            return; // already queued
+            return null; // in-flight or backing off after a failure
         }
         set_transient( self::FLAG_DOWNLOADING, time(), self::DOWNLOAD_LOCK_TTL );
-        wp_schedule_single_event( time(), self::CRON_HOOK );
+
+        return $this->download_database();
+    }
+
+    /**
+     * Emit a JSON response and detach from the client, so the request can keep
+     * running (to download the database) without the visitor waiting.
+     *
+     * Prefers fastcgi_finish_request() / litespeed_finish_request(); otherwise it
+     * flushes with an explicit Content-Length so the browser treats the (small)
+     * body as complete immediately while any follow-up work runs inline — the
+     * visitor's page is never blocked either way.
+     *
+     * @param array $payload Response data, echoed as JSON.
+     */
+    private function send_json_and_close( array $payload ) {
+        $json = wp_json_encode( $payload );
+
+        if ( ! headers_sent() ) {
+            header( 'Content-Type: application/json; charset=' . get_option( 'blog_charset' ) );
+            header( 'Content-Length: ' . strlen( $json ) );
+            header( 'Connection: close' );
+        }
+
+        echo $json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON response body.
+
+        if ( function_exists( 'fastcgi_finish_request' ) ) {
+            fastcgi_finish_request();
+        } elseif ( function_exists( 'litespeed_finish_request' ) ) {
+            litespeed_finish_request();
+        } else {
+            // Can't detach: flush what we have. The Content-Length lets the browser
+            // treat the body as complete immediately; any follow-up work runs inline.
+            while ( ob_get_level() > 0 ) {
+                ob_end_flush();
+            }
+            flush();
+        }
     }
 
     private function is_db_stale() {
@@ -464,10 +526,15 @@ class Olymp_Tool_Visitor_Location implements Olymp_Tool {
     }
 
     /**
-     * Download the current DB-IP Lite City database. Runs in the WP-Cron request,
-     * so it has its own execution context. Downloads to a temp file, decompresses
-     * and verifies it, then atomically swaps it into place — a failure mid-way
-     * never corrupts the live DB (the old one keeps serving).
+     * Download the current DB-IP Lite City database. Reached via run_locked_download()
+     * from both the admin "Refresh" button (synchronous) and the first-visitor lookup
+     * (after its response is flushed). Downloads to a temp file, decompresses and
+     * verifies it, then atomically swaps it into place — a failure mid-way never
+     * corrupts the live DB (the old one keeps serving).
+     *
+     * @return true|WP_Error True on success; a WP_Error describing the last failed
+     *                       attempt otherwise. The error is also stored in
+     *                       OPT_LAST_ERROR for display on the admin page.
      */
     public function download_database() {
         if ( ! function_exists( 'download_url' ) ) {
@@ -518,11 +585,12 @@ class Olymp_Tool_Visitor_Location implements Olymp_Tool {
             update_option( self::OPT_LAST_UPDATED, time() );
             delete_option( self::OPT_LAST_ERROR );
             delete_transient( self::FLAG_DOWNLOADING );
-            return;
+            return true;
         }
 
         // All attempts failed: record the error and let the lock expire (back-off).
         update_option( self::OPT_LAST_ERROR, $last_error );
+        return new WP_Error( 'vloc_download_failed', $last_error );
     }
 
     /**
